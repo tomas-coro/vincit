@@ -57,6 +57,17 @@ const pool = new Pool({
   `);
 
   await pool.query(`
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS pin_hash TEXT;
+    ALTER TABLE bets ADD COLUMN IF NOT EXISTS comment TEXT;
+    CREATE TABLE IF NOT EXISTS reactions (
+      bet_id TEXT NOT NULL,
+      bettor TEXT NOT NULL,
+      emoji  TEXT NOT NULL,
+      PRIMARY KEY (bet_id, bettor)
+    );
+  `);
+
+  await pool.query(`
     INSERT INTO profiles ("user", name, avatar, color_key)
       VALUES ('tomas',  'Tomas',  '🃏', 'blue'),
              ('giulia', 'Giulia', '♥️', 'purple')

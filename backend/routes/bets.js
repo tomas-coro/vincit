@@ -104,6 +104,21 @@ module.exports = function(broadcastUpdate) {
     }
   });
 
+  router.patch('/:id/comment', async (req, res) => {
+    try {
+      const { comment } = req.body;
+      if (typeof comment === 'string' && comment.length > 280) {
+        return res.status(400).json({ error: 'Commento troppo lungo' });
+      }
+      await db.query('UPDATE bets SET comment = $1 WHERE id = $2', [comment, req.params.id]);
+      broadcastUpdate();
+      res.json({ ok: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   router.patch('/:id/flame', async (req, res) => {
     try {
       await db.query(

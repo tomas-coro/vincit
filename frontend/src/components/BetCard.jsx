@@ -10,7 +10,7 @@ const S = {
 const getC = (profiles,user)=>COLORS[profiles[user].colorKey]||"#5b8af0";
 const qToP = q=>Math.round(100/parseFloat(q));
 
-export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,isDesktop}){
+export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,reactions,isDesktop}){
   const other=user==="tomas"?"giulia":"tomas";
   const isOwner=bet.creator===user;
   const cat=cats.find(c=>c.id===bet.category)||cats[cats.length-1];
@@ -19,6 +19,9 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const myCounter=(bet.counterBets||[]).find(cb=>cb.bettor===user);
   const theirCounter=(bet.counterBets||[]).find(cb=>cb.bettor!==user);
   const sideColor=done?(bet.status==="won"?"var(--grn)":"var(--red)"):(bet.isSecret?"var(--gold)":cat.color);
+  const betReactions=(reactions||[]).filter(r=>r.bet_id===bet.id);
+  const myReaction=betReactions.find(r=>r.bettor===user);
+  const EMOJIS=['🔥','😂','👀','💀','⚡'];
 
   const actions=isOwner&&!done&&(
     <div style={{display:"flex",gap:8,...(isDesktop?{flexDirection:"column",alignItems:"stretch",flexShrink:0,justifyContent:"center"}:{})}}>
@@ -64,6 +67,13 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             {done&&<Bdg bg={bet.status==="won"?"var(--grn)22":"var(--red)22"} c={bet.status==="won"?"var(--grn)":"var(--red)"}>{bet.status==="won"?`✅ +${bet.potentialWin-bet.stake} ₡`:`❌ −${bet.stake} ₡`}</Bdg>}
           </div>
 
+          {/* Comment */}
+          {done&&bet.comment&&(
+            <div style={{borderLeft:"3px solid var(--gold)",paddingLeft:10,marginBottom:8,marginTop:2}}>
+              <div style={{fontSize:12,color:"var(--dim)",fontStyle:"italic",lineHeight:1.5}}>"{bet.comment}"</div>
+            </div>
+          )}
+
           {/* Counter-bet section */}
           {!bet.isSecret&&!done&&bet.isCounterable&&(
             <div style={{borderTop:"1px solid var(--brd)",paddingTop:8,marginBottom:8}}>
@@ -74,6 +84,21 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
               </div>
               {!isOwner&&!myCounter&&<Btn variant="ghost" sm full onClick={()=>onCounter(bet)}>⚡ Scommetti SÌ {fmtQ(bet.quota)}× o NO {fmtQ(qNo(bet.quota))}×</Btn>}
               {!isOwner&&myCounter&&<div style={{fontSize:12,color:"var(--dim)",fontStyle:"italic"}}>La tua posizione: {myCounter.side==="yes"?"✅ SÌ":"❌ NO"} @ {fmtQ(myCounter.quotaUsed)}× · {myCounter.stake} ₡</div>}
+            </div>
+          )}
+
+          {/* Reactions */}
+          {!bet.isSecret&&onReaction&&(
+            <div style={{display:"flex",gap:5,marginTop:8,flexWrap:"wrap"}}>
+              {EMOJIS.map(e=>{
+                const count=betReactions.filter(r=>r.emoji===e).length;
+                const isMe=myReaction?.emoji===e;
+                return(
+                  <button key={e} onClick={()=>onReaction(bet.id,e)} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:20,border:`1px solid ${isMe?"var(--gold)":"var(--brd)"}`,background:isMe?"var(--gold)22":"transparent",cursor:"pointer",fontSize:13,color:isMe?"var(--gold)":"var(--dim)",fontFamily:"'Syne',sans-serif",fontWeight:600,transition:"all .15s"}}>
+                    {e}{count>0&&<span style={{fontSize:11}}>{count}</span>}
+                  </button>
+                );
+              })}
             </div>
           )}
 

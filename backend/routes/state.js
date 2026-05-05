@@ -10,6 +10,11 @@ async function buildState() {
     profiles[r.user] = { name: r.name, avatar: r.avatar, colorKey: r.color_key };
   });
 
+  const pinProtected = {};
+  profileRows.forEach(r => {
+    pinProtected[r.user] = r.pin_hash !== null;
+  });
+
   const credits = {};
   const { rows: creditRows } = await db.query('SELECT * FROM credits');
   creditRows.forEach(r => {
@@ -48,6 +53,7 @@ async function buildState() {
     createdAt:     r.created_at,
     status:        r.status,
     flamed:        r.flamed === 1,
+    comment:       r.comment || null,
     counterBets:   countersByBetId[r.id] || [],
   }));
 
@@ -59,7 +65,14 @@ async function buildState() {
     color: r.color,
   }));
 
-  return { profiles, credits, bets, categories };
+  const { rows: reactionRows } = await db.query('SELECT * FROM reactions');
+  const reactions = reactionRows.map(r => ({
+    bet_id: r.bet_id,
+    bettor: r.bettor,
+    emoji:  r.emoji,
+  }));
+
+  return { profiles, credits, bets, categories, pinProtected, reactions };
 }
 
 router.get('/', async (req, res) => {

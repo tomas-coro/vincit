@@ -7,7 +7,7 @@ const S = {
   row: {display:"flex",alignItems:"center",gap:10},
 };
 
-export default function DashboardView({user,profiles,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop}){
+export default function DashboardView({user,profiles,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction}){
   const other=user==="tomas"?"giulia":"tomas";
   const myWon=bets.filter(b=>b.creator===user&&b.status==="won");
   const myLost=bets.filter(b=>b.creator===user&&b.status==="lost");
@@ -19,6 +19,21 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
   const expiring=bets.filter(b=>b.creator===user&&b.status==="active"&&isSoon(b.expiresAt));
   const wr=(myWon.length+myLost.length)?Math.round(myWon.length/(myWon.length+myLost.length)*100):0;
   const meC=getC(profiles,user); const otC=getC(profiles,other);
+
+  // Monthly summary
+  const now=new Date();
+  const prevMonth=now.getMonth()===0?11:now.getMonth()-1;
+  const prevYear=now.getMonth()===0?now.getFullYear()-1:now.getFullYear();
+  const prevMonthKey=`betcouple_summary_seen_${prevYear}-${String(prevMonth+1).padStart(2,'0')}`;
+  const prevMonthBets=bets.filter(b=>{const d=new Date(b.createdAt);return d.getMonth()===prevMonth&&d.getFullYear()===prevYear&&['won','lost'].includes(b.status);});
+  const [summaryDismissed,setSummaryDismissed]=React.useState(false);
+  const showSummary=!summaryDismissed&&!localStorage.getItem(prevMonthKey)&&prevMonthBets.length>0;
+  const myPrevWins=prevMonthBets.filter(b=>b.creator===user&&b.status==='won');
+  const myPrevLoss=prevMonthBets.filter(b=>b.creator===user&&b.status==='lost');
+  const otPrevWins=prevMonthBets.filter(b=>b.creator===other&&b.status==='won');
+  const bestBet=myPrevWins.reduce((best,b)=>(!best||b.quota>best.quota)?b:best,null);
+  const netProfit=myPrevWins.reduce((s,b)=>s+(b.potentialWin-b.stake),0)-myPrevLoss.reduce((s,b)=>s+b.stake,0);
+  const MONTHS=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
   const scoreCard=(
     <div className="card pGold" style={{...S.card,marginBottom:14,background:"linear-gradient(135deg,var(--card),var(--surf))"}}>
@@ -64,8 +79,8 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
   const activeBets=(myAct.length+thAct.length)>0&&(
     <>
       <SecLabel>Bets attive</SecLabel>
-      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop}/>)}
-      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop}/>)}
+      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction}/>)}
+      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction}/>)}
     </>
   );
 
@@ -82,13 +97,24 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
     <>
       <SecLabel mt={16}>Ultime risolte</SecLabel>
       {bets.filter(b=>b.creator===user&&["won","lost"].includes(b.status)).slice(-3).reverse().map(b=>(
-        <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop}/>
+        <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction}/>
       ))}
     </>
   );
 
   return(
     <div className="sUp">
+      {/* Monthly summary banner */}
+      {showSummary&&(
+        <div style={{...S.card,marginBottom:12,background:"var(--gold)11",border:"1px solid var(--gold)44",position:"relative"}}>
+          <div style={{fontWeight:700,fontSize:14,color:"var(--gold)",marginBottom:6}}>📊 {MONTHS[prevMonth]} {prevYear}</div>
+          <div style={{fontSize:13,color:"var(--txt)",marginBottom:4}}>{profiles[user].name} {myPrevWins.length}V / {profiles[other].name} {otPrevWins.length}V</div>
+          {bestBet&&<div style={{fontSize:12,color:"var(--dim)",marginBottom:2}}>Bet più epica: <span style={{color:"var(--gold)"}}>{bestBet.title} @ {parseFloat(bestBet.quota).toFixed(2)}×</span></div>}
+          <div style={{fontSize:12,color:netProfit>=0?"var(--grn)":"var(--red)"}}>Profitto netto {profiles[user].name}: {netProfit>=0?'+':''}{netProfit} ₡</div>
+          <button onClick={()=>{localStorage.setItem(prevMonthKey,'1');setSummaryDismissed(true);}} style={{position:"absolute",top:10,right:10,background:"transparent",border:"none",cursor:"pointer",fontSize:16,color:"var(--dim)"}}>✕</button>
+        </div>
+      )}
+
       {/* Partner notification: full width in both layouts */}
       {newPart>0&&(
         <div style={{...S.card,marginBottom:12,background:`var(--gold)14`,border:"1px solid var(--gold)44",display:"flex",alignItems:"center",gap:10}}>

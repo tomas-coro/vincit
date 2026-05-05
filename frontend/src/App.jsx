@@ -15,6 +15,8 @@ import RevealModal from './components/modals/RevealModal.jsx';
 import { ResolveModal, OvertimeModal } from './components/modals/ResolveModal.jsx';
 import CounterModal from './components/modals/CounterModal.jsx';
 import PinModal from './components/modals/PinModal.jsx';
+import PinLoginModal from './components/modals/PinLoginModal.jsx';
+import CommentModal from './components/modals/CommentModal.jsx';
 
 const CSS_BASE = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Syne:wght@400;500;600;700&display=swap');
@@ -78,6 +80,8 @@ export default function App() {
   const [credits, setCredits]     = useState({ tomas: 100, giulia: 100 });
   const [bets, setBets]           = useState([]);
   const [customCats, setCustomCats] = useState([]);
+  const [pinProtected, setPinProtected] = useState({ tomas: false, giulia: false });
+  const [reactions, setReactions] = useState([]);
 
   // useSync merges server response fields into the right state slices
   const refresh = useSync(useCallback(data => {
@@ -85,6 +89,8 @@ export default function App() {
     if (data.credits)    setCredits(data.credits);
     if (data.bets)       setBets(data.bets);
     if (data.categories) setCustomCats(data.categories);
+    if (data.pinProtected) setPinProtected(data.pinProtected);
+    if (data.reactions)    setReactions(data.reactions);
   }, []));
 
   // categories: server returns { id, e, label, color } — DEF_CATS have same shape
@@ -106,6 +112,8 @@ export default function App() {
   const [overtimeBet, setOvertimeBet]   = useState(null);
   const [showPin, setShowPin]           = useState(false);
   const [winAnim, setWinAnim]           = useState(null);
+  const [pendingPinUser, setPendingPinUser] = useState(null);
+  const [commentBetModal, setCommentBetModal] = useState(null);
 
   const login = u => {
     const prev = getLastSeen(u);
@@ -133,6 +141,7 @@ export default function App() {
       await api.resolveBet(bet.id, outcome);
       if (outcome === 'won') setWinAnim(bet.potentialWin);
       setRevealBet(null); setResolveBet(null); setOvertimeBet(null);
+      setCommentBetModal({ ...bet, status: outcome });
     } catch (e) { console.error(e); }
   };
 
@@ -145,6 +154,22 @@ export default function App() {
 
   const handleFlame = async id => {
     try { await api.flameBet(id); } catch (e) { console.error(e); }
+  };
+
+  const handleComment = async (betId, comment) => {
+    try { await api.commentBet(betId, comment); } catch (e) { console.error(e); }
+    setCommentBetModal(null);
+  };
+
+  const handleReaction = async (betId, emoji) => {
+    try {
+      const existing = reactions.find(r => r.bet_id === betId && r.bettor === user);
+      if (existing && existing.emoji === emoji) {
+        await api.removeReaction(betId, user);
+      } else {
+        await api.addReaction(betId, user, emoji);
+      }
+    } catch (e) { console.error(e); }
   };
 
   const handleUpdateProfile = async (userId, data) => {
@@ -178,7 +203,25 @@ export default function App() {
     return (
       <div className="bc" style={rootVars(C)}>
         <style>{CSS_BASE}</style>
-        <WelcomeScreen profiles={profiles} onSelect={login} />
+        <WelcomeScreen
+          profiles={profiles}
+          pinProtected={pinProtected}
+          onSelect={k => {
+            if (pinProtected[k]) {
+              setPendingPinUser(k);
+            } else {
+              login(k);
+            }
+          }}
+        />
+        {pendingPinUser && (
+          <PinLoginModal
+            user={pendingPinUser}
+            profile={profiles[pendingPinUser]}
+            onSuccess={() => { login(pendingPinUser); setPendingPinUser(null); }}
+            onClose={() => setPendingPinUser(null)}
+          />
+        )}
       </div>
     );
   }
@@ -245,11 +288,11 @@ export default function App() {
 
       {/* Content */}
       <div style={isDesktop ? { marginLeft: 220, maxWidth: 900, padding: '32px 40px' } : { padding: '14px 20px' }}>
-        {view === 'dashboard' && <DashboardView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} />}
-        {view === 'bets'      && <BetsView user={user} profiles={profiles} bets={bets} cats={cats} onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} isDesktop={isDesktop} />}
+        {view === 'dashboard' && <DashboardView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} />}
+        {view === 'bets'      && <BetsView user={user} profiles={profiles} bets={bets} cats={cats} onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} />}
         {view === 'vault'     && <VaultView user={user} profiles={profiles} bets={bets} cats={cats} onReveal={b => setRevealBet(b)} onFlame={handleFlame} unlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin} isDesktop={isDesktop} />}
         {view === 'stats'     && <StatsView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} isDesktop={isDesktop} />}
-        {view === 'settings'  && <SettingsView user={user} profiles={profiles} isDark={isDark} setIsDark={setIsDark} customCats={customCats} credits={credits} onUpdateProfile={handleUpdateProfile} onResetCredits={handleResetCredits} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} />}
+        {view === 'settings'  && <SettingsView user={user} profiles={profiles} isDark={isDark} setIsDark={setIsDark} customCats={customCats} credits={credits} onUpdateProfile={handleUpdateProfile} onResetCredits={handleResetCredits} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} pinProtected={pinProtected} isDesktop={isDesktop} />}
       </div>
 
       {/* Bottom nav: mobile only */}
@@ -279,6 +322,7 @@ export default function App() {
       {overtimeBet    && <OvertimeModal bet={overtimeBet} profiles={profiles} onResult={handleResolve} onClose={() => setOvertimeBet(null)} />}
       {showPin        && <PinModal user={user} profiles={profiles} vaultPin={vaultPin} onSuccess={() => { setVaultUnlocked(true); setShowPin(false); }} onClose={() => setShowPin(false)} />}
       {winAnim        && <WinOverlay amount={winAnim} onDone={() => setWinAnim(null)} />}
+      {commentBetModal && <CommentModal bet={commentBetModal} onSave={handleComment} onSkip={() => setCommentBetModal(null)} />}
     </div>
   );
 }

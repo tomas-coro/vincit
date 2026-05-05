@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Btn, Inp, Toggle, SecLabel, Avatar, AVATARS, COLORS, CAT_COLS, getC } from '../Atoms.jsx';
+import * as api from '../../api.js';
 
 const S = {
   card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
   inp: {background:"var(--inp)",border:"1px solid var(--brd)",color:"var(--txt)",borderRadius:10,padding:"10px 14px",fontFamily:"'Syne',sans-serif",fontSize:14,outline:"none",width:"100%"},
 };
 
-export default function SettingsView({user,profiles,isDark,setIsDark,customCats,credits,onUpdateProfile,onResetCredits,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop}){
+export default function SettingsView({user,profiles,isDark,setIsDark,customCats,credits,onUpdateProfile,onResetCredits,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,pinProtected,isDesktop}){
   const [newE,setNewE]=useState("🎯");
   const [newLabel,setNewLabel]=useState("");
   const [newColor,setNewColor]=useState(CAT_COLS[0]);
@@ -14,7 +15,28 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
   const [pin1,setPin1]=useState("");
   const [pin2,setPin2]=useState("");
   const [pinErr,setPinErr]=useState("");
-  const [resetConfirm,setResetConfirm]=useState(false);
+  const [creditAmounts, setCreditAmounts] = useState({tomas:'', giulia:''});
+  const [creditConfirm, setCreditConfirm] = useState(null); // null | { user, delta, amount }
+  const [creditErr, setCreditErr] = useState({tomas:'', giulia:''});
+  const [acctPinPhase,setAcctPinPhase]=useState(null); // null|"set"|"change"|"remove"
+  const [acctPin0,setAcctPin0]=useState('');
+  const [acctPin1,setAcctPin1]=useState('');
+  const [acctPin2,setAcctPin2]=useState('');
+  const [acctPinErr,setAcctPinErr]=useState('');
+  const [acctPinLoading,setAcctPinLoading]=useState(false);
+
+  const handleDeltaCredits = async (targetUser, delta) => {
+    try {
+      await api.deltaCredits(targetUser, delta);
+      setCreditAmounts(a => ({...a, [targetUser]: ''}));
+      setCreditConfirm(null);
+      setCreditErr(e => ({...e, [targetUser]: ''}));
+    } catch (err) {
+      const msg = err.message?.includes('400') ? 'Crediti insufficienti' : 'Errore';
+      setCreditErr(e => ({...e, [targetUser]: msg}));
+      setCreditConfirm(null);
+    }
+  };
 
   const addCat=()=>{
     if(!newLabel.trim())return;
@@ -26,6 +48,30 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
     if(pin1!==pin2){setPinErr("I PIN non coincidono");return;}
     onSetVaultPin(pin1);
     setPinPhase(null);setPin1("");setPin2("");setPinErr("");
+  };
+  const saveAcctPin=async()=>{
+    if(!/^\d{4}$/.test(acctPin1)){setAcctPinErr('Il PIN deve essere 4 cifre');return;}
+    if(acctPin1!==acctPin2){setAcctPinErr('I PIN non coincidono');return;}
+    if(acctPinPhase==='change'&&!acctPin0){setAcctPinErr('Inserisci il PIN attuale');return;}
+    setAcctPinLoading(true);
+    try{
+      if(acctPinPhase==='change'){
+        const v=await api.verifyAccountPin(user,acctPin0);
+        if(!v.valid){setAcctPinErr('PIN attuale errato');setAcctPinLoading(false);return;}
+      }
+      await api.setAccountPin(user,acctPin1);
+      setAcctPinPhase(null);setAcctPin0('');setAcctPin1('');setAcctPin2('');setAcctPinErr('');
+    }catch{setAcctPinErr('Errore. Riprova.');}
+    setAcctPinLoading(false);
+  };
+  const removeAcctPin=async()=>{
+    if(!acctPin0){setAcctPinErr('Inserisci il PIN attuale');return;}
+    setAcctPinLoading(true);
+    try{
+      await api.removeAccountPin(user,acctPin0);
+      setAcctPinPhase(null);setAcctPin0('');setAcctPinErr('');
+    }catch{setAcctPinErr('PIN errato');}
+    setAcctPinLoading(false);
   };
 
   return(
@@ -94,6 +140,59 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
         )}
       </div>
 
+      {/* PIN ACCOUNT */}
+      <SecLabel mt={16}>PIN Account (mio)</SecLabel>
+      <div style={{...S.card,marginBottom:12}}>
+        <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>{pinProtected?.[user]?'🔒 PIN attivo':'🔓 Nessun PIN'}</div>
+        <div style={{fontSize:12,color:"var(--dim)",marginBottom:10}}>Protegge l'accesso al profilo su qualsiasi dispositivo</div>
+        {acctPinErr&&<div style={{fontSize:12,color:"var(--red)",marginBottom:8}}>{acctPinErr}</div>}
+        {acctPinPhase==='set'&&(
+          <div>
+            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>Nuovo PIN (4 cifre):</div>
+            <Inp type="text" value={acctPin1} onChange={e=>setAcctPin1(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:8}}/>
+            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>Conferma PIN:</div>
+            <Inp type="text" value={acctPin2} onChange={e=>setAcctPin2(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:12}}/>
+            <div style={{display:"flex",gap:8}}>
+              <Btn variant="gold" sm onClick={saveAcctPin} disabled={acctPinLoading}>Salva</Btn>
+              <Btn variant="ghost" sm onClick={()=>{setAcctPinPhase(null);setAcctPin1('');setAcctPin2('');setAcctPinErr('');}}>Annulla</Btn>
+            </div>
+          </div>
+        )}
+        {acctPinPhase==='change'&&(
+          <div>
+            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>PIN attuale:</div>
+            <Inp type="text" value={acctPin0} onChange={e=>setAcctPin0(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:8}}/>
+            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>Nuovo PIN:</div>
+            <Inp type="text" value={acctPin1} onChange={e=>setAcctPin1(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:8}}/>
+            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>Conferma nuovo PIN:</div>
+            <Inp type="text" value={acctPin2} onChange={e=>setAcctPin2(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:12}}/>
+            <div style={{display:"flex",gap:8}}>
+              <Btn variant="gold" sm onClick={saveAcctPin} disabled={acctPinLoading}>Salva</Btn>
+              <Btn variant="ghost" sm onClick={()=>{setAcctPinPhase(null);setAcctPin0('');setAcctPin1('');setAcctPin2('');setAcctPinErr('');}}>Annulla</Btn>
+            </div>
+          </div>
+        )}
+        {acctPinPhase==='remove'&&(
+          <div>
+            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>Conferma PIN attuale per rimuoverlo:</div>
+            <Inp type="text" value={acctPin0} onChange={e=>setAcctPin0(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:12}}/>
+            <div style={{display:"flex",gap:8}}>
+              <Btn variant="red" sm onClick={removeAcctPin} disabled={acctPinLoading}>Rimuovi</Btn>
+              <Btn variant="ghost" sm onClick={()=>{setAcctPinPhase(null);setAcctPin0('');setAcctPinErr('');}}>Annulla</Btn>
+            </div>
+          </div>
+        )}
+        {!acctPinPhase&&(
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {!pinProtected?.[user]&&<Btn variant="ghost" sm onClick={()=>setAcctPinPhase('set')}>Imposta PIN</Btn>}
+            {pinProtected?.[user]&&<>
+              <Btn variant="ghost" sm onClick={()=>setAcctPinPhase('change')}>Cambia PIN</Btn>
+              <Btn variant="ghost" sm style={{color:"var(--red)",borderColor:"var(--red)22"}} onClick={()=>setAcctPinPhase('remove')}>Rimuovi PIN</Btn>
+            </>}
+          </div>
+        )}
+      </div>
+
       {/* THEME */}
       <SecLabel>Tema</SecLabel>
       <div style={{...S.card,marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -122,23 +221,54 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
         </div>
       </div>
 
-      {/* CREDITS RESET */}
-      <SecLabel>Crediti</SecLabel>
-      <div style={S.card}>
-        {resetConfirm?(
-          <div>
-            <div style={{fontSize:13,marginBottom:10}}>Reset crediti a 100 per entrambi?</div>
-            <div style={{display:"flex",gap:8}}>
-              <Btn variant="red" sm onClick={()=>{onResetCredits({tomas:100,giulia:100});setResetConfirm(false);}}>Conferma Reset</Btn>
-              <Btn variant="ghost" sm onClick={()=>setResetConfirm(false)}>Annulla</Btn>
+      {/* CREDITI */}
+      <SecLabel mt={16}>Crediti</SecLabel>
+      <div style={{...S.card}}>
+        {["tomas","giulia"].map(k=>{
+          const p=profiles[k]; const amt=parseFloat(creditAmounts[k])||0;
+          return(
+            <div key={k} style={{marginBottom:k==="tomas"?14:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                <div style={{fontSize:24}}>{p.avatar}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:600}}>{p.name}</div>
+                  <div style={{fontSize:12,color:"var(--gold)",fontWeight:700}}>Saldo: {Math.round(credits[k])} ₡</div>
+                </div>
+              </div>
+              {creditErr[k]&&<div style={{fontSize:12,color:"var(--red)",marginBottom:6}}>{creditErr[k]}</div>}
+              {creditConfirm?.user===k?(
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                  <div style={{fontSize:13,color:"var(--dim)",flex:1}}>
+                    Sottrarre {creditConfirm.amount} ₡ da {p.name}?
+                  </div>
+                  <Btn variant="red" sm onClick={()=>handleDeltaCredits(k,-creditConfirm.amount)}>Conferma</Btn>
+                  <Btn variant="ghost" sm onClick={()=>setCreditConfirm(null)}>Annulla</Btn>
+                </div>
+              ):(
+                <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                  <Inp
+                    type="number"
+                    min={1}
+                    max={9999}
+                    value={creditAmounts[k]}
+                    onChange={e=>setCreditAmounts(a=>({...a,[k]:e.target.value}))}
+                    placeholder="Importo"
+                    style={{width:90,padding:"6px 10px",fontSize:13}}
+                  />
+                  <Btn variant="grn" sm onClick={()=>{
+                    if(!amt||amt<1)return;
+                    handleDeltaCredits(k, Math.floor(amt));
+                  }}>+ Aggiungi</Btn>
+                  <Btn variant="ghost" sm style={{color:"var(--red)",borderColor:"var(--red)22"}} onClick={()=>{
+                    if(!amt||amt<1)return;
+                    setCreditConfirm({user:k, amount:Math.floor(amt)});
+                    setCreditErr(e=>({...e,[k]:''}));
+                  }}>− Sottrai</Btn>
+                </div>
+              )}
             </div>
-          </div>
-        ):(
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div><div style={{fontSize:14,fontWeight:600}}>Reset Crediti</div><div style={{fontSize:12,color:"var(--dim)"}}>Riporta entrambi a 100 ₡</div></div>
-            <Btn variant="ghost" sm onClick={()=>setResetConfirm(true)}>Reset</Btn>
-          </div>
-        )}
+          );
+        })}
       </div>
     </div>
   );

@@ -19,3 +19,13 @@ export const updateProfile  = (user, data)   => req('PUT',    `/profiles/${user}
 export const resetCredits   = (amounts)      => req('PUT',    '/credits', amounts);
 export const createCategory = (cat)          => req('POST',   '/categories', cat);
 export const deleteCategory = (id)           => req('DELETE', `/categories/${id}`);
+
+export const setAccountPin    = (user, pin)        => req('POST',   `/profiles/${user}/pin`, { pin });
+export const verifyAccountPin = (user, pin)        => req('POST',   `/profiles/${user}/pin/verify`, { pin });
+export const removeAccountPin = (user, currentPin) => req('DELETE', `/profiles/${user}/pin`, { currentPin });
+
+export const deltaCredits = (user, delta) => req('PATCH', `/credits/${user}`, { delta });
+
+export const commentBet     = (id, comment)         => req('PATCH',  `/bets/${id}/comment`, { comment });
+export const addReaction    = (id, bettor, emoji)    => req('POST',   `/bets/${id}/reaction`, { bettor, emoji });
+export const removeReaction = (id, bettor)           => req('DELETE', `/bets/${id}/reaction/${bettor}`);
