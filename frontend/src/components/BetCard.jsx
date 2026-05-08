@@ -8,7 +8,7 @@ const S = {
   row: {display:"flex",alignItems:"center",gap:10},
 };
 
-const getC = (profiles,user)=>COLORS[profiles[user].colorKey]||"#5b8af0";
+const getC = (profiles,user)=>COLORS[profiles[user]?.colorKey]||"#5b8af0";
 const qToP = q=>Math.round(100/parseFloat(q));
 
 const DEF_IDS=['intimo','serata','casa','cibo','gaming','altro'];
@@ -19,7 +19,6 @@ const VERT_ABORT      = 40;
 export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,reactions,onDelete,onEdit,isDesktop}){
   const { t, lang } = useLang();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
-  const other=user==="tomas"?"giulia":"tomas";
   const isOwner=bet.creator===user;
   const cat=cats.find(c=>c.id===bet.category)||cats[cats.length-1];
   const done=["won","lost"].includes(bet.status);
@@ -109,7 +108,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
               }
               <div style={{fontSize:11,color:"var(--dim)",marginTop:3}}>
                 {cat.e} {catLabel(cat)} · {fmtD(bet.createdAt,lang)}
-                {!isOwner&&<span style={{color:getC(profiles,bet.creator)}}> · {profiles[bet.creator].name}</span>}
+                {!isOwner&&<span style={{color:getC(profiles,bet.creator)}}> · {profiles[bet.creator]?.name}</span>}
               </div>
             </div>
             {/* Quota top-right: mobile only */}
@@ -140,8 +139,8 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             <div style={{borderTop:"1px solid var(--brd)",paddingTop:8,marginBottom:8}}>
               <div style={{fontSize:10,color:"var(--dim)",letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>{t('bet_card.challenge')}</div>
               <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:6}}>
-                <Bdg bg="var(--grn)22" c="var(--grn)">{profiles[bet.creator].avatar} {t('bet_card.yes')} @ {fmtQ(bet.quota)}×</Bdg>
-                {theirCounter&&<Bdg bg={theirCounter.side==="yes"?"var(--grn)22":"var(--red)22"} c={theirCounter.side==="yes"?"var(--grn)":"var(--red)"}>{profiles[theirCounter.bettor].avatar} {theirCounter.side==="yes"?t('bet_card.yes'):t('bet_card.no')} @ {fmtQ(theirCounter.quotaUsed)}×</Bdg>}
+                <Bdg bg="var(--grn)22" c="var(--grn)">{profiles[bet.creator]?.avatar} {t('bet_card.yes')} @ {fmtQ(bet.quota)}×</Bdg>
+                {theirCounter&&<Bdg bg={theirCounter.side==="yes"?"var(--grn)22":"var(--red)22"} c={theirCounter.side==="yes"?"var(--grn)":"var(--red)"}>{profiles[theirCounter.bettor]?.avatar} {theirCounter.side==="yes"?t('bet_card.yes'):t('bet_card.no')} @ {fmtQ(theirCounter.quotaUsed)}×</Bdg>}
               </div>
               {!isOwner&&!myCounter&&<Btn variant="ghost" sm full onClick={()=>onCounter(bet)}>{t('bet_card.counter_cta',{qy:fmtQ(bet.quota),qn:fmtQ(qNo(bet.quota))})}</Btn>}
               {!isOwner&&myCounter&&<div style={{fontSize:12,color:"var(--dim)",fontStyle:"italic"}}>{t('bet_card.my_pos')} {myCounter.side==="yes"?t('bet_card.side_yes'):t('bet_card.side_no')} @ {fmtQ(myCounter.quotaUsed)}× · {myCounter.stake} ₡</div>}

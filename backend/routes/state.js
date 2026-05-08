@@ -8,7 +8,8 @@ async function buildState(roomId) {
   const { rows: users } = await db.query(
     'SELECT id, name, avatar, color_key FROM users WHERE room_id=$1', [roomId]
   );
-  for (const u of users) profiles[u.id] = { name:u.name, avatar:u.avatar, colorKey:u.color_key };
+  for (const u of users) profiles[u.id] = { name:u.name, avatar:u.avatar, color:u.color_key, colorKey:u.color_key };
+  console.log('[state] roomId:', roomId, 'profiles:', Object.keys(profiles));
 
   const credits = {};
   const { rows: creditRows } = await db.query(

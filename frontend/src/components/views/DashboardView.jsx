@@ -30,7 +30,7 @@ const S = {
 
 export default function DashboardView({user,profiles,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onDelete,onEdit}){
   const { t, lang } = useLang();
-  const other=user==="tomas"?"giulia":"tomas";
+  const other=Object.keys(profiles).find(k=>k!==user)??null;
   const myWon=bets.filter(b=>b.creator===user&&b.status==="won");
   const myLost=bets.filter(b=>b.creator===user&&b.status==="lost");
   const thWon=bets.filter(b=>b.creator===other&&b.status==="won");
@@ -41,7 +41,7 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
   const expiring=bets.filter(b=>b.creator===user&&b.status==="active"&&isSoon(b.expiresAt));
   const expiredBets=bets.filter(b=>b.creator===user&&b.status==="expired");
   const wr=(myWon.length+myLost.length)?Math.round(myWon.length/(myWon.length+myLost.length)*100):0;
-  const meC=getC(profiles,user); const otC=getC(profiles,other);
+  const meC=getC(profiles,user); const otC=other?getC(profiles,other):"#5b8af0";
 
   // Monthly summary
   const now=new Date();
@@ -62,10 +62,10 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
     <div className="card pGold" style={{...S.card,marginBottom:14,background:"linear-gradient(135deg,var(--card),var(--surf))"}}>
       <SecLabel>{t('dashboard.ranking')}</SecLabel>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
-        {[{k:user,p:profiles[user],c:meC,w:myWon.length},{k:other,p:profiles[other],c:otC,w:thWon.length}].map((s,i)=>(
+        {[{k:user,p:profiles[user],c:meC,w:myWon.length},...(other?[{k:other,p:profiles[other],c:otC,w:thWon.length}]:[])].map((s,i)=>(
           <div key={s.k} style={{flex:1,textAlign:"center"}}>
-            <div style={{width:44,height:44,borderRadius:"50%",background:`${s.c}33`,border:`2px solid ${s.c}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto"}}>{s.p.avatar}</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:700,marginTop:6}}>{s.p.name}</div>
+            <div style={{width:44,height:44,borderRadius:"50%",background:`${s.c}33`,border:`2px solid ${s.c}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto"}}>{s.p?.avatar}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:700,marginTop:6}}>{s.p?.name}</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:i===0?"var(--gold)":s.c,lineHeight:1.1}}>{s.w}</div>
             <div style={{fontSize:10,color:"var(--dim)"}}>{t('dashboard.wins')}</div>
           </div>
@@ -153,9 +153,9 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
       {showSummary&&(
         <div style={{...S.card,marginBottom:12,background:"var(--gold)11",border:"1px solid var(--gold)44",position:"relative"}}>
           <div style={{fontWeight:700,fontSize:14,color:"var(--gold)",marginBottom:6}}>📊 {months[prevMonth]} {prevYear}</div>
-          <div style={{fontSize:13,color:"var(--txt)",marginBottom:4}}>{profiles[user].name} {myPrevWins.length}V / {profiles[other].name} {otPrevWins.length}V</div>
+          <div style={{fontSize:13,color:"var(--txt)",marginBottom:4}}>{profiles[user]?.name} {myPrevWins.length}V / {profiles[other]?.name} {otPrevWins.length}V</div>
           {bestBet&&<div style={{fontSize:12,color:"var(--dim)",marginBottom:2}}>{t('dashboard.best_bet')} <span style={{color:"var(--gold)"}}>{bestBet.title} @ {parseFloat(bestBet.quota).toFixed(2)}×</span></div>}
-          <div style={{fontSize:12,color:netProfit>=0?"var(--grn)":"var(--red)"}}>{t('dashboard.net_profit',{name:profiles[user].name})} {netProfit>=0?'+':''}{netProfit} ₡</div>
+          <div style={{fontSize:12,color:netProfit>=0?"var(--grn)":"var(--red)"}}>{t('dashboard.net_profit',{name:profiles[user]?.name})} {netProfit>=0?'+':''}{netProfit} ₡</div>
           <button onClick={()=>{localStorage.setItem(prevMonthKey,'1');setSummaryDismissed(true);}} style={{position:"absolute",top:10,right:10,background:"transparent",border:"none",cursor:"pointer",fontSize:16,color:"var(--dim)"}}>✕</button>
         </div>
       )}
@@ -163,9 +163,9 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
       {/* Partner notification */}
       {newPart>0&&(
         <div style={{...S.card,marginBottom:12,background:`var(--gold)14`,border:"1px solid var(--gold)44",display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:22}}>{profiles[other].avatar}</span>
+          <span style={{fontSize:22}}>{profiles[other]?.avatar}</span>
           <div>
-            <div style={{fontWeight:600,fontSize:13,color:"var(--gold)"}}>{profiles[other].name} {newPart===1?t('dashboard.notif_one'):t('dashboard.notif_many',{n:newPart})}</div>
+            <div style={{fontWeight:600,fontSize:13,color:"var(--gold)"}}>{profiles[other]?.name} {newPart===1?t('dashboard.notif_one'):t('dashboard.notif_many',{n:newPart})}</div>
             <div style={{fontSize:11,color:"var(--dim)"}}>{t('dashboard.notif_sub')}</div>
           </div>
         </div>

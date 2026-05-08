@@ -20,7 +20,10 @@ export function useSync(setState, roomId, token) {
   }, [refresh, ready]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!roomId || !token) {
+      console.warn('[useSync] missing roomId or token — not syncing', { roomId, token: !!token });
+      return;
+    }
     const es = new EventSource(`/api/state/stream?token=${encodeURIComponent(token)}`);
     es.onmessage = () => refresh();
     es.onerror   = () => { es.close(); };

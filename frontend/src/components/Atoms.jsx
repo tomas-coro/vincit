@@ -45,7 +45,7 @@ export const tLeft = (ts, lang='it') => {
   return h>=48?`${Math.floor(h/24)}${dt.days}`:h>0?`${h}${dt.hours}${m}${dt.minutes}`:`${m}${dt.minutes}`;
 };
 export const isSoon= ts=>ts&&ts>Date.now()&&(ts-Date.now())<86400000;
-export const getC  = (profiles,user)=>COLORS[profiles[user].colorKey]||"#5b8af0";
+export const getC  = (profiles,user)=>COLORS[profiles[user]?.colorKey]||"#5b8af0";
 
 // ─── UI ATOMS ────────────────────────────────────────────────────────────────
 const S = {

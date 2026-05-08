@@ -51,7 +51,7 @@ export default function CreateModal({user,profiles,maxC,cats,onCreate,onClose}){
         {/* Counter toggle */}
         {!isSecret&&(
           <div onClick={()=>setIsCnt(!isCnt)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:12,marginBottom:14,cursor:"pointer",background:isCnt?"var(--blu)12":"var(--card)",border:`1px solid ${isCnt?"var(--blu)":"var(--brd)"}`,transition:"all .2s"}}>
-            <div><div style={{fontWeight:600,fontSize:13}}>{t('create.counter_title')}</div><div style={{fontSize:11,color:"var(--dim)",marginTop:1}}>{profiles[user==="tomas"?"giulia":"tomas"].name} {t('create.counter_desc')}</div></div>
+            <div><div style={{fontWeight:600,fontSize:13}}>{t('create.counter_title')}</div><div style={{fontSize:11,color:"var(--dim)",marginTop:1}}>{profiles[Object.keys(profiles).find(k=>k!==user)]?.name ?? ''} {t('create.counter_desc')}</div></div>
             <Toggle on={isCnt} onToggle={()=>{}} color="var(--blu)"/>
           </div>
         )}

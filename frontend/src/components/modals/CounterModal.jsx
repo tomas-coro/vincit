@@ -25,7 +25,7 @@ export default function CounterModal({bet,user,profiles,credits,cats,onPlace,onC
       <div className="bIn" style={{...S.card,width:"100%",maxWidth:380,padding:24}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,marginBottom:6}}>{t('counter.title')}</div>
         <div style={{fontSize:13,color:"var(--dim)",fontStyle:"italic",marginBottom:4,lineHeight:1.4}}>"{bet.title}"</div>
-        <div style={{fontSize:11,color:"var(--dim)",marginBottom:20}}>{cat.e} {catLabel(cat)} · {t('counter.by')} {profiles[bet.creator].name}</div>
+        <div style={{fontSize:11,color:"var(--dim)",marginBottom:20}}>{cat.e} {catLabel(cat)} · {t('counter.by')} {profiles[bet.creator]?.name}</div>
         <div style={{display:"flex",gap:10,marginBottom:20}}>
           {[{s:"yes",l:t('counter.yes_label'),q:qY,c:"var(--grn)"},{s:"no",l:t('counter.no_label'),q:qN,c:"var(--red)"}].map(o=>(
             <div key={o.s} onClick={()=>setSide(o.s)} style={{flex:1,padding:"14px 10px",borderRadius:14,border:`2px solid ${side===o.s?o.c:"var(--brd)"}`,cursor:"pointer",textAlign:"center",background:side===o.s?`${o.c}18`.replace("var(--grn)","#2ecc7f").replace("var(--red)","#e05555"):"var(--surf)",transition:"all .18s"}}>

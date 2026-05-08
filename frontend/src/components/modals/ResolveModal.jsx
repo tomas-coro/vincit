@@ -32,8 +32,8 @@ export function ResolveModal({bet,cats,profiles,onResolve,onOvertime,onClose}){
           <div style={{marginBottom:14,padding:"10px 12px",background:"var(--surf)",borderRadius:10,border:"1px solid var(--brd)"}}>
             <div style={{fontSize:10,color:"var(--dim)",marginBottom:6,letterSpacing:1,textTransform:"uppercase"}}>{t('resolve.positions')}</div>
             <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-              <Bdg bg="var(--grn)22" c="var(--grn)">{profiles[bet.creator].avatar} {t('resolve.yes')} · {bet.stake} ₡</Bdg>
-              {cbs.map(cb=><Bdg key={cb.bettor} bg={cb.side==="yes"?"var(--grn)22":"var(--red)22"} c={cb.side==="yes"?"var(--grn)":"var(--red)"}>{profiles[cb.bettor].avatar} {cb.side==="yes"?t('resolve.yes'):t('resolve.no')} · {cb.stake} ₡</Bdg>)}
+              <Bdg bg="var(--grn)22" c="var(--grn)">{profiles[bet.creator]?.avatar} {t('resolve.yes')} · {bet.stake} ₡</Bdg>
+              {cbs.map(cb=><Bdg key={cb.bettor} bg={cb.side==="yes"?"var(--grn)22":"var(--red)22"} c={cb.side==="yes"?"var(--grn)":"var(--red)"}>{profiles[cb.bettor]?.avatar} {cb.side==="yes"?t('resolve.yes'):t('resolve.no')} · {cb.stake} ₡</Bdg>)}
             </div>
           </div>
         )}
@@ -53,7 +53,7 @@ export function OvertimeModal({bet,profiles,onResult,onClose}){
   const flip=()=>{
     setPhase("flipping");
     setTimeout(()=>{
-      const w=Math.random()<.5?bet.creator:(bet.creator==="tomas"?"giulia":"tomas");
+      const w=Math.random()<.5?bet.creator:(Object.keys(profiles).find(k=>k!==bet.creator)??bet.creator);
       setWinner(w);setPhase("result");
     },1600);
   };
@@ -68,7 +68,7 @@ export function OvertimeModal({bet,profiles,onResult,onClose}){
         {phase==="flipping"&&<div style={{fontSize:14,color:"var(--dim)"}}>{t('overtime.flipping')}</div>}
         {phase==="result"&&winner&&(
           <div className="bIn">
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:"var(--gold)",marginBottom:8}}>{profiles[winner].avatar} {profiles[winner].name} {t('overtime.winner')}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:"var(--gold)",marginBottom:8}}>{profiles[winner]?.avatar} {profiles[winner]?.name} {t('overtime.winner')}</div>
             <div style={{fontSize:13,color:"var(--dim)",marginBottom:20}}>{t('overtime.fate')}</div>
             <div style={{display:"flex",gap:10}}>
               <Btn variant="grn" style={{flex:1}} onClick={()=>onResult(bet,winner===bet.creator?"won":"lost")}>{t('overtime.accept')}</Btn>
