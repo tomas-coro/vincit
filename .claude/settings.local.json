@@ -31,7 +31,24 @@
       "Bash(python3 *)",
       "Bash(git add *)",
       "Bash(git rm *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(createdb betcouple *)",
+      "Bash(curl -s http://localhost:5174/api/state)",
+      "Bash(xargs kill *)",
+      "Bash(pg_config --version)",
+      "Bash(psql -c \"SHOW unix_socket_directories;\" betcouple)",
+      "Bash(psql -c \"SHOW listen_addresses;\" betcouple)",
+      "Bash(psql --version)",
+      "Read(//private/tmp/**)",
+      "Read(//var/run/**)",
+      "Bash(brew services *)",
+      "Bash(git push *)",
+      "Bash(npm start *)",
+      "Bash(render --version)",
+      "Bash(env)",
+      "Read(//Users/skafiskafnjak/**)",
+      "Read(//Users/skafiskafnjak/.config/**)",
+      "Bash(gh run *)"
     ]
   }
 }

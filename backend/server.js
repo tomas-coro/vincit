@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { router: eventsRouter, broadcastUpdate } = require('./routes/events.js');
+const { router: pushRouter, sendPushToUser } = require('./routes/push.js');
 const db = require('./db.js');
 
 const app = express();
@@ -18,6 +19,7 @@ app.use('/api/profiles',   require('./routes/profiles.js')(broadcastUpdate));
 app.use('/api/credits',    require('./routes/credits.js')(broadcastUpdate));
 app.use('/api/categories', require('./routes/categories.js')(broadcastUpdate));
 app.use('/api/bets',       require('./routes/reactions.js')(broadcastUpdate));
+app.use('/api/push',       pushRouter);
 
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 app.get('*', (req, res) => {
@@ -32,10 +34,14 @@ setInterval(async () => {
   try {
     const now = Date.now();
     const result = await db.query(
-      "UPDATE bets SET status='expired' WHERE status='active' AND expires_at IS NOT NULL AND expires_at < $1",
+      "UPDATE bets SET status='expired' WHERE status='active' AND expires_at IS NOT NULL AND expires_at < $1 RETURNING creator, title",
       [now]
     );
-    if (result.rowCount > 0) broadcastUpdate();
+    if (result.rowCount > 0) {
+      broadcastUpdate();
+      for (const b of result.rows)
+        sendPushToUser(b.creator, { title:'BetCouple ⏱', body:`"${b.title}" è scaduta — dichiara l'esito!`, url:'/' });
+    }
   } catch (err) {
     console.error('Expiry job error:', err);
   }

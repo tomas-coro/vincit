@@ -27,6 +27,7 @@ export const removeAccountPin = (user, currentPin) => req('DELETE', `/profiles/$
 export const deltaCredits = (user, delta) => req('PATCH', `/credits/${user}`, { delta });
 
 export const cancelBet      = (id, creator)          => req('DELETE', `/bets/${id}`, { creator });
+export const editBet        = (id, data)             => req('PATCH',  `/bets/${id}/edit`, data);
 export const commentBet     = (id, comment)         => req('PATCH',  `/bets/${id}/comment`, { comment });
 export const addReaction    = (id, bettor, emoji)    => req('POST',   `/bets/${id}/reaction`, { bettor, emoji });
 export const removeReaction = (id, bettor)           => req('DELETE', `/bets/${id}/reaction/${bettor}`);

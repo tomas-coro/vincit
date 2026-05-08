@@ -1,6 +1,7 @@
 'use strict';
 const express = require('express');
 const db = require('../db.js');
+const { sendPushToUser } = require('./push.js');
 
 module.exports = function(broadcastUpdate) {
   const router = express.Router();
@@ -27,6 +28,8 @@ module.exports = function(broadcastUpdate) {
       });
 
       broadcastUpdate();
+      const { rows: profiles } = await db.query('SELECT "user" FROM profiles WHERE "user" != $1', [creator]);
+      if (profiles[0]) sendPushToUser(profiles[0].user, { title:'BetCouple 🎲', body:`Nuova bet: "${title}"`, url:'/' });
       res.status(201).json({ id });
     } catch (err) {
       console.error(err);
@@ -119,6 +122,26 @@ module.exports = function(broadcastUpdate) {
     }
   });
 
+  router.patch('/:id/edit', async (req, res) => {
+    try {
+      const { creator, title, quota, category, pegno, expiresAt } = req.body;
+      if (!creator || !title?.trim()) return res.status(400).json({ error: 'Invalid' });
+      const { rows } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
+      const bet = rows[0];
+      if (!bet)                              return res.status(404).json({ error: 'Not found' });
+      if (bet.creator !== creator)           return res.status(403).json({ error: 'Forbidden' });
+      if (bet.status !== 'active')           return res.status(403).json({ error: 'Already resolved' });
+      if (Date.now() - bet.created_at > 60000) return res.status(403).json({ error: 'Window expired' });
+      const potentialWin = Math.round(bet.stake * parseFloat(quota));
+      await db.query(
+        `UPDATE bets SET title=$1, quota=$2, potential_win=$3, category=$4, pegno=$5, expires_at=$6 WHERE id=$7`,
+        [title.trim(), parseFloat(quota), potentialWin, category, pegno||null, expiresAt||null, bet.id]
+      );
+      broadcastUpdate();
+      res.json({ ok: true });
+    } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+  });
+
   router.delete('/:id', async (req, res) => {
     try {
       const { creator } = req.body;
@@ -129,7 +152,7 @@ module.exports = function(broadcastUpdate) {
       if (!bet) return res.status(404).json({ error: 'Not found' });
       if (bet.creator !== creator) return res.status(403).json({ error: 'Forbidden' });
       if (bet.status !== 'active') return res.status(403).json({ error: 'Already resolved' });
-      if (Date.now() - bet.created_at > 5 * 60 * 1000) return res.status(403).json({ error: 'Window expired' });
+      if (Date.now() - bet.created_at > 60 * 1000) return res.status(403).json({ error: 'Window expired' });
 
       const { rows: counters } = await db.query('SELECT * FROM counter_bets WHERE bet_id = $1', [bet.id]);
 

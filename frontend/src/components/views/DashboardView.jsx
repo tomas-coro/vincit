@@ -8,17 +8,18 @@ const S = {
   row: {display:"flex",alignItems:"center",gap:10},
 };
 
-export default function DashboardView({user,profiles,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onDelete}){
+export default function DashboardView({user,profiles,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onDelete,onEdit}){
   const { t, lang } = useLang();
   const other=user==="tomas"?"giulia":"tomas";
   const myWon=bets.filter(b=>b.creator===user&&b.status==="won");
   const myLost=bets.filter(b=>b.creator===user&&b.status==="lost");
   const thWon=bets.filter(b=>b.creator===other&&b.status==="won");
-  const myAct=bets.filter(b=>b.creator===user&&!b.isSecret&&b.status==="active");
+  const myAct=bets.filter(b=>b.creator===user&&!b.isSecret&&['active','expired'].includes(b.status));
   const mySec=bets.filter(b=>b.creator===user&&b.isSecret&&b.status==="active");
   const thAct=bets.filter(b=>b.creator===other&&!b.isSecret&&b.status==="active");
   const newPart=bets.filter(b=>b.creator===other&&!b.isSecret&&b.createdAt>(notifSince[user]||0)).length;
   const expiring=bets.filter(b=>b.creator===user&&b.status==="active"&&isSoon(b.expiresAt));
+  const expiredBets=bets.filter(b=>b.creator===user&&b.status==="expired");
   const wr=(myWon.length+myLost.length)?Math.round(myWon.length/(myWon.length+myLost.length)*100):0;
   const meC=getC(profiles,user); const otC=getC(profiles,other);
 
@@ -71,6 +72,13 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
     </div>
   );
 
+  const expiredAlert=expiredBets.length>0&&(
+    <div style={{...S.card,marginBottom:12,background:"var(--red)18",border:"1px solid var(--red)44"}}>
+      <div style={{fontWeight:600,fontSize:13,color:"var(--red)",marginBottom:4}}>{t(expiredBets.length===1?'dashboard.expired_one':'dashboard.expired_many',{n:expiredBets.length})}</div>
+      {expiredBets.map(b=><div key={b.id} style={{fontSize:12,color:"var(--dim)",marginTop:2}}>· {b.title}</div>)}
+    </div>
+  );
+
   const expiryAlert=expiring.length>0&&(
     <div style={{...S.card,marginBottom:12,background:"var(--red)18",border:"1px solid var(--red)44"}}>
       <div style={{fontWeight:600,fontSize:13,color:"var(--red)",marginBottom:4}}>{t('dashboard.expiry',{n:expiring.length})}</div>
@@ -81,8 +89,8 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
   const activeBets=(myAct.length+thAct.length)>0&&(
     <>
       <SecLabel>{t('dashboard.active')}</SecLabel>
-      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete}/>)}
-      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete}/>)}
+      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete} onEdit={onEdit}/>)}
+      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete} onEdit={onEdit}/>)}
     </>
   );
 
@@ -99,7 +107,7 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
     <>
       <SecLabel mt={16}>{t('dashboard.recent')}</SecLabel>
       {bets.filter(b=>b.creator===user&&["won","lost"].includes(b.status)).slice(-3).reverse().map(b=>(
-        <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete}/>
+        <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete} onEdit={onEdit}/>
       ))}
     </>
   );
@@ -131,10 +139,10 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
       {isDesktop?(
         <div style={{display:"grid",gridTemplateColumns:"60% 40%",gap:20,alignItems:"start"}}>
           <div>{activeBets}{emptyState}{recentResolved}</div>
-          <div>{scoreCard}{vaultTeaser}{expiryAlert}</div>
+          <div>{scoreCard}{vaultTeaser}{expiredAlert}{expiryAlert}</div>
         </div>
       ):(
-        <>{expiryAlert}{scoreCard}{vaultTeaser}{activeBets}{emptyState}{recentResolved}</>
+        <>{expiredAlert}{expiryAlert}{scoreCard}{vaultTeaser}{activeBets}{emptyState}{recentResolved}</>
       )}
     </div>
   );

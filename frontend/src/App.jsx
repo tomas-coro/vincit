@@ -18,6 +18,26 @@ import CounterModal from './components/modals/CounterModal.jsx';
 import PinModal from './components/modals/PinModal.jsx';
 import PinLoginModal from './components/modals/PinLoginModal.jsx';
 import CommentModal from './components/modals/CommentModal.jsx';
+import EditModal from './components/modals/EditModal.jsx';
+
+function urlB64ToUint8(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));
+  return Uint8Array.from(raw, c => c.charCodeAt(0));
+}
+async function registerPush(user) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const { publicKey } = await fetch('/api/push/vapid-key').then(r => r.json());
+    if (!publicKey) return;
+    if (Notification.permission === 'denied') return;
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return;
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlB64ToUint8(publicKey) });
+    await fetch('/api/push/subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user, subscription:sub.toJSON()}) });
+  } catch(e) { console.warn('Push registration failed:', e); }
+}
 
 const CSS_BASE = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Syne:wght@400;500;600;700&display=swap');
@@ -28,6 +48,7 @@ const CSS_BASE = `
 @keyframes pGold{0%,100%{box-shadow:0 0 0 0 var(--glow)}50%{box-shadow:0 0 22px 4px var(--glow)}}
 @keyframes spinC{0%{transform:rotateY(0deg)}100%{transform:rotateY(1800deg)}}
 @keyframes confA{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(90px) rotate(720deg);opacity:0}}
+@keyframes confB{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1}100%{transform:translate(var(--ex),var(--ey)) rotate(var(--rot,720deg)) scale(.4);opacity:0}}
 .bc *{box-sizing:border-box;margin:0;padding:0}
 .bc{font-family:'Syne',sans-serif;transition:background .25s,color .25s}
 .sUp{animation:sUp .3s ease both}
@@ -36,7 +57,7 @@ const CSS_BASE = `
 .pGold{animation:pGold 3s ease-in-out infinite}
 .shim{background:linear-gradient(90deg,var(--gold) 0%,var(--goldL) 50%,var(--gold) 100%);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 2.5s linear infinite}
 .spinC{animation:spinC 1.4s ease-in-out forwards}
-.confp{position:absolute;border-radius:2px;animation:confA 1.2s ease-out forwards}
+
 .bc input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:var(--mut);outline:none;cursor:pointer}
 .bc input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 8px var(--glow)}
 ::-webkit-scrollbar{width:4px}
@@ -116,6 +137,9 @@ export default function App() {
   const [winAnim, setWinAnim]           = useState(null);
   const [pendingPinUser, setPendingPinUser] = useState(null);
   const [commentBetModal, setCommentBetModal] = useState(null);
+  const [editingBet, setEditingBet] = useState(null);
+
+  useEffect(() => { if (user) registerPush(user); }, [user]);
 
   const login = u => {
     const prev = getLastSeen(u);
@@ -137,6 +161,11 @@ export default function App() {
       setShowCreate(false);
       refresh();
     } catch (e) { console.error(e); alert(t('app.error_create')); }
+  };
+
+  const handleEdit = async (id, data) => {
+    try { await api.editBet(id, data); setEditingBet(null); refresh(); }
+    catch(e) { console.error(e); alert(t('app.error_edit')); }
   };
 
   const handleDelete = async bet => {
@@ -301,9 +330,9 @@ export default function App() {
 
       {/* Content */}
       <div style={isDesktop ? { marginLeft: 220, maxWidth: 900, padding: '32px 40px' } : { padding: '14px 20px' }}>
-        {view === 'dashboard' && <DashboardView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} />}
-        {view === 'bets'      && <BetsView user={user} profiles={profiles} bets={bets} cats={cats} onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} />}
-        {view === 'vault'     && <VaultView user={user} profiles={profiles} bets={bets} cats={cats} onReveal={b => setRevealBet(b)} onFlame={handleFlame} unlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin} isDesktop={isDesktop} onDelete={handleDelete} />}
+        {view === 'dashboard' && <DashboardView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} onEdit={b => setEditingBet(b)} />}
+        {view === 'bets'      && <BetsView user={user} profiles={profiles} bets={bets} cats={cats} onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} onEdit={b => setEditingBet(b)} />}
+        {view === 'vault'     && <VaultView user={user} profiles={profiles} bets={bets} cats={cats} onReveal={b => setRevealBet(b)} onFlame={handleFlame} unlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin} isDesktop={isDesktop} onDelete={handleDelete} onEdit={b => setEditingBet(b)} />}
         {view === 'stats'     && <StatsView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} isDesktop={isDesktop} />}
         {view === 'settings'  && <SettingsView user={user} profiles={profiles} isDark={isDark} setIsDark={setIsDark} customCats={customCats} credits={credits} onUpdateProfile={handleUpdateProfile} onResetCredits={handleResetCredits} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} pinProtected={pinProtected} isDesktop={isDesktop} />}
       </div>
@@ -336,6 +365,7 @@ export default function App() {
       {showPin        && <PinModal user={user} profiles={profiles} vaultPin={vaultPin} onSuccess={() => { setVaultUnlocked(true); setShowPin(false); }} onClose={() => setShowPin(false)} />}
       {winAnim        && <WinOverlay amount={winAnim} onDone={() => setWinAnim(null)} />}
       {commentBetModal && <CommentModal bet={commentBetModal} onSave={handleComment} onSkip={() => setCommentBetModal(null)} />}
+      {editingBet && <EditModal bet={editingBet} cats={cats} user={user} onSave={handleEdit} onClose={() => setEditingBet(null)}/>}
     </div>
   );
 }

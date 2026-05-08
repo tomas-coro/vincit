@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Btn, Bdg, Avatar, fmtQ, fmtD, tLeft, isSoon, qNo, COLORS } from './Atoms.jsx';
 import { useLang } from '../i18n.js';
 
@@ -13,14 +13,17 @@ const qToP = q=>Math.round(100/parseFloat(q));
 
 const DEF_IDS=['intimo','serata','casa','cibo','gaming','altro'];
 
-export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,reactions,onDelete,isDesktop}){
+const SWIPE_THRESHOLD = 80;
+const VERT_ABORT      = 40;
+
+export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,reactions,onDelete,onEdit,isDesktop}){
   const { t, lang } = useLang();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const other=user==="tomas"?"giulia":"tomas";
   const isOwner=bet.creator===user;
   const cat=cats.find(c=>c.id===bet.category)||cats[cats.length-1];
   const done=["won","lost"].includes(bet.status);
-  const CANCEL_MS=5*60*1000;
+  const CANCEL_MS=60*1000;
   const canCancel=isOwner&&!done&&!!onDelete&&(Date.now()-bet.createdAt<CANCEL_MS);
   const minsLeft=Math.ceil((bet.createdAt+CANCEL_MS-Date.now())/60000);
   const tl=tLeft(bet.expiresAt,lang);
@@ -31,6 +34,44 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const myReaction=betReactions.find(r=>r.bettor===user);
   const EMOJIS=['🔥','😂','👀','💀','⚡'];
 
+  // Swipe-to-resolve
+  const cardRef  = useRef(null);
+  const swipeRef = useRef(null);
+  const [deltaX, setDeltaX] = useState(0);
+
+  useEffect(() => {
+    if (isDesktop || !isOwner || done || !onResolve) return;
+    const el = cardRef.current;
+    if (!el) return;
+
+    const onStart = e => {
+      swipeRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, active: true };
+      setDeltaX(0);
+    };
+    const onMove = e => {
+      if (!swipeRef.current?.active) return;
+      const dx = e.touches[0].clientX - swipeRef.current.x;
+      const dy = Math.abs(e.touches[0].clientY - swipeRef.current.y);
+      if (dy > VERT_ABORT) { swipeRef.current.active = false; setDeltaX(0); return; }
+      e.preventDefault();
+      setDeltaX(dx);
+    };
+    const onEnd = () => {
+      if (swipeRef.current?.active && Math.abs(deltaX) >= SWIPE_THRESHOLD) onResolve(bet);
+      swipeRef.current = null;
+      setDeltaX(0);
+    };
+
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove',  onMove,  { passive: false });
+    el.addEventListener('touchend',   onEnd,   { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove',  onMove);
+      el.removeEventListener('touchend',   onEnd);
+    };
+  }, [isDesktop, isOwner, done, onResolve, deltaX, bet]);
+
   const actions=isOwner&&!done&&(
     <div style={{display:"flex",gap:8,...(isDesktop?{flexDirection:"column",alignItems:"stretch",flexShrink:0,justifyContent:"center"}:{})}}>
       {bet.isSecret
@@ -38,6 +79,9 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
         :<Btn variant="grn" sm style={isDesktop?{}:{flex:1}} onClick={()=>onResolve(bet)}>{t('bet_card.declare')}</Btn>
       }
       <button onClick={()=>onFlame(bet.id)} style={{...S.btn,padding:"7px 10px",background:"transparent",border:"1px solid var(--brd)",color:bet.flamed?"#f97316":"var(--dim)",fontSize:12}}>{bet.flamed?"🔥":"🤍"}</button>
+      {canCancel&&onEdit&&(
+        <button onClick={()=>onEdit(bet)} style={{...S.btn,padding:"7px 10px",background:"transparent",border:"1px solid var(--gold)44",color:"var(--gold)",fontSize:11}}>✏️ {t('bet_card.edit_btn')}</button>
+      )}
       {canCancel&&(
         <button onClick={()=>{if(window.confirm(t('bet_card.cancel_confirm')))onDelete(bet);}} style={{...S.btn,padding:"7px 10px",background:"transparent",border:"1px solid var(--red)44",color:"var(--red)",fontSize:11}}>✕ {t('bet_card.cancel_btn')} ({t('bet_card.cancel_window',{m:minsLeft})})</button>
       )}
@@ -45,7 +89,13 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   );
 
   return(
-    <div className="sUp" style={{...S.card,marginBottom:10,position:"relative",overflow:"hidden",opacity:done?0.78:1,border:`1px solid ${bet.isSecret?"var(--gold)44":"var(--brd)"}`}}>
+    <div ref={cardRef} className="sUp" style={{
+      ...S.card, marginBottom:10, position:"relative", overflow:"hidden",
+      opacity:done?0.78:1,
+      border:`1px solid ${deltaX > 40 ? 'var(--grn)' : deltaX < -40 ? 'var(--red)' : bet.isSecret ? 'var(--gold)44' : 'var(--brd)'}`,
+      transform: deltaX !== 0 ? `translateX(${Math.max(-60, Math.min(60, deltaX))}px)` : 'none',
+      transition: deltaX === 0 ? 'transform .3s ease, border-color .2s' : 'border-color .1s',
+    }}>
       <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:sideColor,borderRadius:"3px 0 0 3px"}}/>
       <div style={{paddingLeft:12,...(isDesktop?{display:"flex",alignItems:"flex-start",gap:16}:{})}}>
         {/* Main content */}
@@ -110,6 +160,13 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {/* Swipe hint: mobile owned active bets */}
+          {!isDesktop&&isOwner&&!done&&(
+            <div style={{fontSize:9,color:'var(--mut)',textAlign:'center',marginTop:6,letterSpacing:1}}>
+              ← {t('bet_card.swipe_resolve')} →
             </div>
           )}
 

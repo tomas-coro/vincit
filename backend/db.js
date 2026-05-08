@@ -54,6 +54,12 @@ const pool = new Pool({
       label TEXT NOT NULL,
       color TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      "user"       TEXT NOT NULL,
+      endpoint     TEXT PRIMARY KEY,
+      subscription JSONB NOT NULL
+    );
   `);
 
   await pool.query(`

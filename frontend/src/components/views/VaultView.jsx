@@ -13,13 +13,13 @@ const Bdg=({c,bg,children})=><span style={{...S.bdg,background:bg,color:c}}>{chi
 const qToP = q=>Math.round(100/parseFloat(q));
 const DEF_IDS=['intimo','serata','casa','cibo','gaming','altro'];
 
-export default function VaultView({user,profiles,bets,cats,onReveal,onFlame,unlocked,onPinRequest,vaultPin,isDesktop,onDelete}){
+export default function VaultView({user,profiles,bets,cats,onReveal,onFlame,unlocked,onPinRequest,vaultPin,isDesktop,onDelete,onEdit}){
   const { t, lang } = useLang();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const active=bets.filter(b=>b.creator===user&&b.isSecret&&b.status==="active");
   const resolved=bets.filter(b=>b.creator===user&&b.isSecret&&["won","lost"].includes(b.status));
   const hasPIN=!!vaultPin;
-  const CANCEL_MS=5*60*1000;
+  const CANCEL_MS=60*1000;
 
   if(hasPIN&&!unlocked){
     return(
@@ -80,7 +80,7 @@ export default function VaultView({user,profiles,bets,cats,onReveal,onFlame,unlo
           </div>
         );
       })}
-      {resolved.length>0&&<><SecLabel mt={16}>{t('vault_view.resolved')}</SecLabel>{resolved.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={()=>{}} isDesktop={isDesktop} onDelete={onDelete}/>)}</>}
+      {resolved.length>0&&<><SecLabel mt={16}>{t('vault_view.resolved')}</SecLabel>{resolved.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={()=>{}} isDesktop={isDesktop} onDelete={onDelete} onEdit={onEdit}/>)}</>}
     </div>
   );
 }
