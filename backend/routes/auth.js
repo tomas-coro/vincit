@@ -37,7 +37,7 @@ router.post('/register', async (req, res) => {
 
     await db.transaction(async (client) => {
       await client.query(
-        'INSERT INTO rooms(id, invite_code, created_at) VALUES($1,$2,$3)',
+        "INSERT INTO rooms(id, invite_code, created_at, name, emoji, max_size) VALUES($1,$2,$3,'My Group','🎲',10)",
         [roomId, inviteCode, now]
       );
       await client.query(
@@ -47,6 +47,10 @@ router.post('/register', async (req, res) => {
       await client.query(
         'INSERT INTO credits("user",amount) VALUES($1,100) ON CONFLICT("user") DO NOTHING',
         [userId]
+      );
+      await client.query(
+        'INSERT INTO user_groups(group_id,user_id,role,joined_at) VALUES($1,$2,$3,$4)',
+        [roomId, userId, 'owner', now]
       );
     });
 

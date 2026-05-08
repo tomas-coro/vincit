@@ -37,18 +37,29 @@ function broadcastUpdate(roomId) {
   }
 }
 
-// SSE stream — token in query param (EventSource can't send custom headers)
-app.get('/api/state/stream', authMiddlewareSSE, (req, res) => {
+// SSE stream — token + optional groupId in query params
+app.get('/api/state/stream', authMiddlewareSSE, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
-  const { roomId } = req;
-  if (!clients.has(roomId)) clients.set(roomId, new Set());
-  clients.get(roomId).add(res);
+
+  let groupId = req.query.groupId || req.roomId;
+  if (req.query.groupId && req.query.groupId !== req.roomId) {
+    // Validate membership for non-default group
+    const { rows } = await db.query(
+      'SELECT 1 FROM user_groups WHERE group_id=$1 AND user_id=$2',
+      [req.query.groupId, req.userId]
+    );
+    if (!rows.length) { res.end(); return; }
+    groupId = req.query.groupId;
+  }
+
+  if (!clients.has(groupId)) clients.set(groupId, new Set());
+  clients.get(groupId).add(res);
   const ping = setInterval(() => res.write(': ping\n\n'), 25000);
-  req.on('close', () => { clearInterval(ping); clients.get(roomId)?.delete(res); });
+  req.on('close', () => { clearInterval(ping); clients.get(groupId)?.delete(res); });
 });
 
 // Public routes (no auth)
@@ -56,6 +67,7 @@ app.use('/api/auth', authRouter);
 
 // Protected routes
 const stateRouter    = require('./routes/state.js');
+const groupsRouter   = require('./routes/groups.js');
 const betsRouter     = require('./routes/bets.js')(broadcastUpdate);
 const profilesRouter = require('./routes/profiles.js')(broadcastUpdate);
 const creditsRouter  = require('./routes/credits.js')(broadcastUpdate);
@@ -64,6 +76,7 @@ const reactionsRouter = require('./routes/reactions.js')(broadcastUpdate);
 const { router: pushRouter } = require('./routes/push.js');
 
 app.use('/api/state',      authMiddleware, stateRouter);
+app.use('/api/groups',     authMiddleware, groupsRouter);
 app.use('/api/bets',       authMiddleware, betsRouter);
 app.use('/api/profiles',   authMiddleware, profilesRouter);
 app.use('/api/credits',    authMiddleware, creditsRouter);

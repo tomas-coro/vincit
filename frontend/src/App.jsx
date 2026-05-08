@@ -13,6 +13,7 @@ import VaultView from './components/views/VaultView.jsx';
 import StatsView from './components/views/StatsView.jsx';
 import SettingsView from './components/views/SettingsView.jsx';
 import CreateModal from './components/modals/CreateModal.jsx';
+import CreateGroupModal from './components/modals/CreateGroupModal.jsx';
 import RevealModal from './components/modals/RevealModal.jsx';
 import { ResolveModal, OvertimeModal } from './components/modals/ResolveModal.jsx';
 import CounterModal from './components/modals/CounterModal.jsx';
@@ -101,10 +102,34 @@ export default function App() {
   const [authUser,    setAuthUser]    = useState(null);
   const [authLoading, setAuthLoading] = useState(!!localStorage.getItem('bc_token'));
 
+  // Groups state
+  const [groups,        setGroups]        = useState([]);
+  const [activeGroupId, setActiveGroupId] = useState(() => lsGet('bc_active_group', null));
+  const [showGroupModal, setShowGroupModal] = useState(false);
+
+  const loadGroups = useCallback(async () => {
+    try {
+      const gs = await api.getMyGroups();
+      setGroups(gs);
+      if (gs.length > 0) {
+        setActiveGroupId(prev => {
+          const valid = gs.find(g => g.id === prev);
+          const id = valid ? prev : gs[0].id;
+          lsSet('bc_active_group', id);
+          return id;
+        });
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (!token) { setAuthLoading(false); return; }
     api.getMe()
-      .then(u => { setAuthUser(u); setAuthLoading(false); })
+      .then(async u => {
+        setAuthUser(u);
+        await loadGroups();
+        setAuthLoading(false);
+      })
       .catch(() => {
         localStorage.removeItem('bc_token');
         setToken(null);
@@ -120,8 +145,26 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('bc_token');
+    lsDel('bc_active_group');
     setToken(null);
     setAuthUser(null);
+    setGroups([]);
+    setActiveGroupId(null);
+  };
+
+  const handleGroupCreated = group => {
+    setGroups(prev => {
+      const exists = prev.find(g => g.id === group.id);
+      return exists ? prev : [...prev, group];
+    });
+    setActiveGroupId(group.id);
+    lsSet('bc_active_group', group.id);
+    setShowGroupModal(false);
+  };
+
+  const switchGroup = id => {
+    setActiveGroupId(id);
+    lsSet('bc_active_group', id);
   };
 
   // user is the UUID string (same type as before, just UUID instead of "tomas")
@@ -140,7 +183,7 @@ export default function App() {
     if (data.bets)       setBets(data.bets);
     if (data.categories) setCustomCats(data.categories);
     if (data.reactions)  setReactions(data.reactions);
-  }, []), authUser?.room_id, token);
+  }, []), activeGroupId, token);
 
   const cats = [...DEF_CATS, ...customCats];
 
@@ -159,7 +202,7 @@ export default function App() {
   const [commentBetModal, setCommentBetModal] = useState(null);
   const [editingBet, setEditingBet]       = useState(null);
 
-  useEffect(() => { if (user && authUser?.paired) registerPush(user); }, [user]);
+  useEffect(() => { if (user && groups.length > 0) registerPush(user); }, [user, groups.length]);
 
   const notifSince = user ? { [user]: getNotifSince(user) } : {};
 
@@ -259,11 +302,11 @@ export default function App() {
     </div>
   );
 
-  // Pairing gate
-  if (!authUser.paired) return (
+  // Group gate — no groups yet → show first-group creation screen
+  if (groups.length === 0) return (
     <div className="bc" style={rootVars(C)}>
       <style>{CSS_BASE}</style>
-      <PairingView user={authUser} onPaired={handleAuth} />
+      <PairingView user={authUser} onGroupCreated={g => { handleGroupCreated(g); loadGroups(); }} />
     </div>
   );
 
@@ -281,6 +324,22 @@ export default function App() {
   ];
 
   const myProfile = profiles[user] ?? { name: authUser.name, avatar: authUser.avatar, colorKey: authUser.color_key };
+  const activeGroup = groups.find(g => g.id === activeGroupId);
+
+  const groupSwitcher = groups.length > 0 && (
+    <div style={{ display:'flex', gap:6, overflowX:'auto', padding:'8px 0', scrollbarWidth:'none' }}>
+      {groups.map(g => (
+        <button key={g.id} onClick={() => switchGroup(g.id)}
+          style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'5px 10px', borderRadius:20, border:`1px solid ${g.id===activeGroupId?'var(--gold)':'var(--brd)'}`, background:g.id===activeGroupId?'var(--gold)22':'transparent', cursor:'pointer', fontFamily:"'Syne',sans-serif", fontSize:11, fontWeight:600, color:g.id===activeGroupId?'var(--gold)':'var(--dim)', whiteSpace:'nowrap', flexShrink:0, transition:'all .18s' }}>
+          {g.emoji} {g.name}
+        </button>
+      ))}
+      <button onClick={() => setShowGroupModal(true)}
+        style={{ display:'inline-flex', alignItems:'center', padding:'5px 10px', borderRadius:20, border:'1px solid var(--brd)', background:'transparent', cursor:'pointer', fontFamily:"'Syne',sans-serif", fontSize:11, fontWeight:600, color:'var(--dim)', whiteSpace:'nowrap', flexShrink:0, transition:'all .18s' }}>
+        {t('app.new_group')}
+      </button>
+    </div>
+  );
 
   return (
     <div className="bc" style={rootStyle}>
@@ -297,6 +356,11 @@ export default function App() {
             <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--gold)', marginBottom: 10 }}>{Math.round(credits[user] ?? 0)} ₡</div>
             <button style={{ width: '100%', padding: '6px 0', borderRadius: 8, border: '1px solid var(--brd)', cursor: 'pointer', fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, background: 'transparent', color: 'var(--dim)' }} onClick={handleLogout}>{t('settings.logout')}</button>
           </div>
+          {groups.length > 0 && (
+            <div style={{ padding:'8px 12px', borderBottom:'1px solid var(--brd)', marginBottom:4 }}>
+              {groupSwitcher}
+            </div>
+          )}
           <div style={{ flex: 1, padding: '4px 12px' }}>
             {NAV.map(n => (
               <div key={n.id} onClick={() => setView(n.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: view === n.id ? 'var(--gold)' : 'var(--dim)', background: view === n.id ? 'var(--gold)11' : 'transparent', marginBottom: 4, transition: 'all .18s', userSelect: 'none', position: 'relative' }}>
@@ -316,20 +380,25 @@ export default function App() {
 
       {/* Header: mobile only */}
       {!isDesktop && (
-        <div style={{ padding: '18px 20px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: C.bg, zIndex: 10, borderBottom: `1px solid ${C.brd}22` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `2px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38 * 0.42, flexShrink: 0 }}>{myProfile.avatar}</div>
-            <div>
-              <div style={{ fontSize: 10, color: 'var(--dim)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('app.welcome_back')}</div>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700 }}>{myProfile.name}</div>
+        <div style={{ position: 'sticky', top: 0, background: C.bg, zIndex: 10, borderBottom: `1px solid ${C.brd}22` }}>
+          <div style={{ padding: '18px 20px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `2px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38 * 0.42, flexShrink: 0 }}>{myProfile.avatar}</div>
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--dim)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('app.welcome_back')}</div>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700 }}>{myProfile.name}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 10, color: 'var(--dim)' }}>{t('app.credits')}</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--gold)' }}>{Math.round(credits[user] ?? 0)} ₡</div>
+              </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 10, color: 'var(--dim)' }}>{t('app.credits')}</div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--gold)' }}>{Math.round(credits[user] ?? 0)} ₡</div>
-            </div>
-          </div>
+          {groups.length > 0 && (
+            <div style={{ padding:'0 20px 6px' }}>{groupSwitcher}</div>
+          )}
         </div>
       )}
 
@@ -371,6 +440,7 @@ export default function App() {
       {winAnim        && <WinOverlay amount={winAnim} onDone={() => setWinAnim(null)} />}
       {commentBetModal && <CommentModal bet={commentBetModal} onSave={handleComment} onSkip={() => setCommentBetModal(null)} />}
       {editingBet && <EditModal bet={editingBet} cats={cats} user={user} onSave={handleEdit} onClose={() => setEditingBet(null)}/>}
+      {showGroupModal && <CreateGroupModal onCreated={handleGroupCreated} onClose={() => setShowGroupModal(false)} />}
     </div>
   );
 }

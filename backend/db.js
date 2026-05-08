@@ -110,6 +110,27 @@ const pool = new Pool({
   `);
 
   await pool.query(`
+    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS name     TEXT DEFAULT 'My Group';
+    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS emoji    TEXT DEFAULT '🎲';
+    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS max_size INTEGER DEFAULT 10;
+
+    CREATE TABLE IF NOT EXISTS user_groups (
+      group_id  TEXT NOT NULL REFERENCES rooms(id)  ON DELETE CASCADE,
+      user_id   TEXT NOT NULL REFERENCES users(id)  ON DELETE CASCADE,
+      role      TEXT NOT NULL DEFAULT 'member',
+      joined_at BIGINT NOT NULL,
+      PRIMARY KEY (group_id, user_id)
+    );
+  `);
+
+  await pool.query(`
+    INSERT INTO user_groups (group_id, user_id, role, joined_at)
+      SELECT room_id, id, 'owner', created_at
+      FROM users WHERE room_id IS NOT NULL
+    ON CONFLICT DO NOTHING;
+  `);
+
+  await pool.query(`
     INSERT INTO profiles ("user", name, avatar, color_key)
       VALUES ('tomas',  'Tomas',  '🃏', 'blue'),
              ('giulia', 'Giulia', '♥️', 'purple')

@@ -27,7 +27,14 @@ export const getMe         = ()          => req('GET',   '/auth/me');
 export const updateProfile = d           => req('PATCH', '/auth/profile', d);
 
 // State
-export const fetchState     = ()             => req('GET',    '/state');
+export const fetchState     = (groupId)      => req('GET',    groupId ? `/state?groupId=${encodeURIComponent(groupId)}` : '/state');
+
+// Groups
+export const getMyGroups    = ()             => req('GET',    '/groups');
+export const getGroupMembers = (id)          => req('GET',    `/groups/${id}/members`);
+export const createGroup    = (data)         => req('POST',   '/groups', data);
+export const renameGroup    = (id, data)     => req('PATCH',  `/groups/${id}`, data);
+export const joinGroup      = (code)         => req('POST',   '/groups/join', { code });
 
 // Bets
 export const createBet      = (data)         => req('POST',   '/bets', data);

@@ -5,15 +5,24 @@ const db = require('../db.js');
 
 async function buildState(roomId) {
   const profiles = {};
-  const { rows: users } = await db.query(
-    'SELECT id, name, avatar, color_key FROM users WHERE room_id=$1', [roomId]
+  // Prefer user_groups (multi-group), fall back to users.room_id for legacy rows
+  const { rows: members } = await db.query(
+    `SELECT DISTINCT u.id, u.name, u.avatar, u.color_key
+     FROM users u
+     LEFT JOIN user_groups ug ON ug.user_id = u.id
+     WHERE ug.group_id = $1 OR (u.room_id = $1 AND NOT EXISTS (SELECT 1 FROM user_groups WHERE group_id=$1))`,
+    [roomId]
   );
-  for (const u of users) profiles[u.id] = { name:u.name, avatar:u.avatar, color:u.color_key, colorKey:u.color_key };
-  console.log('[state] roomId:', roomId, 'profiles:', Object.keys(profiles));
+  for (const u of members) profiles[u.id] = { name:u.name, avatar:u.avatar, color:u.color_key, colorKey:u.color_key };
 
   const credits = {};
   const { rows: creditRows } = await db.query(
-    'SELECT c.user, c.amount FROM credits c JOIN users u ON u.id=c.user WHERE u.room_id=$1', [roomId]
+    `SELECT c.user, c.amount FROM credits c
+     WHERE c.user IN (
+       SELECT user_id FROM user_groups WHERE group_id=$1
+       UNION SELECT id FROM users WHERE room_id=$1 AND NOT EXISTS (SELECT 1 FROM user_groups WHERE group_id=$1)
+     )`,
+    [roomId]
   );
   creditRows.forEach(r => { credits[r.user] = r.amount; });
 
@@ -85,7 +94,16 @@ async function buildState(roomId) {
 
 router.get('/', async (req, res) => {
   try {
-    res.json(await buildState(req.roomId));
+    let groupId = req.roomId;
+    if (req.query.groupId && req.query.groupId !== req.roomId) {
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_groups WHERE group_id=$1 AND user_id=$2',
+        [req.query.groupId, req.userId]
+      );
+      if (!rows.length) return res.status(403).json({ error: 'not_member' });
+      groupId = req.query.groupId;
+    }
+    res.json(await buildState(groupId));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
