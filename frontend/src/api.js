@@ -35,8 +35,12 @@ export const getGroupMembers = (id)          => req('GET',    `/groups/${id}/mem
 export const createGroup    = (data)         => req('POST',   '/groups', data);
 export const renameGroup    = (id, data)     => req('PATCH',  `/groups/${id}`, data);
 export const joinGroup      = (code)         => req('POST',   '/groups/join', { code });
-export const leaveGroup     = (groupId)      => req('DELETE', `/groups/${groupId}/leave`);
-export const deleteGroup    = (groupId)      => req('DELETE', `/groups/${groupId}`);
+export const leaveGroup          = (groupId)         => req('DELETE', `/groups/${groupId}/leave`);
+export const deleteGroup         = (groupId)         => req('DELETE', `/groups/${groupId}`);
+export const kickMember          = (groupId, userId) => req('DELETE', `/groups/${groupId}/members/${userId}`);
+export const regenerateCode      = (groupId)         => req('POST',   `/groups/${groupId}/regenerate-code`);
+export const promoteMember       = (groupId, userId) => req('PATCH',  `/groups/${groupId}/members/${userId}/promote`);
+export const updateGroupSettings = (groupId, data)   => req('PATCH',  `/groups/${groupId}/settings`, data);
 
 // Bets
 export const createBet      = (data)         => req('POST',   '/bets', data);
@@ -50,6 +54,8 @@ export const deleteCategory = (id)           => req('DELETE', `/categories/${id}
 export const deltaCredits = (user, delta) => req('PATCH', `/credits/${user}`, { delta });
 
 export const cancelBet      = (id)           => req('DELETE', `/bets/${id}`);
+export const acceptBet      = (id)           => req('POST',   `/bets/${id}/accept`);
+export const rejectBet      = (id)           => req('POST',   `/bets/${id}/reject`);
 export const editBet        = (id, data)     => req('PATCH',  `/bets/${id}/edit`, data);
 export const resetAll       = ()             => req('POST',   '/bets/reset');
 export const commentBet     = (id, comment)  => req('PATCH',  `/bets/${id}/comment`, { comment });

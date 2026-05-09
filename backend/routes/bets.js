@@ -2,6 +2,7 @@
 const express = require('express');
 const db = require('../db.js');
 const { sendPushToUser } = require('./push.js');
+const { requireOwner } = require('../middleware/auth.js');
 
 module.exports = function(broadcastUpdate) {
   const router = express.Router();
@@ -11,22 +12,31 @@ module.exports = function(broadcastUpdate) {
       const creator = req.userId;
       const roomId  = req.roomId;
       const { id, title, quota, stake, potentialWin,
-              category, isSecret, isCounterable, pegno, expiresAt, createdAt } = req.body;
+              category, isSecret, isCounterable, pegno, expiresAt, createdAt, opponent } = req.body;
+
+      const { rows: roomRows } = await db.query(
+        'SELECT acceptance_threshold FROM rooms WHERE id=$1', [roomId]
+      );
+      const threshold = roomRows[0]?.acceptance_threshold ?? 20;
+      const isPending = !isSecret && opponent && stake >= threshold;
+      const status = isPending ? 'pending' : 'active';
 
       await db.transaction(async (client) => {
         await client.query(
           `INSERT INTO bets
              (id, creator, room_id, title, quota, stake, potential_win,
-              category, is_secret, is_counterable, pegno, expires_at, created_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+              category, is_secret, is_counterable, pegno, expires_at, created_at, status, opponent)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
           [id, creator, roomId, title, quota, stake, potentialWin,
            category, isSecret ? 1 : 0, isCounterable ? 1 : 0,
-           pegno || null, expiresAt || null, createdAt]
+           pegno || null, expiresAt || null, createdAt, status, opponent || null]
         );
-        await client.query(
-          'UPDATE credits SET amount = amount - $1 WHERE "user" = $2',
-          [stake, creator]
-        );
+        if (!isPending) {
+          await client.query(
+            'UPDATE credits SET amount = amount - $1 WHERE "user" = $2',
+            [stake, creator]
+          );
+        }
       });
 
       broadcastUpdate(roomId);
@@ -161,24 +171,69 @@ module.exports = function(broadcastUpdate) {
     } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
   });
 
+  router.post('/:id/accept', async (req, res) => {
+    try {
+      const { rows } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
+      const bet = rows[0];
+      if (!bet) return res.status(404).json({ error: 'Not found' });
+      if (bet.room_id !== req.roomId) return res.status(403).json({ error: 'Forbidden' });
+      if (bet.status !== 'pending') return res.status(400).json({ error: 'Not pending' });
+      if (bet.opponent !== req.userId) return res.status(403).json({ error: 'Not the opponent' });
+
+      await db.transaction(async (client) => {
+        await client.query('UPDATE bets SET status=$1 WHERE id=$2', ['active', bet.id]);
+        await client.query(
+          'UPDATE credits SET amount = amount - $1 WHERE "user" = $2',
+          [bet.stake, bet.creator]
+        );
+      });
+
+      broadcastUpdate(req.roomId);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.post('/:id/reject', async (req, res) => {
+    try {
+      const { rows } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
+      const bet = rows[0];
+      if (!bet) return res.status(404).json({ error: 'Not found' });
+      if (bet.room_id !== req.roomId) return res.status(403).json({ error: 'Forbidden' });
+      if (bet.status !== 'pending') return res.status(400).json({ error: 'Not pending' });
+      if (bet.opponent !== req.userId) return res.status(403).json({ error: 'Not the opponent' });
+
+      await db.query('UPDATE bets SET status=$1 WHERE id=$2', ['rejected', bet.id]);
+      broadcastUpdate(req.roomId);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   router.delete('/:id', async (req, res) => {
     try {
       const creator = req.userId;
       const { rows } = await db.query('SELECT * FROM bets WHERE id = $1', [req.params.id]);
       const bet = rows[0];
       if (!bet) return res.status(404).json({ error: 'Not found' });
-      if (bet.room_id !== req.roomId)          return res.status(403).json({ error: 'Forbidden' });
-      if (bet.creator !== creator)             return res.status(403).json({ error: 'Forbidden' });
-      if (bet.status !== 'active')             return res.status(403).json({ error: 'Already resolved' });
-      if (Date.now() - bet.created_at > 60 * 1000) return res.status(403).json({ error: 'Window expired' });
+      if (bet.room_id !== req.roomId)                        return res.status(403).json({ error: 'Forbidden' });
+      if (bet.creator !== creator)                           return res.status(403).json({ error: 'Forbidden' });
+      if (!['active','pending'].includes(bet.status))        return res.status(403).json({ error: 'Already resolved' });
+      if (Date.now() - bet.created_at > 60 * 1000)          return res.status(403).json({ error: 'Window expired' });
 
       const { rows: counters } = await db.query('SELECT * FROM counter_bets WHERE bet_id = $1', [bet.id]);
 
       await db.transaction(async (client) => {
-        await client.query(
-          'UPDATE credits SET amount = amount + $1 WHERE "user" = $2',
-          [bet.stake, bet.creator]
-        );
+        if (bet.status === 'active') {
+          await client.query(
+            'UPDATE credits SET amount = amount + $1 WHERE "user" = $2',
+            [bet.stake, bet.creator]
+          );
+        }
         for (const cb of counters) {
           await client.query(
             'UPDATE credits SET amount = amount + $1 WHERE "user" = $2',
@@ -214,6 +269,7 @@ module.exports = function(broadcastUpdate) {
 
   router.post('/reset', async (req, res) => {
     try {
+      if (!(await requireOwner(req, res))) return;
       await db.query('DELETE FROM bets WHERE room_id=$1', [req.roomId]);
       await db.query(
         'UPDATE credits SET amount=100 WHERE "user" IN (SELECT id FROM users WHERE room_id=$1)',

@@ -184,6 +184,7 @@ export default function App() {
   const [bets,       setBets]       = useState([]);
   const [customCats, setCustomCats] = useState([]);
   const [reactions,  setReactions]  = useState([]);
+  const [settings,   setSettings]   = useState({ acceptance_threshold: 20, max_stake: 100 });
 
   const refresh = useSync(useCallback(data => {
     if (data.profiles)   setProfiles(data.profiles);
@@ -191,6 +192,7 @@ export default function App() {
     if (data.bets)       setBets(data.bets);
     if (data.categories) setCustomCats(data.categories);
     if (data.reactions)  setReactions(data.reactions);
+    if (data.settings)   setSettings(data.settings);
   }, []), activeGroupId, token);
 
   const cats = [...DEF_CATS, ...customCats];
@@ -255,6 +257,17 @@ export default function App() {
   const handleComment = async (betId, comment) => {
     try { await api.commentBet(betId, comment); } catch (e) { console.error(e); }
     setCommentBetModal(null);
+  };
+
+  const handleAccept = async id => {
+    try { await api.acceptBet(id); refresh(); }
+    catch(e) { console.error(e); alert(t('app.error_accept')); }
+  };
+
+  const handleReject = async id => {
+    if (!window.confirm(t('app.reject_confirm'))) return;
+    try { await api.rejectBet(id); refresh(); }
+    catch(e) { console.error(e); alert(t('app.error_reject')); }
   };
 
   const handleReaction = async (betId, emoji) => {
@@ -432,8 +445,8 @@ export default function App() {
 
       {/* Content */}
       <div style={isDesktop ? { marginLeft: 220, maxWidth: 960, padding: '32px 40px' } : { padding: '14px 20px' }}>
-        {view === 'dashboard' && <DashboardView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} onEdit={b => setEditingBet(b)} />}
-        {view === 'bets'      && <BetsView user={user} profiles={profiles} bets={bets} cats={cats} onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} onEdit={b => setEditingBet(b)} />}
+        {view === 'dashboard' && <DashboardView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} />}
+        {view === 'bets'      && <BetsView user={user} profiles={profiles} bets={bets} cats={cats} onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} />}
         {view === 'vault'     && <VaultView user={user} profiles={profiles} bets={bets} cats={cats} onReveal={b => setRevealBet(b)} onFlame={handleFlame} unlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin} isDesktop={isDesktop} onDelete={handleDelete} onEdit={b => setEditingBet(b)} />}
         {view === 'stats'     && <StatsView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} isDesktop={isDesktop} />}
         {view === 'settings'  && <SettingsView user={user} profiles={profiles} isDark={isDark} setIsDark={setIsDark} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onResetCredits={handleResetCredits} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onLogout={handleLogout} onProfileUpdate={u => setAuthUser(prev => ({...prev,...u}))} isAdmin={isAdmin} />}
@@ -459,7 +472,7 @@ export default function App() {
       )}
 
       {/* Modals */}
-      {showCreate     && <CreateModal user={user} profiles={profiles} maxC={credits[user]??0} cats={cats} onCreate={handleCreate} onClose={() => setShowCreate(false)} />}
+      {showCreate     && <CreateModal user={user} profiles={profiles} maxC={credits[user]??0} cats={cats} settings={settings} onCreate={handleCreate} onClose={() => setShowCreate(false)} />}
       {revealBet      && <RevealModal bet={revealBet} cats={cats} onResolve={handleResolve} onClose={() => setRevealBet(null)} />}
       {resolveBet     && <ResolveModal bet={resolveBet} cats={cats} profiles={profiles} onResolve={handleResolve} onOvertime={b => { setResolveBet(null); setOvertimeBet(b); }} onClose={() => setResolveBet(null)} />}
       {counterTarget  && <CounterModal bet={counterTarget} user={user} profiles={profiles} credits={credits} cats={cats} onPlace={handleCounter} onClose={() => setCounterTarget(null)} />}

@@ -66,6 +66,7 @@ async function buildState(roomId) {
     flamed:        r.flamed === 1,
     comment:       r.comment || null,
     counterBets:   countersByBetId[r.id] || [],
+    opponent:      r.opponent || null,
   }));
 
   const { rows: catRows } = await db.query(
@@ -89,7 +90,14 @@ async function buildState(roomId) {
     emoji:  r.emoji,
   }));
 
-  return { profiles, credits, bets, categories, reactions };
+  const { rows: roomRows } = await db.query(
+    'SELECT acceptance_threshold, max_stake FROM rooms WHERE id=$1', [roomId]
+  );
+  const settings = roomRows[0]
+    ? { acceptance_threshold: roomRows[0].acceptance_threshold ?? 20, max_stake: roomRows[0].max_stake ?? 100 }
+    : { acceptance_threshold: 20, max_stake: 100 };
+
+  return { profiles, credits, bets, categories, reactions, settings };
 }
 
 router.get('/', async (req, res) => {

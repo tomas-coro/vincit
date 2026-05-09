@@ -28,13 +28,14 @@ const S = {
   row: {display:"flex",alignItems:"center",gap:10},
 };
 
-export default function DashboardView({user,profiles,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onDelete,onEdit}){
+export default function DashboardView({user,profiles,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onDelete,onEdit,onAccept,onReject}){
   const { t, lang } = useLang();
   const other=Object.keys(profiles).find(k=>k!==user)??null;
   const myWon=bets.filter(b=>b.creator===user&&b.status==="won");
   const myLost=bets.filter(b=>b.creator===user&&b.status==="lost");
   const thWon=bets.filter(b=>b.creator===other&&b.status==="won");
   const myAct=bets.filter(b=>b.creator===user&&!b.isSecret&&['active','expired'].includes(b.status));
+  const pendingBets=bets.filter(b=>b.status==='pending'&&(b.creator===user||b.opponent===user));
   const mySec=bets.filter(b=>b.creator===user&&b.isSecret&&b.status==="active");
   const thAct=bets.filter(b=>b.creator===other&&!b.isSecret&&b.status==="active");
   const newPart=bets.filter(b=>b.creator===other&&!b.isSecret&&b.createdAt>(notifSince[user]||0)).length;
@@ -121,6 +122,13 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
     </div>
   );
 
+  const pendingSection=pendingBets.length>0&&(
+    <>
+      <SecLabel>{t('dashboard.pending')}</SecLabel>
+      {pendingBets.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete} onAccept={onAccept} onReject={onReject}/>)}
+    </>
+  );
+
   const activeBets=(myAct.length+thAct.length)>0&&(
     <>
       <SecLabel>{t('dashboard.active')}</SecLabel>
@@ -173,11 +181,11 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
 
       {isDesktop?(
         <div style={{display:"grid",gridTemplateColumns:"60% 40%",gap:20,alignItems:"start"}}>
-          <div>{activeBets}{emptyState}{recentResolved}</div>
+          <div>{pendingSection}{activeBets}{emptyState}{recentResolved}</div>
           <div>{scoreCard}{vaultTeaser}{expiredAlert}{expiryAlert}</div>
         </div>
       ):(
-        <>{expiredAlert}{expiryAlert}{scoreCard}{vaultTeaser}{activeBets}{emptyState}{recentResolved}</>
+        <>{expiredAlert}{expiryAlert}{scoreCard}{vaultTeaser}{pendingSection}{activeBets}{emptyState}{recentResolved}</>
       )}
     </div>
   );

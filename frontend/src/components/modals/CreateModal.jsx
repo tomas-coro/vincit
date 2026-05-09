@@ -13,7 +13,7 @@ const qNo = qY=>parseFloat((parseFloat(qY)/(parseFloat(qY)-1)).toFixed(2));
 
 const DEF_IDS=['intimo','serata','casa','cibo','gaming','altro'];
 
-export default function CreateModal({user,profiles,maxC,cats,onCreate,onClose}){
+export default function CreateModal({user,profiles,maxC,cats,settings={},onCreate,onClose}){
   const { t } = useLang();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const [title,setTitle]=useState("");
@@ -24,14 +24,18 @@ export default function CreateModal({user,profiles,maxC,cats,onCreate,onClose}){
   const [isCnt,setIsCnt]=useState(true);
   const [pegno,setPegno]=useState("");
   const [exp,setExp]=useState("");
+  const maxStake=Math.min(maxC, settings.max_stake ?? maxC);
+  const threshold=settings.acceptance_threshold ?? Infinity;
   const stake=Math.max(0,parseFloat(stakeStr)||0);
   const prob=qToP(quota); const potWin=Math.round(stake*quota);
   const probC=prob>=70?"var(--grn)":prob>=40?"var(--gold)":"var(--red)";
+  const opponent=Object.keys(profiles).find(k=>k!==user)??null;
+  const needsApproval=!isSecret&&stake>=threshold&&opponent;
 
   const submit=()=>{
     if(!title.trim()){alert(t('create.err_title'));return;}
-    if(stake<=0||stake>maxC){alert(t('create.err_stake',{max:Math.round(maxC)}));return;}
-    onCreate({title,quota,stake,potentialWin:potWin,category:cat,isSecret,isCounterable:!isSecret&&isCnt,pegno,expiresAt:exp?new Date(exp).getTime():null});
+    if(stake<=0||stake>maxStake){alert(t('create.err_stake',{max:Math.round(maxStake)}));return;}
+    onCreate({title,quota,stake,potentialWin:potWin,category:cat,isSecret,isCounterable:!isSecret&&isCnt,pegno,expiresAt:exp?new Date(exp).getTime():null,opponent:opponent||undefined});
   };
 
   return(
@@ -87,14 +91,19 @@ export default function CreateModal({user,profiles,maxC,cats,onCreate,onClose}){
         <div style={{marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
             <label style={{...S.lbl,marginBottom:0}}>{t('create.stake_label')}</label>
-            <span style={{fontSize:11,color:"var(--dim)"}}>{t('create.stake_max')} {Math.round(maxC)} ₡</span>
+            <span style={{fontSize:11,color:"var(--dim)"}}>{t('create.stake_max')} {Math.round(maxStake)} ₡</span>
           </div>
           <div style={{display:"flex",gap:6,marginBottom:10}}>
             {[5,10,20,50].map(s=>(
-              <button key={s} onClick={()=>s<=maxC&&setStakeStr(String(s))} style={{...S.btn,flex:1,padding:"7px 4px",fontSize:12,background:"transparent",border:`1px solid ${stake===s?"var(--gold)":"var(--brd)"}`,color:stake===s?"var(--gold)":"var(--dim)",opacity:s>maxC?.4:1}}>{s}</button>
+              <button key={s} onClick={()=>s<=maxStake&&setStakeStr(String(s))} style={{...S.btn,flex:1,padding:"7px 4px",fontSize:12,background:"transparent",border:`1px solid ${stake===s?"var(--gold)":"var(--brd)"}`,color:stake===s?"var(--gold)":"var(--dim)",opacity:s>maxStake?.4:1}}>{s}</button>
             ))}
           </div>
-          <Inp type="number" min="1" max={Math.floor(maxC)} step="1" value={stakeStr} onChange={e=>setStakeStr(e.target.value)} placeholder={t('create.stake_placeholder')}/>
+          <Inp type="number" min="1" max={Math.floor(maxStake)} step="1" value={stakeStr} onChange={e=>setStakeStr(e.target.value)} placeholder={t('create.stake_placeholder')}/>
+          {needsApproval&&(
+            <div style={{fontSize:12,color:"var(--gold)",marginTop:8,padding:"8px 12px",background:"var(--gold)12",borderRadius:8,border:"1px solid var(--gold)33"}}>
+              {t('create.acceptance_required',{name:profiles[opponent]?.name??'...'})}
+            </div>
+          )}
           <div style={{...S.card,marginTop:10,padding:"10px 14px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div><div style={{fontSize:11,color:"var(--dim)"}}>{t('create.risks')}</div><div style={{fontSize:17,fontWeight:700,color:"var(--red)"}}>−{stake} ₡</div></div>

@@ -110,9 +110,11 @@ const pool = new Pool({
   `);
 
   await pool.query(`
-    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS name     TEXT DEFAULT 'My Group';
-    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS emoji    TEXT DEFAULT '🎲';
-    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS max_size INTEGER DEFAULT 10;
+    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS name                 TEXT DEFAULT 'My Group';
+    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS emoji                TEXT DEFAULT '🎲';
+    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS max_size             INTEGER DEFAULT 10;
+    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS acceptance_threshold INTEGER DEFAULT 20;
+    ALTER TABLE rooms ADD COLUMN IF NOT EXISTS max_stake            INTEGER DEFAULT 100;
 
     CREATE TABLE IF NOT EXISTS user_groups (
       group_id  TEXT NOT NULL REFERENCES rooms(id)  ON DELETE CASCADE,
@@ -128,6 +130,10 @@ const pool = new Pool({
       SELECT room_id, id, 'owner', created_at
       FROM users WHERE room_id IS NOT NULL
     ON CONFLICT DO NOTHING;
+  `);
+
+  await pool.query(`
+    ALTER TABLE bets ADD COLUMN IF NOT EXISTS opponent TEXT;
   `);
 
   await pool.query(`

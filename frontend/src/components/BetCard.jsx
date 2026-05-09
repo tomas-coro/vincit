@@ -16,12 +16,14 @@ const DEF_IDS=['intimo','serata','casa','cibo','gaming','altro'];
 const SWIPE_THRESHOLD = 80;
 const VERT_ABORT      = 40;
 
-export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,reactions,onDelete,onEdit,isDesktop}){
+export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,reactions,onDelete,onEdit,isDesktop,onAccept,onReject}){
   const { t, lang } = useLang();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const isOwner=bet.creator===user;
+  const isPending=bet.status==='pending';
+  const isRejected=bet.status==='rejected';
   const cat=cats.find(c=>c.id===bet.category)||cats[cats.length-1];
-  const done=["won","lost"].includes(bet.status);
+  const done=["won","lost","rejected"].includes(bet.status);
   const CANCEL_MS=60*1000;
   const canCancel=isOwner&&!done&&!!onDelete&&(Date.now()-bet.createdAt<CANCEL_MS);
   const minsLeft=Math.ceil((bet.createdAt+CANCEL_MS-Date.now())/60000);
@@ -39,7 +41,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const [deltaX, setDeltaX] = useState(0);
 
   useEffect(() => {
-    if (isDesktop || !isOwner || done || !onResolve) return;
+    if (isDesktop || !isOwner || done || isPending || !onResolve) return;
     const el = cardRef.current;
     if (!el) return;
 
@@ -71,7 +73,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
     };
   }, [isDesktop, isOwner, done, onResolve, deltaX, bet]);
 
-  const actions=isOwner&&!done&&(
+  const actions=isOwner&&!done&&!isPending&&(
     <div style={{display:"flex",gap:8,...(isDesktop?{flexDirection:"column",alignItems:"stretch",flexShrink:0,justifyContent:"center"}:{})}}>
       {bet.isSecret
         ?<Btn variant="gold" sm style={isDesktop?{}:{flex:1}} onClick={()=>onReveal(bet)}>{t('bet_card.reveal')}</Btn>
@@ -124,7 +126,9 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             {!bet.isSecret&&<><Bdg bg="var(--mut)44" c="var(--dim)">{t('bet_card.stake')} {bet.stake} ₡</Bdg><Bdg bg="var(--grn)22" c="var(--grn)">{t('bet_card.win')} {bet.potentialWin} ₡</Bdg></>}
             {bet.pegno&&<Bdg bg="var(--gold)22" c="var(--gold)">🎁 {bet.pegno}</Bdg>}
             {tl&&<Bdg bg={isSoon(bet.expiresAt)?"var(--red)22":"var(--mut)33"} c={isSoon(bet.expiresAt)?"var(--red)":"var(--dim)"}>⏱ {tl}</Bdg>}
-            {done&&<Bdg bg={bet.status==="won"?"var(--grn)22":"var(--red)22"} c={bet.status==="won"?"var(--grn)":"var(--red)"}>{bet.status==="won"?`✅ +${bet.potentialWin-bet.stake} ₡`:`❌ −${bet.stake} ₡`}</Bdg>}
+            {isPending&&<Bdg bg="var(--gold)22" c="var(--gold)">{t('bet_card.pending_label')}</Bdg>}
+            {isRejected&&<Bdg bg="var(--red)22" c="var(--red)">❌ {t('bet_card.reject_btn')}</Bdg>}
+            {!isPending&&!isRejected&&done&&<Bdg bg={bet.status==="won"?"var(--grn)22":"var(--red)22"} c={bet.status==="won"?"var(--grn)":"var(--red)"}>{bet.status==="won"?`✅ +${bet.potentialWin-bet.stake} ₡`:`❌ −${bet.stake} ₡`}</Bdg>}
           </div>
 
           {/* Comment */}
@@ -162,8 +166,27 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             </div>
           )}
 
+          {/* Pending acceptance UI */}
+          {isPending&&(
+            <div style={{borderTop:'1px solid var(--brd)',paddingTop:8,marginTop:4}}>
+              {user===bet.opponent?(
+                <div>
+                  <div style={{fontSize:12,color:'var(--dim)',marginBottom:8}}>{t('bet_card.pending_label')}</div>
+                  <div style={{display:'flex',gap:8}}>
+                    <Btn variant="grn" sm style={{flex:1}} onClick={()=>onAccept?.(bet.id)}>{t('bet_card.accept_btn')}</Btn>
+                    <button onClick={()=>onReject?.(bet.id)} style={{...S.btn,flex:1,padding:'7px 10px',background:'transparent',border:'1px solid var(--red)44',color:'var(--red)',fontSize:12}}>{t('bet_card.reject_btn')}</button>
+                  </div>
+                </div>
+              ):(
+                <div style={{fontSize:12,color:'var(--dim)',fontStyle:'italic'}}>
+                  {t('bet_card.waiting_acceptance',{name:profiles[bet.opponent]?.name??'...'})}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Swipe hint: mobile owned active bets */}
-          {!isDesktop&&isOwner&&!done&&(
+          {!isDesktop&&isOwner&&!done&&!isPending&&(
             <div style={{fontSize:9,color:'var(--mut)',textAlign:'center',marginTop:6,letterSpacing:1}}>
               ← {t('bet_card.swipe_resolve')} →
             </div>
