@@ -159,6 +159,14 @@ const pool = new Pool({
     ON CONFLICT DO NOTHING
   `);
 
+  // One-time backfill: utenti esistenti senza riga in credits → 100
+  await pool.query(`
+    INSERT INTO credits ("user", amount)
+      SELECT id, 100 FROM users
+      WHERE id NOT IN (SELECT "user" FROM credits)
+    ON CONFLICT ("user") DO NOTHING
+  `);
+
   console.log('DB schema ready');
 })().catch(err => {
   console.error('DB init failed:', err);

@@ -65,7 +65,7 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
       <div style={{display:"flex",alignItems:"center",gap:8}}>
         {[{k:user,p:profiles[user],c:meC,w:myWon.length},...(other?[{k:other,p:profiles[other],c:otC,w:thWon.length}]:[])].map((s,i)=>(
           <div key={s.k} style={{flex:1,textAlign:"center"}}>
-            <div style={{width:44,height:44,borderRadius:"50%",background:`${s.c}33`,border:`2px solid ${s.c}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto"}}>{s.p?.avatar ?? '⏳'}</div>
+            <div style={{width:44,height:44,borderRadius:"50%",background:`${s.c}33`,border:`2px solid ${s.c}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto"}}>{s.p?.avatar ?? ''}</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:700,marginTop:6}}>{s.p?.name}</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:i===0?"var(--gold)":s.c,lineHeight:1.1}}>{s.w}</div>
             <div style={{fontSize:10,color:"var(--dim)"}}>{t('dashboard.wins')}</div>

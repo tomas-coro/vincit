@@ -398,16 +398,18 @@ export default function App() {
       {/* Sidebar: desktop only */}
       {isDesktop && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: 240, height: '100vh', background: 'var(--surf)', borderRight: '1px solid var(--brd)', display: 'flex', flexDirection: 'column', zIndex: 50, padding: '24px 0' }}>
-          <div style={{ padding: '0 20px 12px', borderBottom: '1px solid var(--brd)', marginBottom: 12 }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, letterSpacing:-0.5 }}>
+          <div style={{ padding: '0 20px 16px', borderBottom: '1px solid var(--brd)', marginBottom: 8 }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:900, letterSpacing:-0.5, marginBottom:14 }}>
               <span className="shim">BetCouple</span>
             </div>
-          </div>
-          <div style={{ padding: '0 20px 16px', borderBottom: '1px solid var(--brd)', marginBottom: 8 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `2px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 10 }}>{myProfile.avatar}</div>
-            <div style={{ fontSize: 10, color: 'var(--dim)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('app.welcome_back')}</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 700, marginBottom: 2 }}>{myProfile.name}</div>
-            <div style={{ fontSize: 10, color: 'var(--dim)' }}>{t('app.credits')}</div>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `2px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink:0 }}>{myProfile.avatar}</div>
+              <div style={{ minWidth:0 }}>
+                <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('app.welcome_back')}</div>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 14, fontWeight: 700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{myProfile.name}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('app.credits')}</div>
             <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--gold)' }}>{Math.round(credits[user] ?? 0)} ₡</div>
           </div>
           {groups.length > 0 && (
