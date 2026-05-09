@@ -59,7 +59,11 @@ app.get('/api/state/stream', authMiddlewareSSE, async (req, res) => {
   if (!clients.has(groupId)) clients.set(groupId, new Set());
   clients.get(groupId).add(res);
   const ping = setInterval(() => res.write(': ping\n\n'), 25000);
-  req.on('close', () => { clearInterval(ping); clients.get(groupId)?.delete(res); });
+  req.on('close', () => {
+    clearInterval(ping);
+    const set = clients.get(groupId);
+    if (set) { set.delete(res); if (set.size === 0) clients.delete(groupId); }
+  });
 });
 
 // Public routes (no auth)

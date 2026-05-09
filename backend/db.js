@@ -137,6 +137,15 @@ const pool = new Pool({
   `);
 
   await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_bets_room_id     ON bets(room_id);
+    CREATE INDEX IF NOT EXISTS idx_bets_creator     ON bets(creator);
+    CREATE INDEX IF NOT EXISTS idx_bets_status      ON bets(status) WHERE status IN ('active','pending');
+    CREATE INDEX IF NOT EXISTS idx_ug_user_id       ON user_groups(user_id);
+    CREATE INDEX IF NOT EXISTS idx_counter_bet_id   ON counter_bets(bet_id);
+    CREATE INDEX IF NOT EXISTS idx_reactions_bet_id ON reactions(bet_id);
+  `);
+
+  await pool.query(`
     INSERT INTO profiles ("user", name, avatar, color_key)
       VALUES ('tomas',  'Tomas',  '🃏', 'blue'),
              ('giulia', 'Giulia', '♥️', 'purple')

@@ -25,10 +25,30 @@ export function useSync(setState, groupId, token) {
       return;
     }
     const url = `/api/state/stream?token=${encodeURIComponent(token)}&groupId=${encodeURIComponent(groupId)}`;
-    const es = new EventSource(url);
-    es.onmessage = () => refresh();
-    es.onerror   = () => { es.close(); };
-    return () => es.close();
+    let es = null;
+    let retryCount = 0;
+    let timer = null;
+    let destroyed = false;
+
+    function connect() {
+      if (destroyed) return;
+      es = new EventSource(url);
+      es.onmessage = () => { retryCount = 0; refresh(); };
+      es.onerror = () => {
+        es.close();
+        if (destroyed) return;
+        const delay = Math.min(1000 * 2 ** retryCount + Math.random() * 500, 30000);
+        retryCount++;
+        timer = setTimeout(connect, delay);
+      };
+    }
+
+    connect();
+    return () => {
+      destroyed = true;
+      clearTimeout(timer);
+      es?.close();
+    };
   }, [ready, token, groupId, refresh]);
 
   return refresh;

@@ -73,7 +73,7 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
         ))}
       </div>
       <div style={{display:"flex",justifyContent:"center",gap:20,marginTop:12,paddingTop:12,borderTop:"1px solid var(--brd)"}}>
-        {[{l:t('dashboard.win_rate'),v:`${wr}%`,c:wr>=50?"var(--grn)":"var(--red)"},{l:t('dashboard.credits'),v:`${Math.round(credits[user])} ₡`,c:"var(--gold)"},{l:t('dashboard.total_bets'),v:myWon.length+myLost.length+myAct.length+mySec.length,c:"var(--txt)"}].map(s=>(
+        {[{l:t('dashboard.win_rate'),v:`${wr}%`,c:wr>=50?"var(--grn)":"var(--red)"},{l:t('dashboard.credits'),v:`${Math.round(credits[user] ?? 0)} ₡`,c:"var(--gold)"},{l:t('dashboard.total_bets'),v:myWon.length+myLost.length+myAct.length+mySec.length,c:"var(--txt)"}].map(s=>(
           <div key={s.l} style={{textAlign:"center"}}>
             <div style={{fontSize:16,fontWeight:700,color:s.c}}>{s.v}</div>
             <div style={{fontSize:10,color:"var(--dim)"}}>{s.l}</div>

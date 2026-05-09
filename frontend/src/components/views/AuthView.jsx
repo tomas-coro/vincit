@@ -54,7 +54,7 @@ export default function AuthView({ onAuth }) {
           <div style={{ fontFamily:"'Playfair Display',serif", fontSize:34, fontWeight:900, marginBottom:6 }}>
             <span className="shim">BetCouple</span>
           </div>
-          <div style={{ fontSize:12, color:'var(--dim)' }}>Il vostro gioco privato di scommesse</div>
+          <div style={{ fontSize:12, color:'var(--dim)' }}>{t('welcome.subtitle')}</div>
         </div>
 
         {/* Tabs */}
