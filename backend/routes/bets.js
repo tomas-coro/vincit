@@ -1,4 +1,5 @@
 'use strict';
+const crypto  = require('crypto');
 const express = require('express');
 const db = require('../db.js');
 const { sendPushToUser } = require('./push.js');
@@ -11,8 +12,19 @@ module.exports = function(broadcastUpdate) {
     try {
       const creator = req.userId;
       const roomId  = req.roomId;
-      const { id, title, quota, stake, potentialWin,
-              category, isSecret, isCounterable, pegno, expiresAt, createdAt, opponent } = req.body;
+      const { title, quota: quotaRaw, stake: stakeRaw,
+              category, isSecret, isCounterable, pegno, expiresAt, opponent } = req.body;
+
+      const quota = parseFloat(quotaRaw);
+      const stake = parseInt(stakeRaw, 10);
+      if (!Number.isFinite(quota) || quota < 1.01 || quota > 100)
+        return res.status(400).json({ error: 'quota must be 1.01–100' });
+      if (!Number.isInteger(stake) || stake < 1)
+        return res.status(400).json({ error: 'stake must be a positive integer' });
+
+      const id           = `b_${crypto.randomUUID()}`;
+      const createdAt    = Date.now();
+      const potentialWin = Math.round(stake * quota);
 
       const { rows: roomRows } = await db.query(
         'SELECT acceptance_threshold FROM rooms WHERE id=$1', [roomId]
@@ -58,16 +70,24 @@ module.exports = function(broadcastUpdate) {
   router.patch('/:id/resolve', async (req, res) => {
     try {
       const { outcome } = req.body;
-      const { rows } = await db.query('SELECT * FROM bets WHERE id = $1', [req.params.id]);
-      const bet = rows[0];
-      if (!bet) return res.status(404).json({ error: 'Bet not found' });
-      if (bet.room_id !== req.roomId) return res.status(403).json({ error: 'Forbidden' });
-
-      const { rows: counters } = await db.query(
-        'SELECT * FROM counter_bets WHERE bet_id = $1', [bet.id]
-      );
+      if (!['won', 'lost'].includes(outcome))
+        return res.status(400).json({ error: 'outcome must be won or lost' });
 
       await db.transaction(async (client) => {
+        const { rows } = await client.query(
+          'SELECT * FROM bets WHERE id = $1 FOR UPDATE', [req.params.id]
+        );
+        const bet = rows[0];
+        if (!bet) { res.status(404).json({ error: 'Bet not found' }); return; }
+        if (bet.room_id !== req.roomId) { res.status(403).json({ error: 'Forbidden' }); return; }
+        if (bet.status !== 'active') { res.status(400).json({ error: 'Bet not active' }); return; }
+        if (bet.creator !== req.userId && bet.opponent !== req.userId)
+          { res.status(403).json({ error: 'Forbidden' }); return; }
+
+        const { rows: counters } = await client.query(
+          'SELECT * FROM counter_bets WHERE bet_id = $1', [bet.id]
+        );
+
         await client.query('UPDATE bets SET status = $1 WHERE id = $2', [outcome, bet.id]);
 
         if (outcome === 'won') {
@@ -93,8 +113,10 @@ module.exports = function(broadcastUpdate) {
         }
       });
 
-      broadcastUpdate(req.roomId);
-      res.json({ ok: true });
+      if (!res.headersSent) {
+        broadcastUpdate(req.roomId);
+        res.json({ ok: true });
+      }
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });
@@ -104,12 +126,25 @@ module.exports = function(broadcastUpdate) {
   router.post('/:id/counter', async (req, res) => {
     try {
       const bettor = req.userId;
-      const { id, side, quotaUsed, stake, potentialWin } = req.body;
+      const { side, stake: stakeRaw } = req.body;
+
+      if (!['yes', 'no'].includes(side))
+        return res.status(400).json({ error: 'side must be yes or no' });
+      const stake = parseInt(stakeRaw, 10);
+      if (!Number.isInteger(stake) || stake < 1)
+        return res.status(400).json({ error: 'stake must be a positive integer' });
 
       const { rows } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
       const bet = rows[0];
       if (!bet) return res.status(404).json({ error: 'Bet not found' });
       if (bet.room_id !== req.roomId) return res.status(403).json({ error: 'Forbidden' });
+      if (bet.status !== 'active') return res.status(400).json({ error: 'Bet not active' });
+      if (!bet.is_counterable) return res.status(400).json({ error: 'Bet not counterable' });
+      if (bet.is_secret) return res.status(400).json({ error: 'Cannot counter secret bet' });
+
+      const quotaUsed  = side === 'yes' ? parseFloat(bet.quota) : parseFloat((parseFloat(bet.quota) / (parseFloat(bet.quota) - 1)).toFixed(2));
+      const potentialWin = Math.round(stake * quotaUsed);
+      const id         = `cb_${crypto.randomUUID()}`;
 
       await db.transaction(async (client) => {
         await client.query(
@@ -154,6 +189,9 @@ module.exports = function(broadcastUpdate) {
       const creator = req.userId;
       const { title, quota, category, pegno, expiresAt } = req.body;
       if (!title?.trim()) return res.status(400).json({ error: 'Invalid' });
+      const parsedQuota = parseFloat(quota);
+      if (!Number.isFinite(parsedQuota) || parsedQuota < 1.01 || parsedQuota > 100)
+        return res.status(400).json({ error: 'quota must be 1.01–100' });
       const { rows } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
       const bet = rows[0];
       if (!bet)                                    return res.status(404).json({ error: 'Not found' });
@@ -161,10 +199,10 @@ module.exports = function(broadcastUpdate) {
       if (bet.creator !== creator)                 return res.status(403).json({ error: 'Forbidden' });
       if (bet.status !== 'active')                 return res.status(403).json({ error: 'Already resolved' });
       if (Date.now() - bet.created_at > 60000)     return res.status(403).json({ error: 'Window expired' });
-      const potentialWin = Math.round(bet.stake * parseFloat(quota));
+      const potentialWin = Math.round(bet.stake * parsedQuota);
       await db.query(
         `UPDATE bets SET title=$1, quota=$2, potential_win=$3, category=$4, pegno=$5, expires_at=$6 WHERE id=$7`,
-        [title.trim(), parseFloat(quota), potentialWin, category, pegno||null, expiresAt||null, bet.id]
+        [title.trim(), parsedQuota, potentialWin, category, pegno||null, expiresAt||null, bet.id]
       );
       broadcastUpdate(req.roomId);
       res.json({ ok: true });
@@ -285,6 +323,7 @@ module.exports = function(broadcastUpdate) {
 
   router.get('/export/:user', async (req, res) => {
     try {
+      if (req.params.user !== req.userId) return res.status(403).json({ error: 'Forbidden' });
       const u = req.params.user;
       const [betsRes, creditsRes, profileRes] = await Promise.all([
         db.query('SELECT * FROM bets WHERE creator=$1 AND room_id=$2 ORDER BY created_at DESC', [u, req.roomId]),

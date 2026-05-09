@@ -1,6 +1,7 @@
 'use strict';
 const jwt    = require('jsonwebtoken');
-const SECRET = process.env.JWT_SECRET || 'dev-secret';
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var is required');
+const SECRET = process.env.JWT_SECRET;
 const db     = require('../db.js');
 
 function verify(token) {

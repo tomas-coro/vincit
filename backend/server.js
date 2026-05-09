@@ -69,7 +69,7 @@ app.use('/api/auth', authRouter);
 const stateRouter    = require('./routes/state.js');
 const groupsRouter   = require('./routes/groups.js');
 const betsRouter     = require('./routes/bets.js')(broadcastUpdate);
-const profilesRouter = require('./routes/profiles.js')(broadcastUpdate);
+// profilesRouter removed — profile updates handled via /api/state
 const creditsRouter  = require('./routes/credits.js')(broadcastUpdate);
 const catsRouter     = require('./routes/categories.js')(broadcastUpdate);
 const reactionsRouter = require('./routes/reactions.js')(broadcastUpdate);
@@ -78,7 +78,7 @@ const { router: pushRouter } = require('./routes/push.js');
 app.use('/api/state',      authMiddleware, stateRouter);
 app.use('/api/groups',     authMiddleware, groupsRouter);
 app.use('/api/bets',       authMiddleware, betsRouter);
-app.use('/api/profiles',   authMiddleware, profilesRouter);
+// app.use('/api/profiles', authMiddleware, profilesRouter); // removed
 app.use('/api/credits',    authMiddleware, creditsRouter);
 app.use('/api/categories', authMiddleware, catsRouter);
 app.use('/api/bets',       authMiddleware, reactionsRouter);

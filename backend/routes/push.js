@@ -15,8 +15,9 @@ if (process.env.VAPID_PUBLIC_KEY) {
 router.get('/vapid-key', (_, res) => res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || null }));
 
 router.post('/subscribe', async (req, res) => {
-  const { user, subscription } = req.body;
-  if (!user || !subscription?.endpoint) return res.status(400).json({ error: 'Invalid' });
+  const user = req.userId;
+  const { subscription } = req.body;
+  if (!subscription?.endpoint) return res.status(400).json({ error: 'Invalid' });
   await db.query(
     `INSERT INTO push_subscriptions("user",endpoint,subscription) VALUES($1,$2,$3)
      ON CONFLICT(endpoint) DO UPDATE SET "user"=$1, subscription=$3`,
@@ -32,8 +33,8 @@ router.delete('/subscribe', async (req, res) => {
 
 router.post('/prefs', async (req, res) => {
   try {
-    const { user, on_new_bet, on_resolved, on_expiry } = req.body;
-    if (!user) return res.status(400).json({ error: 'user required' });
+    const user = req.userId;
+    const { on_new_bet, on_resolved, on_expiry } = req.body;
     await db.query(`
       INSERT INTO notification_prefs("user", on_new_bet, on_resolved, on_expiry)
       VALUES($1,$2,$3,$4)
@@ -45,6 +46,7 @@ router.post('/prefs', async (req, res) => {
 
 router.get('/prefs/:user', async (req, res) => {
   try {
+    if (req.params.user !== req.userId) return res.status(403).json({ error: 'Forbidden' });
     const { rows } = await db.query('SELECT * FROM notification_prefs WHERE "user"=$1', [req.params.user]);
     res.json(rows[0] ?? { on_new_bet: true, on_resolved: true, on_expiry: true });
   } catch(e) { res.status(500).json({ error: 'Server error' }); }
