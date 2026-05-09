@@ -22,16 +22,46 @@ async function uniqueCode() {
 // GET /api/groups — list groups the user belongs to
 router.get('/', async (req, res) => {
   try {
-    const { rows } = await db.query(
+    const fetchGroups = () => db.query(
       `SELECT r.id, r.name, r.emoji, r.invite_code, r.max_size,
               r.acceptance_threshold, r.max_stake, ug.role,
               (SELECT COUNT(*) FROM user_groups WHERE group_id = r.id) AS member_count
        FROM rooms r
-       JOIN user_groups ug ON ug.group_id = r.id
-       WHERE ug.user_id = $1
+       JOIN user_groups ug ON ug.group_id = r.id AND ug.user_id = $1
        ORDER BY ug.joined_at`,
       [req.userId]
     );
+
+    let { rows } = await fetchGroups();
+
+    // Self-healing: user has room_id in users table but no user_groups entry
+    // (registered before user_groups migration). Auto-insert now.
+    if (rows.length === 0) {
+      const { rows: userRows } = await db.query(
+        'SELECT room_id FROM users WHERE id=$1 AND room_id IS NOT NULL',
+        [req.userId]
+      );
+      const roomId = userRows[0]?.room_id;
+      if (roomId) {
+        const { rows: roomCreator } = await db.query(
+          'SELECT id FROM users WHERE room_id=$1 ORDER BY created_at ASC LIMIT 1',
+          [roomId]
+        );
+        const role = roomCreator[0]?.id === req.userId ? 'owner' : 'member';
+
+        try {
+          await db.query(
+            'INSERT INTO user_groups(group_id,user_id,role,joined_at) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING',
+            [roomId, req.userId, role, Date.now()]
+          );
+          const retried = await fetchGroups();
+          rows = retried.rows;
+        } catch (migErr) {
+          console.warn('[groups] Auto-migration failed for user', req.userId, migErr.message);
+        }
+      }
+    }
+
     res.json(rows);
   } catch (e) { console.error(e); res.status(500).json({ error: 'server_error' }); }
 });
