@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Btn, Bdg, Avatar, fmtQ, fmtD, tLeft, isSoon, qNo, COLORS } from './Atoms.jsx';
 import { useLang } from '../i18n.js';
+import { fileToSquareDataUrl } from '../imageUtils.js';
 
 const S = {
   card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
@@ -16,8 +17,23 @@ const DEF_IDS=['intimo','serata','casa','cibo','gaming','altro'];
 const SWIPE_THRESHOLD = 80;
 const VERT_ABORT      = 40;
 
-export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,reactions,onDelete,onEdit,isDesktop,onAccept,onReject}){
+export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,onReactionPhoto,reactions,onDelete,onEdit,isDesktop,onAccept,onReject}){
   const { t, lang } = useLang();
+  const photoInputRef = useRef(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
+
+  const handlePhotoFile = async e => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || !onReactionPhoto) return;
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await fileToSquareDataUrl(f, 1080, 0.85);
+      await onReactionPhoto(bet.id, dataUrl);
+    } catch (err) { console.error(err); }
+    finally { setPhotoBusy(false); }
+  };
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const isOwner=bet.creator===user;
   const isPending=bet.status==='pending';
@@ -32,6 +48,8 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const theirCounter=(bet.counterBets||[]).find(cb=>cb.bettor!==user);
   const sideColor=done?(bet.status==="won"?"var(--grn)":"var(--red)"):(bet.isSecret?"var(--gold)":cat.color);
   const betReactions=(reactions||[]).filter(r=>r.bet_id===bet.id);
+  const emojiReactions=betReactions.filter(r=>r.emoji && !r.image_url);
+  const photoReactions=betReactions.filter(r=>r.image_url);
   const myReaction=betReactions.find(r=>r.bettor===user);
   const EMOJIS=['🔥','😂','👀','💀','⚡'];
 
@@ -153,16 +171,56 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
 
           {/* Reactions */}
           {!bet.isSecret&&onReaction&&(
-            <div style={{display:"flex",gap:5,marginTop:8,flexWrap:"wrap"}}>
-              {EMOJIS.map(e=>{
-                const count=betReactions.filter(r=>r.emoji===e).length;
-                const isMe=myReaction?.emoji===e;
-                return(
-                  <button key={e} onClick={()=>onReaction(bet.id,e)} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:20,border:`1px solid ${isMe?"var(--gold)":"var(--brd)"}`,background:isMe?"var(--gold)22":"transparent",cursor:"pointer",fontSize:13,color:isMe?"var(--gold)":"var(--dim)",fontFamily:"'Syne',sans-serif",fontWeight:600,transition:"all .15s"}}>
-                    {e}{count>0&&<span style={{fontSize:11}}>{count}</span>}
-                  </button>
-                );
-              })}
+            <div style={{marginTop:8}}>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
+                {EMOJIS.map(e=>{
+                  const count=emojiReactions.filter(r=>r.emoji===e).length;
+                  const isMe=myReaction?.emoji===e;
+                  return(
+                    <button key={e} onClick={()=>onReaction(bet.id,e)} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:20,border:`1px solid ${isMe?"var(--gold)":"var(--brd)"}`,background:isMe?"var(--gold)22":"transparent",cursor:"pointer",fontSize:13,color:isMe?"var(--gold)":"var(--dim)",fontFamily:"'Syne',sans-serif",fontWeight:600,transition:"all .15s"}}>
+                      {e}{count>0&&<span style={{fontSize:11}}>{count}</span>}
+                    </button>
+                  );
+                })}
+                {onReactionPhoto && (
+                  <>
+                    <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{display:"none"}}/>
+                    <button onClick={()=>photoInputRef.current?.click()} disabled={photoBusy}
+                      title="Reagisci con una foto"
+                      style={{display:"inline-flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:20,
+                        border:`1px solid ${myReaction?.image_url?"var(--gold)":"var(--brd)"}`,
+                        background:myReaction?.image_url?"var(--gold)22":"transparent",
+                        cursor:"pointer",fontSize:13,color:myReaction?.image_url?"var(--gold)":"var(--dim)",
+                        fontFamily:"'Syne',sans-serif",fontWeight:600,transition:"all .15s",
+                        opacity:photoBusy?.5:1}}>
+                      📷
+                    </button>
+                  </>
+                )}
+              </div>
+              {photoReactions.length>0 && (
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8}}>
+                  {photoReactions.map(r=>{
+                    const author = profiles[r.bettor];
+                    const c = COLORS[author?.colorKey] || "#5b8af0";
+                    return (
+                      <div key={r.bettor} onClick={()=>setLightbox(r)}
+                        style={{position:"relative",cursor:"pointer",borderRadius:10,overflow:"hidden",
+                          border:`2px solid ${c}66`,width:56,height:56,flexShrink:0,
+                          boxShadow:`0 0 8px ${c}33`,transition:"transform .15s"}}
+                        onMouseEnter={e=>e.currentTarget.style.transform='scale(1.08)'}
+                        onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
+                        <img src={r.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+                        <div style={{position:"absolute",bottom:-1,left:-1,right:-1,padding:"1px 4px",
+                          background:"linear-gradient(180deg, transparent, rgba(0,0,0,.85))",
+                          fontSize:9,color:"#fff",fontWeight:600,textAlign:"center"}}>
+                          {author?.avatar || ''} {author?.name?.slice(0,8) || ''}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -199,6 +257,21 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
         {/* Actions column: desktop right side */}
         {isDesktop&&actions}
       </div>
+
+      {lightbox && (
+        <div onClick={()=>setLightbox(null)} style={{
+          position:"fixed",inset:0,background:"rgba(0,0,0,.92)",zIndex:300,
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+          padding:20,cursor:"pointer",
+        }}>
+          <img src={lightbox.image_url} alt="" style={{maxWidth:"90vw",maxHeight:"80vh",borderRadius:14,boxShadow:"0 20px 60px rgba(0,0,0,.7)"}}/>
+          <div style={{marginTop:14,color:"#ede8fd",fontFamily:"'Syne',sans-serif",fontSize:14,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:22}}>{profiles[lightbox.bettor]?.avatar}</span>
+            <span style={{fontWeight:600}}>{profiles[lightbox.bettor]?.name}</span>
+          </div>
+          <div style={{position:"absolute",top:20,right:24,color:"#8480a0",fontSize:11,letterSpacing:2,fontFamily:"'Syne',sans-serif"}}>TAP TO CLOSE</div>
+        </div>
+      )}
     </div>
   );
 }

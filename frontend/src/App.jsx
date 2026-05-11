@@ -5,6 +5,7 @@ import * as api from './api.js';
 import { DARK, LIGHT, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx';
 import { useLang } from './i18n.js';
 import WinOverlay from './components/WinOverlay.jsx';
+import SplashScreen from './components/SplashScreen.jsx';
 import AuthView from './components/views/AuthView.jsx';
 import PairingView from './components/views/PairingView.jsx';
 import DashboardView from './components/views/DashboardView.jsx';
@@ -99,6 +100,7 @@ export default function App() {
   const C = isDark ? DARK : LIGHT;
   const isDesktop = useBreakpoint(768);
   const { t } = useLang();
+  const [splashDone, setSplashDone] = useState(false);
 
   // Auth state
   const [token,       setToken]       = useState(() => localStorage.getItem('bc_token'));
@@ -284,6 +286,11 @@ export default function App() {
     } catch (e) { console.error(e); }
   };
 
+  const handleReactionPhoto = async (betId, dataUrl) => {
+    try { await api.addReactionPhoto(betId, dataUrl); }
+    catch (e) { console.error(e); }
+  };
+
   const handleUpdateProfile = async (userId, data) => {
     try { await api.updateProfile(data); } catch (e) { console.error(e); }
   };
@@ -306,7 +313,10 @@ export default function App() {
     setPinVersion(v => v + 1);
   };
 
-  // Loading screen
+  // Splash screen (runs in parallel with auth check; stays until both done)
+  if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
+
+  // Loading screen — auth still resolving after splash
   if (authLoading) return (
     <div style={{position:'fixed',inset:0,display:'flex',alignItems:'center',
       justifyContent:'center',background:'var(--bg)'}}>
@@ -343,7 +353,7 @@ export default function App() {
     { id: 'settings', e: '⚙️', l: t('nav.settings') },
   ];
 
-  const myProfile = profiles[user] ?? { name: authUser.name, avatar: authUser.avatar, colorKey: authUser.color_key };
+  const myProfile = profiles[user] ?? { name: authUser.name, avatar: authUser.avatar, avatarUrl: authUser.avatar_url, colorKey: authUser.color_key };
   const activeGroup = groups.find(g => g.id === activeGroupId);
   const myRole  = activeGroup?.role ?? 'member';
   const isAdmin = myRole === 'owner';
@@ -403,7 +413,11 @@ export default function App() {
               <span className="shim">BetCouple</span>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `2px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink:0 }}>{myProfile.avatar}</div>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `2px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink:0, overflow:'hidden' }}>
+                {myProfile.avatarUrl
+                  ? <img src={myProfile.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  : myProfile.avatar}
+              </div>
               <div style={{ minWidth:0 }}>
                 <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('app.welcome_back')}</div>
                 <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 14, fontWeight: 700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{myProfile.name}</div>
@@ -439,7 +453,11 @@ export default function App() {
         <div style={{ position: 'sticky', top: 0, background: C.bg, zIndex: 10, borderBottom: `1px solid ${C.brd}22` }}>
           <div style={{ padding: '18px 20px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `2px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38 * 0.42, flexShrink: 0 }}>{myProfile.avatar}</div>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `2px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38 * 0.42, flexShrink: 0, overflow:'hidden' }}>
+                {myProfile.avatarUrl
+                  ? <img src={myProfile.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  : myProfile.avatar}
+              </div>
               <div>
                 <div style={{ fontSize: 10, color: 'var(--dim)', letterSpacing: 2, textTransform: 'uppercase' }}>{t('app.welcome_back')}</div>
                 <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700 }}>{myProfile.name}</div>
@@ -460,8 +478,8 @@ export default function App() {
 
       {/* Content */}
       <div style={isDesktop ? { marginLeft: 240, maxWidth: 1080, padding: '40px 56px' } : { padding: '14px 20px' }}>
-        {view === 'dashboard' && <DashboardView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} />}
-        {view === 'bets'      && <BetsView user={user} profiles={profiles} bets={bets} cats={cats} onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} />}
+        {view === 'dashboard' && <DashboardView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} />}
+        {view === 'bets'      && <BetsView user={user} profiles={profiles} bets={bets} cats={cats} onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} />}
         {view === 'vault'     && <VaultView user={user} profiles={profiles} bets={bets} cats={cats} onReveal={b => setRevealBet(b)} onFlame={handleFlame} unlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin} isDesktop={isDesktop} onDelete={handleDelete} onEdit={b => setEditingBet(b)} />}
         {view === 'stats'     && <StatsView user={user} profiles={profiles} credits={credits} bets={bets} cats={cats} isDesktop={isDesktop} />}
         {view === 'settings'  && <SettingsView user={user} profiles={profiles} isDark={isDark} setIsDark={setIsDark} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onLogout={handleLogout} onProfileUpdate={u => setAuthUser(prev => ({...prev,...u}))} isAdmin={isAdmin} />}

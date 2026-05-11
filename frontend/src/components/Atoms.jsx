@@ -77,6 +77,12 @@ export const Toggle=({on,onToggle,color="var(--gold)"})=>(
 export const SecLabel=({children,mt=0})=><div style={{fontSize:10,color:"var(--dim)",letterSpacing:2,textTransform:"uppercase",marginBottom:8,marginTop:mt}}>{children}</div>;
 
 export function Avatar({profile,size=36}){
-  const c=COLORS[profile.colorKey]||"#5b8af0";
-  return <div style={{width:size,height:size,borderRadius:"50%",background:`${c}33`,border:`2px solid ${c}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*.42,flexShrink:0,boxShadow:`0 0 10px ${c}44`}}>{profile.avatar}</div>;
+  const c=COLORS[profile?.colorKey]||"#5b8af0";
+  const ringStyle={width:size,height:size,borderRadius:"50%",border:`2px solid ${c}66`,boxShadow:`0 0 10px ${c}44`,flexShrink:0,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"};
+  if (profile?.avatarUrl) {
+    return <div style={{...ringStyle, background:`${c}11`}}>
+      <img src={profile.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+    </div>;
+  }
+  return <div style={{...ringStyle, background:`${c}33`, fontSize:size*.42}}>{profile?.avatar ?? "🃏"}</div>;
 }

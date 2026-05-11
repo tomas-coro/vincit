@@ -28,7 +28,7 @@ const S = {
   row: {display:"flex",alignItems:"center",gap:10},
 };
 
-export default function DashboardView({user,profiles,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onDelete,onEdit,onAccept,onReject}){
+export default function DashboardView({user,profiles,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject}){
   const { t, lang } = useLang();
   const other=Object.keys(profiles).find(k=>k!==user)??null;
   const myWon=bets.filter(b=>b.creator===user&&b.status==="won");
@@ -65,7 +65,11 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
       <div style={{display:"flex",alignItems:"center",gap:8}}>
         {[{k:user,p:profiles[user],c:meC,w:myWon.length},...(other?[{k:other,p:profiles[other],c:otC,w:thWon.length}]:[])].map((s,i)=>(
           <div key={s.k} style={{flex:1,textAlign:"center"}}>
-            <div style={{width:44,height:44,borderRadius:"50%",background:`${s.c}33`,border:`2px solid ${s.c}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto"}}>{s.p?.avatar ?? ''}</div>
+            <div style={{width:44,height:44,borderRadius:"50%",background:`${s.c}33`,border:`2px solid ${s.c}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto",overflow:"hidden"}}>
+              {s.p?.avatarUrl
+                ? <img src={s.p.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                : (s.p?.avatar ?? '')}
+            </div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:700,marginTop:6}}>{s.p?.name}</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,color:i===0?"var(--gold)":s.c,lineHeight:1.1}}>{s.w}</div>
             <div style={{fontSize:10,color:"var(--dim)"}}>{t('dashboard.wins')}</div>
@@ -130,15 +134,15 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
   const pendingSection=pendingBets.length>0&&(
     <>
       <SecLabel>{t('dashboard.pending')}</SecLabel>
-      {pendingBets.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete} onAccept={onAccept} onReject={onReject}/>)}
+      {pendingBets.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} onDelete={onDelete} onAccept={onAccept} onReject={onReject}/>)}
     </>
   );
 
   const activeBets=(myAct.length+thAct.length)>0&&(
     <>
       <SecLabel>{t('dashboard.active')}</SecLabel>
-      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete} onEdit={onEdit}/>)}
-      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete} onEdit={onEdit}/>)}
+      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} onDelete={onDelete} onEdit={onEdit}/>)}
+      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} onDelete={onDelete} onEdit={onEdit}/>)}
     </>
   );
 
@@ -155,7 +159,7 @@ export default function DashboardView({user,profiles,credits,bets,cats,onCreate,
     <>
       <SecLabel mt={16}>{t('dashboard.recent')}</SecLabel>
       {bets.filter(b=>b.creator===user&&["won","lost"].includes(b.status)).slice(-3).reverse().map(b=>(
-        <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onDelete={onDelete} onEdit={onEdit}/>
+        <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} onDelete={onDelete} onEdit={onEdit}/>
       ))}
     </>
   );

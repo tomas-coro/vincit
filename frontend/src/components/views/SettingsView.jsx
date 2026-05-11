@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Btn, Inp, Toggle, SecLabel, AVATARS, COLORS, CAT_COLS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
+import { fileToSquareDataUrl } from '../../imageUtils.js';
 
 const S = {
   card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
@@ -26,6 +27,9 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
   const [profileName, setProfileName] = useState('');
   const [profileAvatar, setProfileAvatar] = useState('');
   const [profileColor, setProfileColor] = useState('');
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const fileInputRef = useRef(null);
 
   const myProfile = profiles[user];
 
@@ -34,8 +38,33 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
       setProfileName(myProfile.name || '');
       setProfileAvatar(myProfile.avatar || '😊');
       setProfileColor(myProfile.colorKey || 'blue');
+      setProfileAvatarUrl(myProfile.avatarUrl || null);
     }
-  },[user]);
+  },[user, myProfile?.avatarUrl]);
+
+  const handleAvatarFile = async e => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setAvatarBusy(true);
+    try {
+      const dataUrl = await fileToSquareDataUrl(f, 512, 0.85);
+      const { avatar_url } = await api.uploadAvatar(dataUrl);
+      setProfileAvatarUrl(avatar_url);
+      onProfileUpdate?.({ avatarUrl: avatar_url });
+    } catch (err) { console.error(err); }
+    finally { setAvatarBusy(false); }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarBusy(true);
+    try {
+      await api.deleteAvatar();
+      setProfileAvatarUrl(null);
+      onProfileUpdate?.({ avatarUrl: null });
+    } catch (err) { console.error(err); }
+    finally { setAvatarBusy(false); }
+  };
 
   useEffect(()=>{
     api.getNotifPrefs(user).then(setNotifPrefs).catch(console.error);
@@ -102,13 +131,31 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
       {myProfile && (
         <div style={{...S.card,marginBottom:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-            <div style={{fontSize:32}}>{profileAvatar}</div>
+            {profileAvatarUrl
+              ? <img src={profileAvatarUrl} alt="" style={{width:48,height:48,borderRadius:"50%",objectFit:"cover",border:"2px solid var(--gold)44"}}/>
+              : <div style={{fontSize:32}}>{profileAvatar}</div>}
             <div style={{flex:1}}>
               <Inp value={profileName} onChange={e=>setProfileName(e.target.value.slice(0,16))} style={{fontWeight:600}}/>
             </div>
           </div>
-          <div style={{fontSize:11,color:"var(--dim)",marginBottom:8}}>{t('settings.avatar_label')}</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
+
+          {/* Upload row */}
+          <div style={{fontSize:11,color:"var(--dim)",marginBottom:8}}>Foto personalizzata</div>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarFile} style={{display:"none"}} />
+          <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+            <button onClick={()=>fileInputRef.current?.click()} disabled={avatarBusy} style={{...S.btn,padding:"8px 14px",fontSize:12,background:"var(--gold)22",border:"1px solid var(--gold)44",color:"var(--gold)",opacity:avatarBusy?.6:1}}>
+              📷 {profileAvatarUrl ? "Cambia foto" : "Carica foto"}
+            </button>
+            {profileAvatarUrl && (
+              <button onClick={handleRemoveAvatar} disabled={avatarBusy} style={{...S.btn,padding:"8px 14px",fontSize:12,background:"transparent",border:"1px solid var(--red)44",color:"var(--red)",opacity:avatarBusy?.6:1}}>
+                ✕ Rimuovi foto
+              </button>
+            )}
+            {avatarBusy && <span style={{fontSize:12,color:"var(--dim)",alignSelf:"center"}}>caricamento…</span>}
+          </div>
+
+          <div style={{fontSize:11,color:"var(--dim)",marginBottom:8}}>{t('settings.avatar_label')}{profileAvatarUrl ? " (fallback)" : ""}</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12, opacity: profileAvatarUrl ? .5 : 1}}>
             {AVATARS.map(a=>(
               <div key={a} onClick={()=>setProfileAvatar(a)} style={{width:36,height:36,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,cursor:"pointer",background:profileAvatar===a?"var(--gold)22":"var(--surf)",border:`1px solid ${profileAvatar===a?"var(--gold)":"var(--brd)"}`}}>{a}</div>
             ))}

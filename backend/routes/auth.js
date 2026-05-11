@@ -4,10 +4,12 @@ const bcrypt  = require('bcrypt');
 const jwt     = require('jsonwebtoken');
 const crypto  = require('crypto');
 const db      = require('../db.js');
+const { uploadDataUrl, destroyByPublicId, isConfigured: cldReady } = require('../cloudinary.js');
 
 const router  = express.Router();
 const SECRET  = process.env.JWT_SECRET || 'dev-secret';
 const ROUNDS  = 10;
+const AVATAR_FOLDER = 'betcouple/avatars';
 // 31^6 ≈ 887M combinations; no ambiguous chars (0,O,1,I,L)
 const CHARSET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -55,7 +57,7 @@ router.post('/register', async (req, res) => {
     });
 
     const token = makeToken(userId, name.trim(), roomId);
-    res.json({ token, user: { id:userId, name:name.trim(), avatar:avatar||'😊', color_key:color_key||'blue', room_id:roomId, invite_code:inviteCode, paired:false } });
+    res.json({ token, user: { id:userId, name:name.trim(), avatar:avatar||'😊', avatar_url:null, color_key:color_key||'blue', room_id:roomId, invite_code:inviteCode, paired:false } });
   } catch(e) {
     console.error(e);
     res.status(500).json({ error: 'Server error' });
@@ -84,7 +86,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = makeToken(u.id, u.name, u.room_id);
-    res.json({ token, user: { id:u.id, name:u.name, avatar:u.avatar, color_key:u.color_key, room_id:u.room_id, invite_code:inviteCode, paired } });
+    res.json({ token, user: { id:u.id, name:u.name, avatar:u.avatar, avatar_url:u.avatar_url, color_key:u.color_key, room_id:u.room_id, invite_code:inviteCode, paired } });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
@@ -142,7 +144,52 @@ router.get('/me', async (req, res) => {
       inviteCode = roomRes.rows[0]?.paired_at ? null : roomRes.rows[0]?.invite_code;
       paired     = partnerRes.rows.length > 0;
     }
-    res.json({ id:u.id, name:u.name, avatar:u.avatar, color_key:u.color_key, room_id:u.room_id, invite_code:inviteCode, paired });
+    res.json({ id:u.id, name:u.name, avatar:u.avatar, avatar_url:u.avatar_url, color_key:u.color_key, room_id:u.room_id, invite_code:inviteCode, paired });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// POST /api/auth/avatar — upload custom avatar image (base64 data URL)
+router.post('/avatar', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    const { userId } = jwt.verify(authHeader.slice(7), SECRET);
+    if (!cldReady()) return res.status(503).json({ error: 'image_upload_unavailable' });
+
+    const { dataUrl } = req.body;
+    if (typeof dataUrl !== 'string' || !/^data:image\/(jpeg|png|webp|jpg);base64,/i.test(dataUrl))
+      return res.status(400).json({ error: 'invalid_image' });
+
+    // base64 size cap (after stripping prefix): ~5MB
+    const approxBytes = Math.floor(dataUrl.length * 0.75);
+    if (approxBytes > 5 * 1024 * 1024) return res.status(413).json({ error: 'image_too_large' });
+
+    const result = await uploadDataUrl(dataUrl, {
+      folder:    AVATAR_FOLDER,
+      publicId:  userId,
+      transformation: [
+        { width: 512, height: 512, crop: 'fill', gravity: 'face' },
+        { quality: 'auto:good', fetch_format: 'auto' },
+      ],
+    });
+
+    await db.query('UPDATE users SET avatar_url=$1 WHERE id=$2', [result.secure_url, userId]);
+    res.json({ avatar_url: result.secure_url });
+  } catch(e) {
+    console.error('avatar upload failed', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/auth/avatar — remove custom avatar, fall back to emoji
+router.delete('/avatar', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    const { userId } = jwt.verify(authHeader.slice(7), SECRET);
+    await destroyByPublicId(AVATAR_FOLDER, userId);
+    await db.query('UPDATE users SET avatar_url=NULL WHERE id=$1', [userId]);
+    res.json({ ok: true });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 

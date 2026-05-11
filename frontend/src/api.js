@@ -1,8 +1,14 @@
 const BASE = '/api';
 
 const getToken = () => localStorage.getItem('bc_token');
-export const getActiveGroupId = () => localStorage.getItem('bc_active_group');
-export const setActiveGroupId = (id) => id ? localStorage.setItem('bc_active_group', id) : localStorage.removeItem('bc_active_group');
+export const getActiveGroupId = () => {
+  const raw = localStorage.getItem('bc_active_group');
+  if (raw == null) return null;
+  try { return JSON.parse(raw); } catch { return raw; }
+};
+export const setActiveGroupId = (id) => id
+  ? localStorage.setItem('bc_active_group', JSON.stringify(id))
+  : localStorage.removeItem('bc_active_group');
 
 function withGroupId(path) {
   const gid = getActiveGroupId();
@@ -11,8 +17,8 @@ function withGroupId(path) {
   return `${path}${sep}groupId=${encodeURIComponent(gid)}`;
 }
 
-async function req(method, path, body) {
-  const token = getToken();
+async function req(method, path, body, opts = {}) {
+  const token = opts.token ?? getToken();
   const r = await fetch(BASE + withGroupId(path), {
     method,
     headers: {
@@ -66,8 +72,14 @@ export const rejectBet      = (id)           => req('POST',   `/bets/${id}/rejec
 export const editBet        = (id, data)     => req('PATCH',  `/bets/${id}/edit`, data);
 export const resetAll       = ()             => req('POST',   '/bets/reset');
 export const commentBet     = (id, comment)  => req('PATCH',  `/bets/${id}/comment`, { comment });
-export const addReaction    = (id, emoji)    => req('POST',   `/bets/${id}/reaction`, { emoji });
-export const removeReaction = (id, bettor)   => req('DELETE', `/bets/${id}/reaction/${bettor}`);
+export const addReaction      = (id, emoji)   => req('POST',   `/bets/${id}/reaction`,       { emoji });
+export const addReactionPhoto = (id, dataUrl) => req('POST',   `/bets/${id}/reaction/photo`, { dataUrl });
+export const removeReaction   = (id, bettor)  => req('DELETE', `/bets/${id}/reaction/${bettor}`);
 
 export const getNotifPrefs  = (user)        => req('GET',  `/push/prefs/${user}`);
 export const saveNotifPrefs = (prefs)       => req('POST', '/push/prefs', prefs);
+
+// Avatar image upload (dataUrl = "data:image/jpeg;base64,..."). Optional token override
+// for the one-shot call right after register (token not yet in localStorage).
+export const uploadAvatar = (dataUrl, opts) => req('POST',   '/auth/avatar', { dataUrl }, opts);
+export const deleteAvatar = ()              => req('DELETE', '/auth/avatar');

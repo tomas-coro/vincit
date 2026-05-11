@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Btn, Inp, AVATARS, COLORS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
+import { fileToSquareDataUrl } from '../../imageUtils.js';
 
 const S = {
   wrap:  { minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'var(--bg)' },
@@ -17,9 +18,21 @@ export default function AuthView({ onAuth }) {
   const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
   const [avatar, setAvatar]   = useState('😊');
+  const [customAvatar, setCustomAvatar] = useState(null); // data URL preview
   const [colorKey, setColorKey] = useState('blue');
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFile = async e => {
+    const f = e.target.files?.[0];
+    e.target.value = ''; // allow same file twice
+    if (!f) return;
+    try {
+      const dataUrl = await fileToSquareDataUrl(f, 512, 0.85);
+      setCustomAvatar(dataUrl);
+    } catch { setError(t('auth.err_generic')); }
+  };
 
   const submit = async e => {
     e.preventDefault();
@@ -34,6 +47,12 @@ export default function AuthView({ onAuth }) {
           return;
         }
         result = await api.register({ email, password, name: name.trim(), avatar, color_key: colorKey });
+        if (customAvatar && result?.token) {
+          try {
+            const { avatar_url } = await api.uploadAvatar(customAvatar, { token: result.token });
+            result.user = { ...result.user, avatar_url };
+          } catch { /* keep emoji fallback */ }
+        }
       } else {
         result = await api.login(email, password);
       }
@@ -81,13 +100,30 @@ export default function AuthView({ onAuth }) {
               {/* Avatar picker */}
               <div style={{ marginBottom:14 }}>
                 <label style={S.label}>{t('settings.avatar_label')}</label>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                  {AVATARS.slice(0,12).map(a => (
-                    <div key={a} onClick={() => setAvatar(a)}
+                <div style={{ display:'flex', flexWrap:'wrap', gap:6, alignItems:'center' }}>
+                  {/* Upload custom photo */}
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFile}
+                    style={{ display:'none' }} />
+                  <div onClick={() => fileInputRef.current?.click()} title="Carica foto"
+                    style={{ width:36, height:36, borderRadius:8, display:'flex', alignItems:'center',
+                      justifyContent:'center', cursor:'pointer', overflow:'hidden',
+                      background: customAvatar ? 'var(--gold)22' : 'var(--surf)',
+                      border:`1px solid ${customAvatar ? 'var(--gold)' : 'var(--brd)'}` }}>
+                    {customAvatar
+                      ? <img src={customAvatar} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                      : <span style={{fontSize:18}}>📷</span>}
+                  </div>
+                  {customAvatar && (
+                    <button type="button" onClick={() => setCustomAvatar(null)}
+                      style={{ width:24, height:24, borderRadius:'50%', border:'none',
+                        background:'var(--red)33', color:'var(--red)', cursor:'pointer', fontSize:11, marginRight:4 }}>✕</button>
+                  )}
+                  {AVATARS.slice(0,11).map(a => (
+                    <div key={a} onClick={() => { setAvatar(a); setCustomAvatar(null); }}
                       style={{ width:36, height:36, borderRadius:8, display:'flex', alignItems:'center',
                         justifyContent:'center', fontSize:20, cursor:'pointer',
-                        background: avatar===a ? 'var(--gold)22' : 'var(--surf)',
-                        border:`1px solid ${avatar===a ? 'var(--gold)' : 'var(--brd)'}` }}>
+                        background: !customAvatar && avatar===a ? 'var(--gold)22' : 'var(--surf)',
+                        border:`1px solid ${!customAvatar && avatar===a ? 'var(--gold)' : 'var(--brd)'}` }}>
                       {a}
                     </div>
                   ))}

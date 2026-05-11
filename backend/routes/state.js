@@ -7,13 +7,13 @@ async function buildState(roomId) {
   const profiles = {};
   // Prefer user_groups (multi-group), fall back to users.room_id for legacy rows
   const { rows: members } = await db.query(
-    `SELECT DISTINCT u.id, u.name, u.avatar, u.color_key
+    `SELECT DISTINCT u.id, u.name, u.avatar, u.avatar_url, u.color_key
      FROM users u
      LEFT JOIN user_groups ug ON ug.user_id = u.id
      WHERE ug.group_id = $1 OR (u.room_id = $1 AND NOT EXISTS (SELECT 1 FROM user_groups WHERE group_id=$1))`,
     [roomId]
   );
-  for (const u of members) profiles[u.id] = { name:u.name, avatar:u.avatar, color:u.color_key, colorKey:u.color_key };
+  for (const u of members) profiles[u.id] = { name:u.name, avatar:u.avatar, avatarUrl:u.avatar_url, color:u.color_key, colorKey:u.color_key };
 
   const credits = {};
   const { rows: creditRows } = await db.query(
@@ -85,9 +85,10 @@ async function buildState(roomId) {
      WHERE b.room_id=$1`, [roomId]
   );
   const reactions = reactionRows.map(r => ({
-    bet_id: r.bet_id,
-    bettor: r.bettor,
-    emoji:  r.emoji,
+    bet_id:    r.bet_id,
+    bettor:    r.bettor,
+    emoji:     r.emoji,
+    image_url: r.image_url,
   }));
 
   const { rows: roomRows } = await db.query(

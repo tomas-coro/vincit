@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
-app.use(express.json());
+app.use(express.json({ limit: '8mb' })); // larger to allow base64 image uploads
 
 const betLimiter = rateLimit({
   windowMs: 60 * 1000,

@@ -1,9 +1,13 @@
 'use strict';
 const { Pool } = require('pg');
 
+const needsSsl =
+  process.env.NODE_ENV === 'production' ||
+  /render\.com|amazonaws\.com|neon\.tech|supabase\.co|sslmode=require/i.test(process.env.DATABASE_URL || '');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: needsSsl ? { rejectUnauthorized: false } : false,
 });
 
 (async () => {
@@ -134,6 +138,16 @@ const pool = new Pool({
 
   await pool.query(`
     ALTER TABLE bets ADD COLUMN IF NOT EXISTS opponent TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE users    ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE reactions ADD COLUMN IF NOT EXISTS image_url TEXT;
+    ALTER TABLE reactions ALTER COLUMN emoji DROP NOT NULL;
   `);
 
   await pool.query(`

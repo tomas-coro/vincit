@@ -4,7 +4,7 @@ import BetCard from '../BetCard.jsx';
 
 const DEF_IDS=['intimo','serata','casa','cibo','gaming','altro'];
 
-export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onDelete,onEdit,onAccept,onReject}){
+export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject}){
   const { t } = useLang();
   const [fStatus, setFStatus] = useState('active');
   const [fCat,    setFCat]    = useState('all');
@@ -55,7 +55,7 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
         : <div style={isDesktop?{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,alignItems:'start'}:{}}>
             {visible.map(b => <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats}
               onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} onDelete={onDelete} onEdit={onEdit}
-              isDesktop={isDesktop} reactions={reactions} onReaction={onReaction}
+              isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto}
               onAccept={onAccept} onReject={onReject}/>)}
           </div>
       }

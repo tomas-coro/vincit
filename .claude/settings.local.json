@@ -48,7 +48,22 @@
       "Bash(env)",
       "Read(//Users/skafiskafnjak/**)",
       "Read(//Users/skafiskafnjak/.config/**)",
-      "Bash(gh run *)"
+      "Bash(gh run *)",
+      "Bash(git tag *)",
+      "Bash(netstat -ano)",
+      "Bash(where psql *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/api/auth/me)",
+      "Bash(kill baz3jzx0x *)",
+      "Read(//c/Program Files/PostgreSQL/**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Read(//c//**)",
+      "PowerShell(Get-Process *)",
+      "Bash(tasklist *)",
+      "Bash(curl *)",
+      "Bash(./node_modules/.bin/vite build *)",
+      "Bash(git config *)",
+      "Bash(gh --version)",
+      "Bash(git init *)"
     ]
   }
 }
