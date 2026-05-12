@@ -72,7 +72,22 @@ const CSS_BASE = `
 .bc input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 8px var(--glow)}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
-.bc{letter-spacing:-0.005em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.bc{letter-spacing:-0.005em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;position:relative;isolation:isolate}
+.bc::before{
+  content:'';
+  position:fixed; inset:0; z-index:-1;
+  background:
+    radial-gradient(60vmax 40vmax at 12% 18%,  rgba(200,151,63,.10) 0%, transparent 55%),
+    radial-gradient(70vmax 50vmax at 88% 82%,  rgba(91,138,240,.07) 0%, transparent 60%),
+    radial-gradient(40vmax 30vmax at 50% 95%,  rgba(160,126,245,.06) 0%, transparent 60%);
+  filter: blur(4px);
+  animation: ambientDrift 38s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes ambientDrift {
+  0%, 100% { transform: translate(0,0) scale(1);   opacity:1; }
+  50%      { transform: translate(2%, -1%) scale(1.06); opacity:.85; }
+}
 .bc h1,.bc h2{letter-spacing:-0.02em}
 
 /* Focus ring (keyboard nav) */
@@ -126,6 +141,18 @@ export default function App() {
   const C = isDark ? DARK : LIGHT;
   const isDesktop = useBreakpoint(768);
   const { t } = useLang();
+
+  // Mirror the theme CSS variables onto :root so portaled modals
+  // (which live outside the <div className="bc">) still pick them up.
+  useEffect(() => {
+    const root = document.documentElement;
+    const vars = rootVars(C);
+    for (const [key, val] of Object.entries(vars)) {
+      if (key.startsWith('--')) root.style.setProperty(key, val);
+    }
+    document.body.style.background = C.bg;
+    document.body.style.color = C.txt;
+  }, [C]);
   const toast = useToast();
   const [splashDone, setSplashDone] = useState(false);
   const [tourDone, setTourDone] = useState(() => !!localStorage.getItem('bc_onboarding_done'));
@@ -568,7 +595,7 @@ export default function App() {
       )}
 
       {/* Content */}
-      <div style={isDesktop ? { marginLeft: 240, maxWidth: 1080, padding: '40px 56px' } : { padding: '14px 20px' }}>
+      <div style={isDesktop ? { marginLeft: 240, maxWidth: 1320, padding: '32px 48px' } : { padding: '14px 20px' }}>
         {(() => {
           const dataReady = !!profiles[user];
           if (!dataReady) {

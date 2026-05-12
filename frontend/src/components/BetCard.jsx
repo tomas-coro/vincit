@@ -230,13 +230,17 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                 {onReactionPhoto && (
                   <button onClick={()=>setPhotoCaptureOpen(true)} disabled={photoBusy}
                     title="Reagisci con una foto"
-                    style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 10px 4px 7px",borderRadius:20,
-                      border:`1px solid ${myReaction?.image_url ? 'var(--gold)' : 'var(--gold)44'}`,
-                      background: myReaction?.image_url ? 'var(--gold)22' : 'var(--gold)0d',
-                      cursor:'pointer', fontSize:11, color: myReaction?.image_url ? 'var(--gold)' : 'var(--gold)',
-                      fontFamily:"'Syne',sans-serif", fontWeight:700, letterSpacing:.5,
-                      transition:'all .15s', opacity: photoBusy ? .5 : 1}}>
-                    <span style={{fontSize:13, lineHeight:1}}>📸</span>
+                    style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 12px 5px 9px",borderRadius:20,
+                      border:'2px solid var(--gold)',
+                      background: myReaction?.image_url
+                        ? 'linear-gradient(90deg, var(--gold)33, var(--gold)22)'
+                        : 'linear-gradient(90deg, var(--gold)18, var(--gold)10)',
+                      cursor:'pointer', fontSize:11, color:'var(--gold)',
+                      fontFamily:"'Syne',sans-serif", fontWeight:800, letterSpacing:1,
+                      boxShadow:'0 0 10px var(--glow), inset 0 1px 0 rgba(255,255,255,.06)',
+                      transition:'all .15s', opacity: photoBusy ? .5 : 1,
+                      flexShrink:0}}>
+                    <span style={{fontSize:14, lineHeight:1, filter:'drop-shadow(0 0 4px var(--glow))'}}>📸</span>
                     <span style={{textTransform:'uppercase'}}>Foto</span>
                   </button>
                 )}

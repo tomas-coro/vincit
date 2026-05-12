@@ -101,6 +101,7 @@ export default function PhotoCaptureModal({ onCapture, onClose, side = 'square',
         background:'var(--surf)', border:'1px solid var(--brd)', borderRadius:18,
         boxShadow:'0 24px 64px rgba(0,0,0,.6)',
         display:'flex', flexDirection:'column', maxHeight:'calc(100dvh - 32px)',
+        minHeight: 0,
       }}>
         {/* Header */}
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center',
@@ -115,12 +116,17 @@ export default function PhotoCaptureModal({ onCapture, onClose, side = 'square',
           }}>✕</button>
         </div>
 
-        {/* Body: live preview OR fallback */}
-        <div style={{padding:16, display:'flex', flexDirection:'column', gap:14}}>
+        {/* Body: live preview takes flexible height; action bar is sticky at the bottom */}
+        <div style={{padding:'14px 16px 8px', flex:'1 1 auto', minHeight:0, display:'flex', justifyContent:'center'}}>
           <div style={{
-            position:'relative', width:'100%', aspectRatio:'1/1',
+            position:'relative',
+            width:'100%',
+            maxHeight:'100%',
+            aspectRatio:'1/1',
             borderRadius:14, overflow:'hidden',
             background:'#0a0913', border:'1px solid var(--brd)',
+            // Cap the square at a sensible size even on tall screens
+            maxWidth: 'min(100%, calc(100dvh - 220px))',
           }}>
             {supported ? (
               <video ref={videoRef} autoPlay playsInline muted style={{
@@ -145,14 +151,23 @@ export default function PhotoCaptureModal({ onCapture, onClose, side = 'square',
           </div>
 
           <input ref={fileRef} type="file" accept="image/*" onChange={pickFile} style={{display:'none'}}/>
+        </div>
 
+        {/* Sticky action bar — always reachable even on short viewports */}
+        <div style={{
+          padding:'10px 14px 14px', borderTop:'1px solid var(--brd)',
+          background:'var(--surf)', flexShrink:0,
+          display:'flex', flexDirection:'column', gap:8,
+        }}>
           <div style={{display:'flex', gap:8, alignItems:'center'}}>
-            {/* Flip camera (only when stream is alive) */}
-            {supported && !!stream && (
-              <button onClick={flipCamera} title={t('photo.flip')} style={{
-                width:48, height:48, borderRadius:'50%',
+            {/* Flip camera (only when stream is alive) — always rendered so the
+                layout doesn't shift after permission is granted */}
+            {supported && (
+              <button onClick={flipCamera} disabled={!stream} title={t('photo.flip')} style={{
+                width:48, height:48, borderRadius:'50%', flexShrink:0,
                 background:'var(--card)', border:'1px solid var(--brd)',
-                color:'var(--dim)', cursor:'pointer', fontSize:20,
+                color:'var(--dim)', cursor: stream ? 'pointer' : 'not-allowed',
+                fontSize:20, opacity: stream ? 1 : .4,
               }}>🔄</button>
             )}
 
@@ -170,9 +185,9 @@ export default function PhotoCaptureModal({ onCapture, onClose, side = 'square',
               📷 {t('photo.shoot')}
             </button>
 
-            {/* Gallery / file picker */}
+            {/* Gallery / file picker (always available) */}
             <button onClick={() => fileRef.current?.click()} disabled={busy} title={t('photo.gallery')} style={{
-              width:48, height:48, borderRadius:'50%',
+              width:48, height:48, borderRadius:'50%', flexShrink:0,
               background:'var(--card)', border:'1px solid var(--brd)',
               color:'var(--dim)', cursor:'pointer', fontSize:20,
             }}>🖼</button>

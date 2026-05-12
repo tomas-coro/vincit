@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Btn, Inp, AVATAR_CATEGORIES, COLORS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import { useToast } from '../../Toast.jsx';
@@ -54,11 +55,12 @@ export default function ProfileEditModal({ profile, onClose, onSaved }) {
 
   const activeItems = (AVATAR_CATEGORIES.find(c => c.id === activeCat) || AVATAR_CATEGORIES[0]).items;
 
-  return (
+  const overlay = (
     <div onClick={onClose} style={{
       position:'fixed', inset:0, background:'rgba(0,0,0,.85)',
-      display:'flex', alignItems:'center', justifyContent:'center', zIndex:120,
+      display:'flex', alignItems:'center', justifyContent:'center', zIndex:9100,
       padding:16, overflow:'hidden',
+      fontFamily:"'Syne', sans-serif",
     }}>
       <div onClick={e => e.stopPropagation()} className="bIn" style={{
         background:'var(--surf)', border:'1px solid var(--brd)',
@@ -213,4 +215,11 @@ export default function ProfileEditModal({ profile, onClose, onSaved }) {
       </div>
     </div>
   );
+
+  // Portal to document.body so the modal escapes any ancestor with a
+  // `transform` (the `sUp` animation on the view root creates a containing
+  // block that would otherwise pin position:fixed to the scrolled page).
+  return typeof document !== 'undefined'
+    ? createPortal(overlay, document.body)
+    : overlay;
 }

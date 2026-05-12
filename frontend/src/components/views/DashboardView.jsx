@@ -219,8 +219,77 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
     </>
   );
 
+  // Hero greeting strip (welcome + balance + quick KPI)
+  const myProfile = profiles[user] || {};
+  const myColor = getC(profiles, user);
+  const hour = new Date().getHours();
+  const greeting = hour < 6 ? '🌙' : hour < 12 ? '☀️' : hour < 18 ? '👋' : '✨';
+  const totalMy = myWon.length + myLost.length;
+  const hero = (
+    <div style={{
+      position:'relative',
+      background:'linear-gradient(135deg, var(--card) 0%, var(--surf) 50%, var(--card) 100%)',
+      border:'1px solid var(--brd)', borderLeft:`3px solid ${myColor}`,
+      borderRadius:18, padding:isDesktop ? '20px 24px' : '16px 18px',
+      marginBottom:14, overflow:'hidden',
+    }}>
+      {/* Soft accent in the corner */}
+      <div style={{
+        position:'absolute', top:-40, right:-40, width:160, height:160,
+        background:`radial-gradient(circle, ${myColor}33 0%, transparent 70%)`,
+        pointerEvents:'none',
+      }}/>
+      <div style={{display:'flex', alignItems:'center', gap:14, position:'relative'}}>
+        <div style={{
+          width:isDesktop ? 60 : 48, height:isDesktop ? 60 : 48,
+          borderRadius:'50%', background:`${myColor}33`, border:`2px solid ${myColor}66`,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:isDesktop ? 30 : 24, overflow:'hidden', flexShrink:0,
+          boxShadow:`0 0 18px ${myColor}33`,
+        }}>
+          {myProfile.avatarUrl
+            ? <img src={myProfile.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+            : (myProfile.avatar ?? '🃏')}
+        </div>
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{fontSize:11, color:'var(--dim)', letterSpacing:2, textTransform:'uppercase', fontWeight:700}}>
+            {greeting} {t('app.welcome_back')}
+          </div>
+          <div style={{fontFamily:"'Playfair Display',serif", fontSize:isDesktop ? 26 : 20, fontWeight:700, lineHeight:1.1, marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+            {myProfile.name}
+          </div>
+        </div>
+        <div style={{textAlign:'right', flexShrink:0}}>
+          <div style={{fontSize:10, color:'var(--dim)', letterSpacing:2, textTransform:'uppercase', fontWeight:700}}>
+            {t('app.credits')}
+          </div>
+          <div style={{fontFamily:"'Playfair Display',serif", fontSize:isDesktop ? 28 : 22, fontWeight:900, color:'var(--gold)', lineHeight:1.05}}>
+            {Math.round(credits[user] ?? 0)} ₡
+          </div>
+        </div>
+      </div>
+      {/* Quick stats strip — only meaningful once you've played */}
+      {totalMy > 0 && (
+        <div style={{display:'flex', gap:14, marginTop:14, paddingTop:12, borderTop:'1px solid var(--brd)'}}>
+          {[
+            {l:t('stats_view.won'),   v:myWon.length,  c:'var(--grn)'},
+            {l:t('stats_view.lost'),  v:myLost.length, c:'var(--red)'},
+            {l:t('stats_view.win_rate'), v:`${wr}%`,   c: wr>=50 ? 'var(--grn)' : 'var(--red)'},
+            {l:t('dashboard.total_bets'), v:totalMy + myAct.length + mySec.length, c:'var(--gold)'},
+          ].map(s => (
+            <div key={s.l} style={{flex:1, textAlign:'center'}}>
+              <div style={{fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700, color:s.c}}>{s.v}</div>
+              <div style={{fontSize:9, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginTop:2}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return(
     <div className="sUp">
+      {hero}
       {/* Monthly summary banner */}
       {showSummary&&(
         <div style={{...S.card,marginBottom:12,background:"var(--gold)11",border:"1px solid var(--gold)44",position:"relative"}}>
@@ -244,9 +313,9 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
       )}
 
       {isDesktop?(
-        <div style={{display:"grid",gridTemplateColumns:"60% 40%",gap:20,alignItems:"start"}}>
-          <div>{pendingSection}{activeBets}{emptyState}{recentResolved}</div>
-          <div>{scoreCard}{vaultTeaser}{expiredAlert}{expiryAlert}</div>
+        <div style={{display:"grid",gridTemplateColumns:"minmax(0, 1.6fr) minmax(280px, 1fr)",gap:14,alignItems:"start"}}>
+          <div style={{display:'flex', flexDirection:'column', gap:10}}>{pendingSection}{activeBets}{emptyState}{recentResolved}</div>
+          <div style={{display:'flex', flexDirection:'column', gap:10, position:'sticky', top:14}}>{scoreCard}{vaultTeaser}{expiredAlert}{expiryAlert}</div>
         </div>
       ):(
         <>{expiredAlert}{expiryAlert}{scoreCard}{vaultTeaser}{pendingSection}{activeBets}{emptyState}{recentResolved}</>
