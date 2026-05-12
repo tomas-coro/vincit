@@ -637,28 +637,46 @@ export default function App() {
         </div>
       )}
 
-      {/* Sidebar: desktop only */}
+      {/* Sidebar: desktop only — broken column. No hard right wall (the
+          border becomes a soft fading gradient), brand tilts slightly off
+          axis, profile chip is indented from the brand instead of sharing
+          its left edge. */}
       {isDesktop && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: 240, height: '100vh', background: 'var(--surf)', borderRight: '1px solid var(--brd)', display: 'flex', flexDirection: 'column', zIndex: 50, padding: '24px 0' }}>
-          <div style={{ padding: '0 20px 16px', borderBottom: '1px solid var(--brd)', marginBottom: 8 }}>
-            <div style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:24, fontWeight:600, letterSpacing:-0.5, marginBottom:14 }}>
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: 240, height: '100vh',
+          background: 'linear-gradient(90deg, var(--surf) 0%, var(--surf) 70%, transparent 100%)',
+          borderRight: 'none',
+          display: 'flex', flexDirection: 'column', zIndex: 50, padding: '32px 0 20px',
+        }}>
+          <div style={{ padding: '0 20px 22px', borderBottom: '1px solid var(--rule)', marginBottom: 8 }}>
+            <div style={{
+              fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+              fontSize:28, fontWeight:600, letterSpacing:-0.5, marginBottom:22,
+              transform: 'rotate(-2deg)', transformOrigin: 'left center',
+              display: 'inline-block',
+            }}>
               <span className="shim">BetCouple</span>
             </div>
             <div
               onClick={() => setShowProfileEdit(true)}
               title={t('profile.edit_title')}
-              style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', borderRadius:10, padding:4, margin:-4, transition:'background .15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)10'; }}
+              style={{
+                display:'flex', alignItems:'center', gap:12, cursor:'pointer',
+                borderRadius:999, padding:'4px 8px 4px 4px',
+                marginLeft: 14, /* indent — break left-edge axis */
+                transition:'background .15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--soft)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
             >
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `2px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink:0, overflow:'hidden' }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${COLORS[myProfile.colorKey] || '#5b8af0'}33`, border: `1px solid ${COLORS[myProfile.colorKey] || '#5b8af0'}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink:0, overflow:'hidden' }}>
                 {myProfile.avatarUrl
                   ? <img src={myProfile.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                   : myProfile.avatar}
               </div>
               <div style={{ minWidth:0, flex:1 }}>
-                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 17, fontWeight: 700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', lineHeight:1.1 }}>{myProfile.name}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)', marginTop:2 }}>{Math.round(credits[user] ?? 0)} ₡</div>
+                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic', fontSize: 18, fontWeight: 600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', lineHeight:1.05 }}>{myProfile.name}</div>
+                <div className="bc-num" style={{ fontSize: 14, color: 'var(--gold)', marginTop:2 }}>{Math.round(credits[user] ?? 0)}<span style={{fontSize:'0.7em',opacity:.6,marginLeft:3}}>₡</span></div>
               </div>
             </div>
           </div>
@@ -667,22 +685,63 @@ export default function App() {
               {groupPickerEl}
             </div>
           )}
-          <div style={{ flex: 1, padding: '4px 12px' }}>
-            {NAV.map(n => (
-              <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => setView(n.id)} className="nav-item" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: view === n.id ? 'var(--gold)' : 'var(--dim)', background: view === n.id ? 'var(--gold)11' : 'transparent', marginBottom: 4, transition: 'all .18s', userSelect: 'none', position: 'relative' }}>
-                <span style={{ fontSize: 18 }}>{n.e}</span>
-                {n.l}
-                {n.id === 'bets' && secretCount > 0 && (
-                  <div title="Vault" style={{ position: 'absolute', right: 10, width: 16, height: 16, borderRadius: '50%', background: 'var(--gold)', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07060f' }}>🔒</div>
-                )}
-                {n.id === 'friends' && pendingFriendCount > 0 && (
-                  <div style={{ position: 'absolute', right: 10, minWidth: 16, height: 16, padding: '0 5px', borderRadius: 8, background: 'var(--gold)', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07060f' }}>{pendingFriendCount}</div>
-                )}
-              </div>
-            ))}
+          {/* Broken-grid nav — each item lives at its own indent + font size,
+              with a couple of items shifted vertically so the column zig-zags
+              instead of stepping down on a perfect ladder. */}
+          <div style={{ flex: 1, padding: '12px 0 0', position: 'relative' }}>
+            {NAV.map((n, idx) => {
+              // Per-item offsets keep the menu intentionally uneven.
+              const offsets = [
+                { px: 14, sz: 14, mt: 0 },   // 0
+                { px: 28, sz: 13, mt: 2 },   // 1
+                { px: 10, sz: 13, mt: 4 },   // 2
+                { px: 34, sz: 14, mt: 2 },   // 3
+                { px: 18, sz: 13, mt: 4 },   // 4
+                { px: 30, sz: 13, mt: 2 },   // 5
+                { px: 14, sz: 13, mt: 4 },   // 6
+              ];
+              const o = offsets[idx] || offsets[offsets.length - 1];
+              const isActive = view === n.id;
+              return (
+                <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => setView(n.id)} className="nav-item" style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 14px 8px ' + o.px + 'px',
+                  marginTop: o.mt,
+                  cursor: 'pointer',
+                  fontFamily:"'Cormorant Garamond',serif",
+                  fontSize: isActive ? o.sz + 4 : o.sz,
+                  fontStyle: 'italic',
+                  fontWeight: isActive ? 600 : 500,
+                  letterSpacing: '-0.01em',
+                  color: isActive ? 'var(--gold)' : 'var(--dim)',
+                  background: 'transparent',
+                  borderLeft: isActive ? '2px solid var(--gold)' : '2px solid transparent',
+                  transition: 'all .2s ease', userSelect: 'none', position: 'relative',
+                }}>
+                  <span style={{ fontSize: 17 }}>{n.e}</span>
+                  {n.l}
+                  {n.id === 'bets' && secretCount > 0 && (
+                    <div title="Vault" style={{ position: 'absolute', right: 14, width: 6, height: 6, borderRadius: 999, background: 'var(--gold)' }}/>
+                  )}
+                  {n.id === 'friends' && pendingFriendCount > 0 && (
+                    <div style={{ position: 'absolute', right: 14, width: 6, height: 6, borderRadius: 999, background: 'var(--red)' }}/>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <div style={{ padding: '12px 16px 0' }}>
-            <button data-tour="new-bet" onClick={() => setShowCreate(true)} style={{ width: '100%', padding: '11px 0', borderRadius: 12, border: 'none', background: 'var(--gold)', color: '#07060f', fontFamily: "'Manrope',sans-serif", fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px var(--glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>{t('app.new_bet')}</button>
+          {/* "Nuovo Bet" CTA — pinned bottom but indented to the right so it
+              doesn't sit on the same axis as the brand. */}
+          <div style={{ padding: '18px 14px 4px 40px' }}>
+            <button data-tour="new-bet" onClick={() => setShowCreate(true)} style={{
+              width: '100%', padding: '13px 0', borderRadius: 999, border: 'none',
+              background: 'var(--pur)', color: '#1a1530',
+              fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 700,
+              letterSpacing: '.18em', textTransform: 'uppercase',
+              cursor: 'pointer',
+              boxShadow: '0 14px 36px -12px var(--pur), 0 1px 0 rgba(255,255,255,.15) inset',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>{t('app.new_bet')}</button>
           </div>
         </div>
       )}
@@ -718,8 +777,12 @@ export default function App() {
         </div>
       )}
 
-      {/* Content */}
-      <div style={isDesktop ? { marginLeft: 240, maxWidth: 1320, padding: '32px 48px' } : { padding: '14px 20px' }}>
+      {/* Content — overflow:hidden catches any deliberate bleed from the
+          broken-grid layouts inside views (giant italic headlines, dice with
+          rotate offsets, leaderboard numbers floating off-baseline). */}
+      <div style={isDesktop
+        ? { marginLeft: 240, maxWidth: 1320, padding: '32px 64px 32px 56px', overflowX: 'hidden' }
+        : { padding: '14px 20px', overflowX: 'hidden' }}>
         {(() => {
           const dataReady = !!profiles[user];
           if (!dataReady) {
@@ -748,24 +811,54 @@ export default function App() {
         })()}
       </div>
 
-      {/* Bottom nav: mobile only */}
+      {/* Bottom nav: mobile only — broken alignment, every icon at a slightly
+          different vertical offset so the row reads like a sawtooth instead
+          of a rigid grid. Active item floats highest. */}
       {!isDesktop && (
-        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: C.surf, borderTop: `1px solid ${C.brd}`, padding: '8px 2px 10px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 50 }}>
-          {NAV.map(n => (
-            <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => setView(n.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 10px', cursor: 'pointer', borderRadius: 12, fontSize: 10, color: view === n.id ? 'var(--gold)' : 'var(--mut)', transition: 'all .18s', position: 'relative', userSelect: 'none' }}>
-              <span style={{ fontSize: 20 }}>{n.e}</span>
-              {n.id === 'friends' && pendingFriendCount > 0 && (
-                <div style={{ position: 'absolute', top: 2, right: 6, minWidth: 14, height: 14, padding: '0 4px', borderRadius: 7, background: 'var(--gold)', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07060f' }}>{pendingFriendCount}</div>
-              )}
-              {n.id === 'bets' && secretCount > 0 && (
-                <div style={{ position: 'absolute', top: 2, right: 6, width: 14, height: 14, borderRadius: '50%', background: 'var(--gold)', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07060f' }}>🔒</div>
-              )}
-              {n.l}
-            </div>
-          ))}
-          <div data-tour="new-bet" onClick={() => setShowCreate(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, cursor: 'pointer', userSelect: 'none' }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: `0 4px 16px var(--glow)`, transition: 'all .18s' }}>+</div>
-            <span style={{ fontSize: 10, color: 'var(--gold)' }}>{t('app.new_bet_label')}</span>
+        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: C.surf, borderTop: `1px solid ${C.brd}`, padding: '10px 4px 12px', display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', zIndex: 50 }}>
+          {NAV.map((n, idx) => {
+            const isActive = view === n.id;
+            // Sawtooth vertical offsets — every other item lifted differently.
+            const baseLift = [0, 6, 2, 8, 4, 6, 0];
+            const lift = isActive ? -8 : baseLift[idx % baseLift.length];
+            return (
+              <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => setView(n.id)} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                padding: '4px 8px', cursor: 'pointer',
+                transform: `translateY(${lift}px)`,
+                transition: 'transform .25s ease, color .18s',
+                color: isActive ? 'var(--gold)' : 'var(--mut)',
+                position: 'relative', userSelect: 'none',
+              }}>
+                <span style={{ fontSize: isActive ? 22 : 18, transition:'font-size .18s' }}>{n.e}</span>
+                {n.id === 'friends' && pendingFriendCount > 0 && (
+                  <div style={{ position: 'absolute', top: 0, right: 4, width: 6, height: 6, borderRadius: 999, background: 'var(--red)' }}/>
+                )}
+                {n.id === 'bets' && secretCount > 0 && (
+                  <div style={{ position: 'absolute', top: 0, right: 4, width: 6, height: 6, borderRadius: 999, background: 'var(--gold)' }}/>
+                )}
+                <span style={{
+                  fontSize: 8, letterSpacing:'.2em', textTransform:'uppercase', fontWeight: 600,
+                  opacity: isActive ? 1 : .7,
+                }}>{n.l}</span>
+              </div>
+            );
+          })}
+          {/* "+" CTA floats higher than every nav item so it punctures the row */}
+          <div data-tour="new-bet" onClick={() => setShowCreate(true)} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            cursor: 'pointer', userSelect: 'none',
+            transform: 'translateY(-22px)',
+          }}>
+            <div style={{
+              width: 50, height: 50, borderRadius: 999,
+              background: 'var(--pur)', color:'#1a1530',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 24, fontWeight: 300,
+              boxShadow: '0 14px 30px -8px var(--pur), 0 1px 0 rgba(255,255,255,.18) inset',
+              transition: 'transform .18s',
+            }}>+</div>
+            <span style={{ fontSize: 8, color: 'var(--gold)', letterSpacing:'.2em', textTransform:'uppercase', fontWeight: 600 }}>{t('app.new_bet_label')}</span>
           </div>
         </div>
       )}

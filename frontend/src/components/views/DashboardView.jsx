@@ -212,12 +212,74 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
     </>
   );
 
-  const emptyState=myAct.length+thAct.length+mySec.length===0&&(
-    <div style={{textAlign:"center",padding:"52px 20px"}}>
-      <div style={{fontSize:52,marginBottom:14}}>🎲</div>
-      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:20,marginBottom:8}}>{t('dashboard.no_active')}</div>
-      <div style={{fontSize:13,color:"var(--dim)",marginBottom:24}}>{t('dashboard.no_active_sub')}</div>
-      <Btn variant="gold" onClick={onCreate} style={{padding:"12px 28px",fontSize:15}}>{t('dashboard.cta')}</Btn>
+  // Off-center empty state — a single gigantic italic banner at the left,
+  // dice glyph floating to the upper right with a tilt, CTA pinned to the
+  // bottom-right corner (asymmetric, never centered).
+  const emptyState = myAct.length+thAct.length+mySec.length===0 && (
+    <div style={{
+      position:'relative',
+      padding: isDesktop ? '40px 0 72px' : '24px 0 56px',
+      minHeight: isDesktop ? 320 : 240,
+      // Hide any overflow from the floating dice/banner.
+      overflow:'hidden',
+    }}>
+      {/* Dice — small, rotated, floats top-right with a soft drift */}
+      <div style={{
+        position:'absolute',
+        top: isDesktop ? 8 : -6,
+        right: isDesktop ? '14%' : '8%',
+        fontSize: isDesktop ? 56 : 38,
+        transform: 'rotate(-14deg)',
+        opacity: .85,
+        pointerEvents:'none',
+        animation: 'sUp .6s ease both .1s',
+      }}>🎲</div>
+
+      {/* Gigantic banner — italic Cormorant, italic, breaks into two lines
+          intentionally with the second line indented for a magazine pull-quote
+          feel. */}
+      <div style={{
+        fontFamily:"'Cormorant Garamond',serif",
+        fontStyle:'italic',
+        fontWeight: 600,
+        fontSize: 'clamp(56px, 16vw, 168px)',
+        lineHeight: 0.9,
+        letterSpacing:'-0.03em',
+        color:'var(--txt)',
+        marginLeft: isDesktop ? -10 : -4,
+        marginBottom: 18,
+      }}>
+        <div>{t('dashboard.no_active').split(' ')[0] || t('dashboard.no_active')}</div>
+        {t('dashboard.no_active').split(' ').slice(1).join(' ') && (
+          <div style={{
+            paddingLeft: isDesktop ? '22%' : '14%',
+            color:'var(--gold)',
+            marginTop: isDesktop ? -10 : -4,
+          }}>{t('dashboard.no_active').split(' ').slice(1).join(' ')}</div>
+        )}
+      </div>
+
+      {/* Subtitle — tiny tracked meta, far-left aligned */}
+      <div className="bc-meta" style={{
+        fontSize: 9,
+        maxWidth: 340, lineHeight: 1.7,
+        color:'var(--dim)',
+        marginBottom: isDesktop ? 32 : 24,
+        textTransform:'none', letterSpacing:'.02em', fontWeight:500,
+        fontStyle:'normal',
+      }}>{t('dashboard.no_active_sub')}</div>
+
+      {/* CTA pinned bottom-right, never centered */}
+      <div style={{
+        textAlign: 'right',
+        paddingRight: isDesktop ? 12 : 0,
+        marginTop: 'auto',
+      }}>
+        <Btn variant="gold" onClick={onCreate}
+          style={{padding: isDesktop ? '14px 36px' : '13px 28px', fontSize: isDesktop ? 13 : 12}}>
+          {t('dashboard.cta')}
+        </Btn>
+      </div>
     </div>
   );
 
@@ -236,48 +298,84 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
   const hour = new Date().getHours();
   const greeting = hour < 6 ? '🌙' : hour < 12 ? '☀️' : hour < 18 ? '👋' : '✨';
   const totalMy = myWon.length + myLost.length;
-  // Editorial hero — no card, just generous space + giant numerals. The
-  // credit balance is the loudest thing on the page; everything else
-  // whispers in tracked uppercase meta.
+  // Broken-grid hero — name escapes its grid cell, credit balance floats
+  // diagonally below to the right with a deliberate stagger, KPI strip below
+  // skews each cell vertically so it never reads as a clean grid.
   const hero = (
-    <div style={{padding: isDesktop ? '32px 0 36px' : '20px 0 28px', marginBottom: 8}}>
-      <div style={{display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:24, flexWrap:'wrap'}}>
-        <div style={{flex:'1 1 220px', minWidth:0}}>
-          <div className="bc-meta" style={{marginBottom:10}}>
-            {greeting} {t('app.welcome_back')}
-          </div>
-          <div className="bc-hero" style={{fontSize: isDesktop ? 56 : 38, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
-            {myProfile.name}
-          </div>
+    <div style={{
+      position:'relative',
+      padding: isDesktop ? '40px 0 56px' : '24px 0 36px',
+      marginBottom: 8,
+      // Allow the giant name to bleed left a hair without triggering scroll;
+      // the App.jsx wrapper now has overflow-x: hidden to catch slop.
+      marginLeft: isDesktop ? -12 : -6,
+    }}>
+      <div className="bc-meta" style={{
+        marginBottom: 16,
+        paddingLeft: isDesktop ? 64 : 28,
+        opacity: .85,
+      }}>
+        {greeting} {t('app.welcome_back')}
+      </div>
+      <div className="bc-hero" style={{
+        fontSize: 'clamp(64px, 18vw, 180px)',
+        whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+        // Pull baseline slightly down so the next block (credit) overlaps it.
+        marginBottom: isDesktop ? -28 : -16,
+      }}>
+        {myProfile.name}
+      </div>
+      {/* Credit balance — drifts right + drops below the name, intentionally
+          breaking the horizontal axis. Tracked meta sits beneath, not above,
+          so the giant number leads. */}
+      <div style={{
+        display:'flex', flexDirection:'column', alignItems:'flex-end',
+        paddingRight: isDesktop ? 24 : 8,
+        marginTop: 0,
+      }}>
+        <div className="bc-num" style={{
+          fontSize: 'clamp(48px, 11vw, 92px)',
+          color:'var(--gold)',
+          lineHeight: .92,
+        }}>
+          {Math.round(credits[user] ?? 0)}<span style={{fontSize:'0.45em', color:'var(--dim)', marginLeft:6, fontWeight:400}}>₡</span>
         </div>
-        <div style={{textAlign:'right', flexShrink:0}}>
-          <div className="bc-meta" style={{marginBottom:6}}>
-            {t('app.credits')}
-          </div>
-          <div className="bc-num" style={{fontSize: isDesktop ? 78 : 56, color:'var(--gold)'}}>
-            {Math.round(credits[user] ?? 0)}<span style={{fontSize:'0.5em', color:'var(--dim)', marginLeft:6, fontWeight:400}}>₡</span>
-          </div>
+        <div className="bc-meta" style={{marginTop:6, fontSize:8}}>
+          — {t('app.credits')}
         </div>
       </div>
-      {/* Quick stats strip — pure typography, separated by hairlines only */}
-      {totalMy > 0 && (
-        <div style={{display:'flex', gap:0, marginTop:28, borderTop:'1px solid var(--rule)', paddingTop:18}}>
-          {[
-            {l:t('stats_view.won'),   v:myWon.length,  c:'var(--grn)'},
-            {l:t('stats_view.lost'),  v:myLost.length, c:'var(--red)'},
-            {l:t('stats_view.win_rate'), v:`${wr}%`,   c: wr>=50 ? 'var(--grn)' : 'var(--red)'},
-            {l:t('dashboard.total_bets'), v:totalMy + myAct.length + mySec.length, c:'var(--gold)'},
-          ].map((s, idx) => (
-            <div key={s.l} style={{
-              flex:1, textAlign: idx === 0 ? 'left' : idx === 3 ? 'right' : 'center',
-              borderLeft: idx === 0 ? 'none' : '1px solid var(--rule)', paddingLeft: idx === 0 ? 0 : 14,
-            }}>
-              <div className="bc-num" style={{fontSize:30, color:s.c}}>{s.v}</div>
-              <div className="bc-meta" style={{marginTop:6, fontSize:8}}>{s.l}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Quick stats — staggered vertically: each cell at a different y. */}
+      {totalMy > 0 && (() => {
+        const cells = [
+          {l:t('stats_view.won'),   v:myWon.length,  c:'var(--grn)'},
+          {l:t('stats_view.lost'),  v:myLost.length, c:'var(--red)'},
+          {l:t('stats_view.win_rate'), v:`${wr}%`,   c: wr>=50 ? 'var(--grn)' : 'var(--red)'},
+          {l:t('dashboard.total_bets'), v:totalMy + myAct.length + mySec.length, c:'var(--gold)'},
+        ];
+        // Stagger offsets — never identical, never centered.
+        const yOffsets = isDesktop ? [0, 22, 8, 30] : [0, 14, 4, 18];
+        const indents  = isDesktop ? [0, 8, 32, 4]  : [0, 4, 16, 2];
+        return (
+          <div style={{
+            display:'flex', gap:0, marginTop: isDesktop ? 44 : 28,
+            paddingTop:18, borderTop:'1px solid var(--rule)',
+            alignItems:'flex-start',
+          }}>
+            {cells.map((s, idx) => (
+              <div key={s.l} style={{
+                flex:1,
+                paddingLeft: idx === 0 ? 0 : indents[idx],
+                paddingTop: yOffsets[idx],
+                textAlign: idx === 0 ? 'left' : 'left',
+                borderLeft: idx === 0 ? 'none' : '1px solid var(--rule)',
+              }}>
+                <div className="bc-num" style={{fontSize: 'clamp(22px, 5vw, 34px)', color:s.c, lineHeight:1}}>{s.v}</div>
+                <div className="bc-meta" style={{marginTop:6, fontSize:8}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 

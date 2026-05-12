@@ -318,48 +318,78 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
     </div>
   );
 
+  // Asymmetric leaderboard: 1st rank gets a giant italic Cormorant treatment,
+  // subsequent ranks shrink and indent left, breaking any grid feel. Numbers
+  // float at varying y-positions on the right margin.
   const leaderboardCard = leaderboard.length > 1 && (
-    <div style={{...S.card, marginBottom:10}}>
-      <SecLabel>{t('stats_group.title')}</SecLabel>
+    <div style={{padding:'30px 0 28px', borderBottom:'1px solid var(--rule)', position:'relative'}}>
+      <div className="bc-meta" style={{marginBottom:24}}>{t('stats_group.title')}</div>
       {leaderboard.every(r => r.tot === 0) ? (
-        <div style={{fontSize:12, color:'var(--dim)', textAlign:'center', padding:'10px 0'}}>{t('stats_group.no_data')}</div>
+        <div style={{fontSize:12, color:'var(--dim)', padding:'10px 0'}}>{t('stats_group.no_data')}</div>
       ) : (
-        <div style={{display:'flex', flexDirection:'column', gap:8}}>
+        <div style={{display:'flex', flexDirection:'column', gap:0}}>
           {leaderboard.map((r, i) => {
             const c = COLORS[r.p?.colorKey] || '#5b8af0';
+            // Per-rank typography & offsets — clamps stay readable on mobile,
+            // breathe wider on desktop. Odd indices indent more than even, so
+            // the column zig-zags.
+            const sizes = [
+              { name: 'clamp(38px, 9vw, 72px)', bal: 'clamp(26px, 6vw, 44px)', indent: 0,  myTop: 0,  pad: '14px 0' },
+              { name: 'clamp(28px, 6vw, 48px)', bal: 'clamp(22px, 5vw, 34px)', indent: 'clamp(20px, 6vw, 64px)', myTop: -8, pad: '8px 0 10px' },
+              { name: 'clamp(22px, 5vw, 36px)', bal: 'clamp(18px, 4vw, 26px)', indent: 'clamp(10px, 3vw, 32px)', myTop: -4, pad: '6px 0 8px' },
+              { name: 'clamp(17px, 3.5vw, 22px)', bal: 'clamp(14px, 2.5vw, 18px)', indent: 'clamp(28px, 8vw, 96px)', myTop: 0, pad: '4px 0' },
+            ];
+            const tier = sizes[Math.min(i, sizes.length - 1)];
+            const isPodium = i < 3;
             return (
               <div key={r.id} style={{
-                display:'flex', alignItems:'center', gap:10,
-                padding:'8px 10px', borderRadius:10,
-                background: r.isMe ? 'var(--gold)0f' : 'transparent',
-                border: r.isMe ? '1px solid var(--gold)44' : '1px solid var(--brd)',
+                position:'relative',
+                display:'flex', alignItems:'baseline', justifyContent:'space-between',
+                gap:14, paddingLeft: tier.indent, padding: tier.pad,
+                marginTop: tier.myTop,
+                // Subtle gold tint only when it's me — no full background, no box.
+                borderLeft: r.isMe ? '2px solid var(--gold)' : 'none',
+                paddingLeft: r.isMe ? `calc(${tier.indent || '0px'} + 14px)` : tier.indent,
+                opacity: i >= 4 ? 0.65 : 1,
               }}>
-                <div style={{fontSize:14, fontWeight:700, color:'var(--dim)', width:18, textAlign:'center'}}>
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}
-                </div>
-                <div style={{width:34, height:34, borderRadius:'50%',
-                  background:`${c}33`, border:`2px solid ${c}66`,
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  fontSize:18, overflow:'hidden', flexShrink:0}}>
-                  {r.p?.avatarUrl
-                    ? <img src={r.p.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                    : (r.p?.avatar ?? '')}
-                </div>
-                <div style={{flex:1, minWidth:0}}>
-                  <div style={{fontFamily:"'Cormorant Garamond',serif", fontSize:14, fontWeight:700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                <div style={{display:'flex', alignItems:'baseline', gap:'clamp(8px, 2vw, 18px)', minWidth:0, flex:1}}>
+                  {/* Rank glyph drifts to the gutter — italic Cormorant for podium, tiny Manrope below */}
+                  <div style={{
+                    fontFamily: isPodium ? "'Cormorant Garamond',serif" : "'Manrope',sans-serif",
+                    fontStyle: isPodium ? 'italic' : 'normal',
+                    fontSize: isPodium ? 'clamp(20px, 5vw, 32px)' : '10px',
+                    fontWeight: isPodium ? 600 : 700,
+                    letterSpacing: isPodium ? '-0.02em' : '.2em',
+                    color: 'var(--dim)', flexShrink: 0,
+                    minWidth: isPodium ? 'auto' : 28,
+                    transform: isPodium ? `translateY(${i*2}px)` : 'none',
+                  }}>
+                    {i === 0 ? 'I' : i === 1 ? 'II' : i === 2 ? 'III' : `0${i+1}`}
+                  </div>
+                  {/* Name — the loudest type, italic Cormorant */}
+                  <div style={{
+                    fontFamily:"'Cormorant Garamond',serif",
+                    fontStyle:'italic',
+                    fontSize: tier.name,
+                    fontWeight: i === 0 ? 600 : 500,
+                    lineHeight: 0.95,
+                    letterSpacing: '-0.02em',
+                    color: r.isMe ? 'var(--gold)' : 'var(--txt)',
+                    whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                  }}>
                     {r.p?.name}
                   </div>
-                  <div style={{fontSize:11, color:'var(--dim)', marginTop:1}}>
-                    <span style={{color:'var(--grn)'}}>{r.w}{t('stats_group.wins')}</span>
-                    {' · '}<span style={{color:'var(--red)'}}>{r.l}{t('stats_group.losses')}</span>
-                    {r.tot > 0 && <> · {t('stats_group.win_rate')} <span style={{color: r.wr>=50?'var(--grn)':'var(--red)', fontWeight:700}}>{r.wr}%</span></>}
-                  </div>
                 </div>
-                <div style={{textAlign:'right', flexShrink:0}}>
-                  <div style={{fontFamily:"'Cormorant Garamond',serif", fontSize:16, fontWeight:700, color:'var(--gold)'}}>{r.bal} ₡</div>
-                  <div style={{fontSize:10, color: r.net >= 0 ? 'var(--grn)' : 'var(--red)', fontWeight:600}}>
-                    {r.net >= 0 ? '+' : ''}{r.net} {t('stats_group.net')}
+                {/* Number — Playfair lining numerals, floats at the right gutter */}
+                <div style={{textAlign:'right', flexShrink:0, transform:`translateY(${i % 2 === 0 ? -3 : 6}px)`}}>
+                  <div className="bc-num" style={{fontSize: tier.bal, color:'var(--gold)', lineHeight:.9}}>
+                    {r.bal}<span style={{fontSize:'0.5em', color:'var(--dim)', marginLeft:3, fontWeight:400}}>₡</span>
                   </div>
+                  {r.tot > 0 && (
+                    <div className="bc-meta" style={{fontSize:8, marginTop:4, color: r.net >= 0 ? 'var(--grn)' : 'var(--red)'}}>
+                      {r.net >= 0 ? '+' : ''}{r.net} · {r.wr}%
+                    </div>
+                  )}
                 </div>
               </div>
             );
