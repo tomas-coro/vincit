@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SecLabel, Avatar, fmtQ, qToP, COLORS, getC } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import Sparkline from '../Sparkline.jsx';
+import * as api from '../../api.js';
 
 const S = {
   card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
@@ -62,6 +63,21 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
   })();
   const peakBalance = balanceSeries.length ? Math.max(...balanceSeries) : 100;
   const lowBalance  = balanceSeries.length ? Math.min(...balanceSeries) : 100;
+
+  // Achievements
+  const [achv, setAchv] = useState({ catalog: [], unlocked: [] });
+  useEffect(() => {
+    api.getAchievements().then(setAchv).catch(() => {});
+  }, [bets.length]);
+  const unlockedMap = Object.fromEntries(achv.unlocked.map(u => [u.achievement_id, u.unlocked_at]));
+
+  // Head-to-head member selection
+  const [h2hId, setH2hId] = useState(null);
+  const others = (groupMembers && groupMembers.length ? groupMembers : [])
+    .filter(m => m.id !== user);
+  useEffect(() => {
+    if (!h2hId && others[0]) setH2hId(others[0].id);
+  }, [h2hId, others]);
 
   // Responsive sparkline width based on container measurement
   const sparkRef = useRef(null);
@@ -156,6 +172,120 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
   );
   const emptyMsg=all.length===0&&<div style={{textAlign:"center",padding:"32px 0",color:"var(--dim)",fontSize:13}}>{t('stats_view.no_bets')}</div>;
 
+  // ─── Trophies card ──────────────────────────────────────────────────
+  const trophiesCard = achv.catalog.length > 0 && (
+    <div style={{...S.card, marginBottom:10}}>
+      <SecLabel>
+        {t('trophies.title')}
+        <span style={{marginLeft:8,color:'var(--gold)',fontWeight:700}}>
+          {achv.unlocked.length}/{achv.catalog.length}
+        </span>
+      </SecLabel>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(76px, 1fr))',gap:8}}>
+        {achv.catalog.map(a => {
+          const unlocked = !!unlockedMap[a.id];
+          const tierC = a.tier === 'gold' ? 'var(--gold)' : a.tier === 'silver' ? '#c0c4d0' : '#b87333';
+          return (
+            <div key={a.id} title={t('trophies.'+a.id+'_desc')} style={{
+              textAlign:'center', padding:'8px 4px', borderRadius:10,
+              background: unlocked ? 'var(--surf)' : 'rgba(255,255,255,.02)',
+              border: `1px solid ${unlocked ? tierC + '55' : 'var(--brd)'}`,
+              opacity: unlocked ? 1 : .45, position:'relative',
+            }}>
+              <div style={{fontSize:28, filter: unlocked ? `drop-shadow(0 0 8px ${tierC}55)` : 'grayscale(1)', marginBottom:2}}>{a.icon}</div>
+              <div style={{fontSize:10, fontWeight:700, color: unlocked ? 'var(--txt)' : 'var(--dim)', lineHeight:1.2}}>
+                {t('trophies.'+a.id)}
+              </div>
+              {!unlocked && (
+                <div style={{fontSize:8,color:'var(--mut)',letterSpacing:1,marginTop:2,textTransform:'uppercase'}}>
+                  🔒 {t('trophies.locked')}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // ─── Head-to-head card ───────────────────────────────────────────────
+  const h2hOpponent = others.find(m => m.id === h2hId);
+  const h2hBets = bets.filter(b =>
+    (b.creator === user && b.opponent === h2hId) ||
+    (b.creator === h2hId && b.opponent === user)
+  );
+  const h2hResolved = h2hBets.filter(b => ['won','lost'].includes(b.status));
+  const myWinsVsThem = h2hResolved.filter(b =>
+    (b.creator === user && b.status === 'won') ||
+    (b.creator === h2hId && b.status === 'lost')
+  ).length;
+  const theirWinsVsMe = h2hResolved.filter(b =>
+    (b.creator === h2hId && b.status === 'won') ||
+    (b.creator === user && b.status === 'lost')
+  ).length;
+  const h2hNetMe = h2hResolved.reduce((s, b) => {
+    if (b.creator === user) return s + (b.status === 'won' ? (b.potentialWin - b.stake) : -b.stake);
+    if (b.creator === h2hId) return s + (b.status === 'won' ? -b.stake : (b.potentialWin - b.stake));
+    return s;
+  }, 0);
+
+  const h2hCard = h2hOpponent && (
+    <div style={{...S.card, marginBottom:10}}>
+      <SecLabel>{t('h2h.title')}</SecLabel>
+      {/* Opponent selector chips */}
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
+        {others.map(m => {
+          const active = m.id === h2hId;
+          return (
+            <button key={m.id} onClick={() => setH2hId(m.id)}
+              style={{
+                display:'inline-flex', alignItems:'center', gap:6,
+                padding:'5px 10px 5px 5px', borderRadius:18,
+                border:`1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
+                background: active ? 'var(--gold)1a' : 'transparent',
+                color: active ? 'var(--gold)' : 'var(--dim)',
+                cursor:'pointer', fontFamily:"'Syne',sans-serif", fontSize:11, fontWeight:600,
+              }}>
+              {m.avatarUrl
+                ? <img src={m.avatarUrl} alt="" style={{width:20,height:20,borderRadius:'50%',objectFit:'cover'}}/>
+                : <span style={{fontSize:14}}>{m.avatar || '😊'}</span>}
+              <span>{m.name}</span>
+            </button>
+          );
+        })}
+      </div>
+      {h2hResolved.length === 0 ? (
+        <div style={{fontSize:12, color:'var(--dim)', textAlign:'center', padding:'12px 0'}}>{t('h2h.no_data')}</div>
+      ) : (
+        <div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-around',gap:8}}>
+            <div style={{textAlign:'center',flex:1}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:myWinsVsThem>theirWinsVsMe?"var(--gold)":"var(--txt)"}}>{myWinsVsThem}</div>
+              <div style={{fontSize:10,color:'var(--dim)',letterSpacing:1,textTransform:'uppercase',marginTop:2}}>{t('h2h.you')}</div>
+            </div>
+            <div style={{fontSize:14,color:'var(--mut)'}}>VS</div>
+            <div style={{textAlign:'center',flex:1}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:theirWinsVsMe>myWinsVsThem?"var(--gold)":"var(--txt)"}}>{theirWinsVsMe}</div>
+              <div style={{fontSize:10,color:'var(--dim)',letterSpacing:1,textTransform:'uppercase',marginTop:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{h2hOpponent.name}</div>
+            </div>
+          </div>
+          <div style={{display:'flex',justifyContent:'space-around',marginTop:12,paddingTop:10,borderTop:'1px solid var(--brd)'}}>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontSize:14,fontWeight:700,color: h2hNetMe >= 0 ? 'var(--grn)' : 'var(--red)'}}>
+                {h2hNetMe >= 0 ? '+' : ''}{h2hNetMe} ₡
+              </div>
+              <div style={{fontSize:10,color:'var(--dim)'}}>{t('h2h.net_me')}</div>
+            </div>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontSize:14,fontWeight:700,color:'var(--gold)'}}>{h2hResolved.length}</div>
+              <div style={{fontSize:10,color:'var(--dim)'}}>{t('h2h.bets')}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const leaderboardCard = leaderboard.length > 1 && (
     <div style={{...S.card, marginBottom:10}}>
       <SecLabel>{t('stats_group.title')}</SecLabel>
@@ -212,11 +342,11 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,marginBottom:20}}>{t('stats_view.title')}</div>
       {isDesktop?(
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
-          <div>{balanceCard}{statsGrid}{bestCard}{emptyMsg}</div>
-          <div>{leaderboardCard}{catCard}{hofCard}</div>
+          <div>{balanceCard}{statsGrid}{bestCard}{h2hCard}{emptyMsg}</div>
+          <div>{leaderboardCard}{trophiesCard}{catCard}{hofCard}</div>
         </div>
       ):(
-        <>{balanceCard}{statsGrid}{bestCard}{leaderboardCard}{catCard}{hofCard}{emptyMsg}</>
+        <>{balanceCard}{statsGrid}{bestCard}{leaderboardCard}{h2hCard}{trophiesCard}{catCard}{hofCard}{emptyMsg}</>
       )}
     </div>
   );

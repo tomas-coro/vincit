@@ -163,6 +163,23 @@ const pool = new Pool({
     CREATE INDEX IF NOT EXISTS idx_bets_target_user ON bets(target_user);
   `);
 
+  // Granular notification preferences (replaces the legacy on_new_bet umbrella)
+  await pool.query(`
+    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_group_bet   BOOLEAN DEFAULT true;
+    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_challenged  BOOLEAN DEFAULT true;
+    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_targeted    BOOLEAN DEFAULT true;
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS achievements (
+      user_id        TEXT NOT NULL,
+      achievement_id TEXT NOT NULL,
+      unlocked_at    BIGINT NOT NULL,
+      PRIMARY KEY (user_id, achievement_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_achievements_user ON achievements(user_id);
+  `);
+
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_bets_room_id     ON bets(room_id);
     CREATE INDEX IF NOT EXISTS idx_bets_creator     ON bets(creator);

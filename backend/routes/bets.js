@@ -2,7 +2,8 @@
 const crypto  = require('crypto');
 const express = require('express');
 const db = require('../db.js');
-const { sendPushToUser } = require('./push.js');
+const { sendPushToUser, isPrefEnabled } = require('./push.js');
+const { refreshAchievements } = require('../achievements.js');
 const { requireOwner, requirePermission } = require('../middleware/auth.js');
 
 module.exports = function(broadcastUpdate) {
@@ -67,45 +68,45 @@ module.exports = function(broadcastUpdate) {
 
       broadcastUpdate(roomId);
 
-      // Determine notification recipients:
-      // - Vault (isSecret): nobody
-      // - Surprise: only the explicit opponent
-      // - Targeted (opponent set, not surprise): everyone in the group except creator
-      //   (so the opponent gets notified AND other members see it too)
-      // - Open: everyone in the group except creator
-      let targets = [];
+      // Granular notifications:
+      // - Vault: nobody
+      // - Surprise: only the opponent (uses on_challenged)
+      // - Targeted (opponent set, not surprise): opponent (on_challenged) + rest of group (on_group_bet)
+      // - Open: rest of group (on_group_bet)
+      // Target user, separately (on_targeted), only if not surprise (else spoiler).
       if (!isSecret) {
-        if (surprise) {
-          targets = [opponent];
-        } else {
+        if (opponent && opponent !== creator) {
+          if (await isPrefEnabled(opponent, 'on_challenged')) {
+            sendPushToUser(opponent, {
+              title: '🎯 Sfida diretta',
+              body:  `Sei stato sfidato: "${title}"`,
+              url:   '/',
+            });
+          }
+        }
+        if (!surprise) {
           const { rows: members } = await db.query(
-            `SELECT user_id AS id FROM user_groups WHERE group_id=$1 AND user_id!=$2`,
-            [roomId, creator]
+            `SELECT user_id AS id FROM user_groups WHERE group_id=$1 AND user_id NOT IN ($2,$3)`,
+            [roomId, creator, opponent || creator]
           );
-          targets = members.map(m => m.id);
+          for (const m of members) {
+            if (await isPrefEnabled(m.id, 'on_group_bet')) {
+              sendPushToUser(m.id, {
+                title: 'BetCouple 🎲',
+                body:  `Nuova bet nel gruppo: "${title}"`,
+                url:   '/',
+              });
+            }
+          }
         }
-      }
-      for (const recipient of targets) {
-        const { rows: prefs } = await db.query('SELECT on_new_bet FROM notification_prefs WHERE "user"=$1', [recipient]);
-        if (prefs[0]?.on_new_bet !== false) {
-          const isMine = opponent === recipient;
-          sendPushToUser(recipient, {
-            title: isMine ? '🎯 Sfida diretta' : 'BetCouple 🎲',
-            body:  isMine ? `Sei stato sfidato: "${title}"` : `Nuova bet: "${title}"`,
-            url: '/',
-          });
-        }
-      }
-      // Notify the target if specified AND the bet is not a surprise — for surprise, the target
-      // must remain unaware until resolution.
-      if (target && !surprise && !isSecret && target !== creator && target !== opponent) {
-        const { rows: prefs } = await db.query('SELECT on_new_bet FROM notification_prefs WHERE "user"=$1', [target]);
-        if (prefs[0]?.on_new_bet !== false) {
-          sendPushToUser(target, {
-            title: '🎯 Sei nel mirino',
-            body:  `Stanno scommettendo su di te: "${title}"`,
-            url: '/',
-          });
+        if (target && !surprise && target !== creator && target !== opponent) {
+          if (await isPrefEnabled(target, 'on_targeted')) {
+            sendPushToUser(target, {
+              title: '🎯 Sei nel mirino',
+              body:  `Stanno scommettendo su di te: "${title}"`,
+              url:   '/',
+            });
+          }
         }
       }
       res.status(201).json({ id });
@@ -168,6 +169,12 @@ module.exports = function(broadcastUpdate) {
         try {
           const { rows: [bet] } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
           if (bet) {
+            // Achievements check for everyone whose stats just changed (creator, opponent, target)
+            const checkIds = new Set([bet.creator]);
+            if (bet.opponent) checkIds.add(bet.opponent);
+            if (bet.target_user) checkIds.add(bet.target_user);
+            for (const u of checkIds) refreshAchievements(u);
+
             const notifyIds = new Set();
             if (bet.opponent && bet.opponent !== req.userId) notifyIds.add(bet.opponent);
             if (bet.creator !== req.userId) notifyIds.add(bet.creator);
@@ -175,8 +182,7 @@ module.exports = function(broadcastUpdate) {
             for (const r of cbs) if (r.bettor !== req.userId) notifyIds.add(r.bettor);
 
             for (const u of notifyIds) {
-              const { rows: prefs } = await db.query('SELECT on_resolved FROM notification_prefs WHERE "user"=$1', [u]);
-              if (prefs[0]?.on_resolved !== false) {
+              if (await isPrefEnabled(u, 'on_resolved')) {
                 sendPushToUser(u, {
                   title: outcome === 'won' ? '✅ Bet vinta' : '❌ Bet persa',
                   body:  `"${bet.title}"`,
@@ -185,12 +191,11 @@ module.exports = function(broadcastUpdate) {
               }
             }
 
-            // Target gets a dedicated notification — for surprise bets this is when they finally
-            // discover the bet existed at all
+            // Target gets a dedicated notification (uses on_targeted) — for surprise bets this is
+            // the moment they finally discover the bet existed at all.
             if (bet.target_user && bet.target_user !== req.userId
                 && bet.target_user !== bet.creator && bet.target_user !== bet.opponent) {
-              const { rows: prefs } = await db.query('SELECT on_resolved FROM notification_prefs WHERE "user"=$1', [bet.target_user]);
-              if (prefs[0]?.on_resolved !== false) {
+              if (await isPrefEnabled(bet.target_user, 'on_targeted')) {
                 sendPushToUser(bet.target_user, {
                   title: bet.is_surprise === 1 ? '🤫 Sorpresa, eri tu il bersaglio' : '🎯 Bet su di te risolta',
                   body:  `"${bet.title}" · ${outcome === 'won' ? 'esito SÌ' : 'esito NO'}`,

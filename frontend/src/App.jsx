@@ -6,6 +6,7 @@ import { DARK, LIGHT, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx'
 import { useLang } from './i18n.js';
 import WinOverlay from './components/WinOverlay.jsx';
 import SplashScreen from './components/SplashScreen.jsx';
+import OnboardingTour from './components/OnboardingTour.jsx';
 import { SkeletonDashboard, SkeletonList } from './components/Skeleton.jsx';
 import { useToast } from './Toast.jsx';
 import AuthView from './components/views/AuthView.jsx';
@@ -125,6 +126,7 @@ export default function App() {
   const { t } = useLang();
   const toast = useToast();
   const [splashDone, setSplashDone] = useState(false);
+  const [tourDone, setTourDone] = useState(() => !!localStorage.getItem('bc_onboarding_done'));
 
   // Auth state
   const [token,       setToken]       = useState(() => localStorage.getItem('bc_token'));
@@ -473,7 +475,7 @@ export default function App() {
           )}
           <div style={{ flex: 1, padding: '4px 12px' }}>
             {NAV.map(n => (
-              <div key={n.id} onClick={() => setView(n.id)} className="nav-item" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: view === n.id ? 'var(--gold)' : 'var(--dim)', background: view === n.id ? 'var(--gold)11' : 'transparent', marginBottom: 4, transition: 'all .18s', userSelect: 'none', position: 'relative' }}>
+              <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => setView(n.id)} className="nav-item" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: view === n.id ? 'var(--gold)' : 'var(--dim)', background: view === n.id ? 'var(--gold)11' : 'transparent', marginBottom: 4, transition: 'all .18s', userSelect: 'none', position: 'relative' }}>
                 <span style={{ fontSize: 18 }}>{n.e}</span>
                 {n.l}
                 {n.id === 'vault' && secretCount > 0 && (
@@ -483,7 +485,7 @@ export default function App() {
             ))}
           </div>
           <div style={{ padding: '12px 16px 0' }}>
-            <button onClick={() => setShowCreate(true)} style={{ width: '100%', padding: '11px 0', borderRadius: 12, border: 'none', background: 'var(--gold)', color: '#07060f', fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px var(--glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>{t('app.new_bet')}</button>
+            <button data-tour="new-bet" onClick={() => setShowCreate(true)} style={{ width: '100%', padding: '11px 0', borderRadius: 12, border: 'none', background: 'var(--gold)', color: '#07060f', fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px var(--glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>{t('app.new_bet')}</button>
           </div>
         </div>
       )}
@@ -540,7 +542,7 @@ export default function App() {
       {!isDesktop && (
         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: C.surf, borderTop: `1px solid ${C.brd}`, padding: '8px 2px 10px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 50 }}>
           {NAV.map(n => (
-            <div key={n.id} onClick={() => setView(n.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 10px', cursor: 'pointer', borderRadius: 12, fontSize: 10, color: view === n.id ? 'var(--gold)' : 'var(--mut)', transition: 'all .18s', position: 'relative', userSelect: 'none' }}>
+            <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => setView(n.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 10px', cursor: 'pointer', borderRadius: 12, fontSize: 10, color: view === n.id ? 'var(--gold)' : 'var(--mut)', transition: 'all .18s', position: 'relative', userSelect: 'none' }}>
               <span style={{ fontSize: 20 }}>{n.e}</span>
               {n.id === 'vault' && secretCount > 0 && (
                 <div style={{ position: 'absolute', top: 2, right: 6, width: 14, height: 14, borderRadius: '50%', background: 'var(--gold)', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>{secretCount}</div>
@@ -548,7 +550,7 @@ export default function App() {
               {n.l}
             </div>
           ))}
-          <div onClick={() => setShowCreate(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, cursor: 'pointer', userSelect: 'none' }}>
+          <div data-tour="new-bet" onClick={() => setShowCreate(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, cursor: 'pointer', userSelect: 'none' }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: `0 4px 16px var(--glow)`, transition: 'all .18s' }}>+</div>
             <span style={{ fontSize: 10, color: 'var(--gold)' }}>{t('app.new_bet_label')}</span>
           </div>
@@ -566,6 +568,21 @@ export default function App() {
       {commentBetModal && <CommentModal bet={commentBetModal} onSave={handleComment} onSkip={() => setCommentBetModal(null)} />}
       {editingBet && <EditModal bet={editingBet} cats={cats} user={user} onSave={handleEdit} onClose={() => setEditingBet(null)}/>}
       {showGroupModal && <CreateGroupModal onCreated={handleGroupCreated} onClose={() => setShowGroupModal(false)} />}
+      {/* Onboarding tour — shown once on first login per device, only after data is ready */}
+      {!tourDone && !!profiles[user] && (
+        <OnboardingTour
+          steps={[
+            { selector: '[data-tour="new-bet"]', title: t('onboarding.step1_title'),
+              body: t('onboarding.step1_body'), place: isDesktop ? 'top' : 'top' },
+            { selector: '[data-tour="nav-vault"]', title: t('onboarding.step2_title'),
+              body: t('onboarding.step2_body'), place: isDesktop ? 'bottom' : 'top' },
+            { selector: '[data-tour="nav-stats"]', title: t('onboarding.step3_title'),
+              body: t('onboarding.step3_body'), place: isDesktop ? 'bottom' : 'top' },
+          ]}
+          onDone={() => { localStorage.setItem('bc_onboarding_done', '1'); setTourDone(true); }}
+        />
+      )}
+
       {showGroupInfo && (
         <GroupInfoModal
           group={groups.find(g => g.id === activeGroupId)}

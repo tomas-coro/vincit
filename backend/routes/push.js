@@ -34,12 +34,19 @@ router.delete('/subscribe', async (req, res) => {
 router.post('/prefs', async (req, res) => {
   try {
     const user = req.userId;
-    const { on_new_bet, on_resolved, on_expiry } = req.body;
+    const { on_group_bet, on_challenged, on_targeted, on_resolved, on_expiry } = req.body;
     await db.query(`
-      INSERT INTO notification_prefs("user", on_new_bet, on_resolved, on_expiry)
-      VALUES($1,$2,$3,$4)
-      ON CONFLICT("user") DO UPDATE SET on_new_bet=$2, on_resolved=$3, on_expiry=$4
-    `, [user, on_new_bet ?? true, on_resolved ?? true, on_expiry ?? true]);
+      INSERT INTO notification_prefs("user", on_group_bet, on_challenged, on_targeted, on_resolved, on_expiry)
+      VALUES($1,$2,$3,$4,$5,$6)
+      ON CONFLICT("user") DO UPDATE SET
+        on_group_bet=$2, on_challenged=$3, on_targeted=$4, on_resolved=$5, on_expiry=$6
+    `, [user,
+        on_group_bet  ?? true,
+        on_challenged ?? true,
+        on_targeted   ?? true,
+        on_resolved   ?? true,
+        on_expiry     ?? true,
+    ]);
     res.json({ ok: true });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
@@ -48,9 +55,23 @@ router.get('/prefs/:user', async (req, res) => {
   try {
     if (req.params.user !== req.userId) return res.status(403).json({ error: 'Forbidden' });
     const { rows } = await db.query('SELECT * FROM notification_prefs WHERE "user"=$1', [req.params.user]);
-    res.json(rows[0] ?? { on_new_bet: true, on_resolved: true, on_expiry: true });
+    const row = rows[0] ?? {};
+    res.json({
+      on_group_bet:  row.on_group_bet  ?? true,
+      on_challenged: row.on_challenged ?? true,
+      on_targeted:   row.on_targeted   ?? true,
+      on_resolved:   row.on_resolved   ?? true,
+      on_expiry:     row.on_expiry     ?? true,
+    });
   } catch(e) { res.status(500).json({ error: 'Server error' }); }
 });
+
+// Helper used by other routes to check a specific preference (default true)
+async function isPrefEnabled(userId, prefName) {
+  const { rows } = await db.query(`SELECT ${prefName} FROM notification_prefs WHERE "user"=$1`, [userId]);
+  if (!rows.length) return true;
+  return rows[0][prefName] !== false;
+}
 
 async function sendPushToUser(targetUser, payload) {
   if (!process.env.VAPID_PUBLIC_KEY) return;
@@ -65,4 +86,4 @@ async function sendPushToUser(targetUser, payload) {
   }
 }
 
-module.exports = { router, sendPushToUser };
+module.exports = { router, sendPushToUser, isPrefEnabled };

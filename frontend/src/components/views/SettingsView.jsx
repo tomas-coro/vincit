@@ -28,7 +28,10 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
   const [creditConfirm, setCreditConfirm] = useState(null);
   const [creditErr, setCreditErr] = useState({});
   const [showResetConfirm,setShowResetConfirm]=useState(false);
-  const [notifPrefs,setNotifPrefs]=useState({on_new_bet:true,on_resolved:true,on_expiry:true});
+  const [notifPrefs,setNotifPrefs]=useState({
+    on_group_bet:true, on_challenged:true, on_targeted:true,
+    on_resolved:true, on_expiry:true,
+  });
   const [profileName, setProfileName] = useState('');
   const [profileAvatar, setProfileAvatar] = useState('');
   const [profileColor, setProfileColor] = useState('');
@@ -269,17 +272,22 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
       <SecLabel mt={16}>{t('settings.notif_title')}</SecLabel>
       <div style={{...S.card,marginBottom:12}}>
         {[
-          {key:'on_new_bet',  label:t('settings.notif_new_bet')},
-          {key:'on_resolved', label:t('settings.notif_resolved')},
-          {key:'on_expiry',   label:t('settings.notif_expiry')},
-        ].map(({key,label})=>(
-          <div key={key} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:key!=='on_expiry'?'1px solid var(--brd)':'none'}}>
-            <span style={{fontSize:13}}>{label}</span>
+          {key:'on_group_bet',  label:t('settings.notif_group_bet'),  desc:t('settings.notif_group_bet_desc')},
+          {key:'on_challenged', label:t('settings.notif_challenged'), desc:t('settings.notif_challenged_desc')},
+          {key:'on_targeted',   label:t('settings.notif_targeted'),   desc:t('settings.notif_targeted_desc')},
+          {key:'on_resolved',   label:t('settings.notif_resolved'),   desc:t('settings.notif_resolved_desc')},
+          {key:'on_expiry',     label:t('settings.notif_expiry'),     desc:t('settings.notif_expiry_desc')},
+        ].map(({key,label,desc},i,arr)=>(
+          <div key={key} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:i<arr.length-1?'1px solid var(--brd)':'none',gap:10}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:600}}>{label}</div>
+              <div style={{fontSize:11,color:'var(--dim)',marginTop:2}}>{desc}</div>
+            </div>
             <button onClick={()=>{
               const next={...notifPrefs,[key]:!notifPrefs[key]};
               setNotifPrefs(next);
               api.saveNotifPrefs(next).catch(console.error);
-            }} style={{width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',position:'relative',background:notifPrefs[key]?'var(--gold)':'var(--brd)',transition:'background .2s'}}>
+            }} style={{width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',position:'relative',background:notifPrefs[key]?'var(--gold)':'var(--brd)',transition:'background .2s',flexShrink:0}}>
               <div style={{position:'absolute',top:3,width:18,height:18,borderRadius:9,background:'#fff',left:notifPrefs[key]?23:3,transition:'left .2s'}}/>
             </button>
           </div>

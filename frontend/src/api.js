@@ -81,6 +81,8 @@ export const removeReaction   = (id, bettor)  => req('DELETE', `/bets/${id}/reac
 export const getNotifPrefs  = (user)        => req('GET',  `/push/prefs/${user}`);
 export const saveNotifPrefs = (prefs)       => req('POST', '/push/prefs', prefs);
 
+export const getAchievements = ()           => req('GET',  '/achievements');
+
 // Avatar image upload (dataUrl = "data:image/jpeg;base64,..."). Optional token override
 // for the one-shot call right after register (token not yet in localStorage).
 export const uploadAvatar = (dataUrl, opts) => req('POST',   '/auth/avatar', { dataUrl }, opts);

@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const { authMiddleware, authMiddlewareSSE, resolveActiveRoom } = require('./middleware/auth.js');
 const authRouter = require('./routes/auth.js');
-const { sendPushToUser } = require('./routes/push.js');
+const { sendPushToUser, isPrefEnabled } = require('./routes/push.js');
 const rateLimit = require('express-rate-limit');
 const db = require('./db.js');
 
@@ -89,6 +89,7 @@ const creditsRouter  = require('./routes/credits.js')(broadcastUpdate);
 const catsRouter     = require('./routes/categories.js')(broadcastUpdate);
 const reactionsRouter = require('./routes/reactions.js')(broadcastUpdate);
 const { router: pushRouter } = require('./routes/push.js');
+const achievementsRouter = require('./routes/achievements.js');
 
 app.use('/api/state',      authMiddleware, stateRouter);
 app.use('/api/groups',     authMiddleware, groupsRouter);
@@ -98,6 +99,7 @@ app.use('/api/credits',    authMiddleware, resolveActiveRoom, creditsRouter);
 app.use('/api/categories', authMiddleware, resolveActiveRoom, catsRouter);
 app.use('/api/bets',       authMiddleware, resolveActiveRoom, reactionsRouter);
 app.use('/api/push',       authMiddleware, pushRouter);
+app.use('/api/achievements', authMiddleware, achievementsRouter);
 
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 app.get('*', (req, res) => {
@@ -118,8 +120,7 @@ setInterval(async () => {
     if (result.rowCount > 0) {
       for (const b of result.rows) {
         broadcastUpdate(b.room_id);
-        const { rows: prefs } = await db.query('SELECT on_expiry FROM notification_prefs WHERE "user"=$1', [b.creator]);
-        if (prefs[0]?.on_expiry !== false)
+        if (await isPrefEnabled(b.creator, 'on_expiry'))
           sendPushToUser(b.creator, { title:'BetCouple ⏱', body:`"${b.title}" è scaduta — dichiara l'esito!`, url:'/' });
       }
     }
