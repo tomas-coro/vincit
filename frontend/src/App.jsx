@@ -16,6 +16,7 @@ import DashboardView from './components/views/DashboardView.jsx';
 import BetsView from './components/views/BetsView.jsx';
 import VaultView from './components/views/VaultView.jsx';
 import StatsView from './components/views/StatsView.jsx';
+import TrophiesView from './components/views/TrophiesView.jsx';
 import SettingsView from './components/views/SettingsView.jsx';
 import CreateModal from './components/modals/CreateModal.jsx';
 import CreateGroupModal from './components/modals/CreateGroupModal.jsx';
@@ -431,6 +432,7 @@ export default function App() {
     { id: 'bets', e: '🎯', l: t('nav.bets') },
     { id: 'vault', e: '🔒', l: t('nav.vault') },
     { id: 'stats', e: '📊', l: t('nav.stats') },
+    { id: 'trophies', e: '🏆', l: t('nav.trophies') },
     { id: 'settings', e: '⚙️', l: t('nav.settings') },
   ];
 
@@ -567,7 +569,7 @@ export default function App() {
           if (!dataReady) {
             if (view === 'dashboard') return <SkeletonDashboard />;
             if (view === 'bets' || view === 'vault') return <SkeletonList count={4} withGoldStripe={view==='vault'} />;
-            if (view === 'stats') return <SkeletonList count={3} />;
+            if (view === 'stats' || view === 'trophies') return <SkeletonList count={3} />;
             return null;
           }
           return (<>
@@ -575,6 +577,7 @@ export default function App() {
             {view === 'bets'      && <BetsView user={user} profiles={profiles} bets={bets} cats={cats} onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} />}
             {view === 'vault'     && <VaultView user={user} profiles={profiles} bets={bets} cats={cats} onReveal={b => setRevealBet(b)} onFlame={handleFlame} unlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin} isDesktop={isDesktop} onDelete={handleDelete} onEdit={b => setEditingBet(b)} />}
             {view === 'stats'     && <StatsView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} isDesktop={isDesktop} />}
+            {view === 'trophies'  && <TrophiesView bets={bets} isDesktop={isDesktop} />}
             {view === 'settings'  && <SettingsView user={user} profiles={profiles} isDark={isDark} setIsDark={setIsDark} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onLogout={handleLogout} onProfileUpdate={u => setAuthUser(prev => ({...prev,...u}))} isAdmin={isAdmin} can={can} />}
           </>);
         })()}

@@ -3,7 +3,6 @@ import { SecLabel, Avatar, fmtQ, qToP, COLORS, getC } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import Sparkline from '../Sparkline.jsx';
 import StreakBadge, { StreakInline } from '../StreakBadge.jsx';
-import TrophiesModal from '../modals/TrophiesModal.jsx';
 import * as api from '../../api.js';
 
 const S = {
@@ -65,20 +64,6 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
   })();
   const peakBalance = balanceSeries.length ? Math.max(...balanceSeries) : 100;
   const lowBalance  = balanceSeries.length ? Math.min(...balanceSeries) : 100;
-
-  // Trophies preview state
-  const [showTrophies, setShowTrophies] = useState(false);
-  const [achvData, setAchvData] = useState({ catalog: [], unlocked: [], progress: {} });
-  useEffect(() => {
-    api.getAchievements().then(setAchvData).catch(() => {});
-  }, [bets.length]);
-  const earnedLevels = Object.values(achvData.progress || {}).reduce((s, p) => s + (p.level || 0), 0);
-  const totalLevels  = (achvData.catalog || []).reduce((s, a) => s + (a.levels?.length || 5), 0);
-  const recentUnlocks = [...(achvData.unlocked || [])]
-    .sort((a, b) => Number(b.unlocked_at || 0) - Number(a.unlocked_at || 0))
-    .slice(0, 6)
-    .map(u => achvData.catalog.find(c => c.id === u.achievement_id))
-    .filter(Boolean);
 
   // Compute personal loss streak (best run length)
   const myChronologicalResolved = [...bets]
@@ -205,55 +190,6 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
   );
   const emptyMsg=all.length===0&&<div style={{textAlign:"center",padding:"32px 0",color:"var(--dim)",fontSize:13}}>{t('stats_view.no_bets')}</div>;
 
-  // ─── Trophies (compact preview card → opens full modal on click) ─────
-  const trophiesCard = (
-    <div onClick={() => setShowTrophies(true)} className="card-hover"
-      style={{...S.card, marginBottom:10, cursor:'pointer'}}>
-      <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10, marginBottom:8}}>
-        <div>
-          <div style={{fontSize:10, color:'var(--dim)', letterSpacing:2, textTransform:'uppercase', marginBottom:4, fontWeight:700}}>
-            {t('trophies.title')}
-          </div>
-          <div style={{display:'flex', alignItems:'baseline', gap:8}}>
-            <div style={{fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:'var(--gold)', lineHeight:1}}>
-              {earnedLevels}<span style={{fontSize:14, color:'var(--dim)', fontWeight:400}}>/{totalLevels}</span>
-            </div>
-            <div style={{fontSize:11, color:'var(--dim)'}}>livelli</div>
-          </div>
-        </div>
-        <div style={{
-          fontSize:12, color:'var(--gold)', fontFamily:"'Syne',sans-serif", fontWeight:700,
-          display:'flex', alignItems:'center', gap:4, padding:'6px 12px', borderRadius:20,
-          border:'1px solid var(--gold)44', background:'var(--gold)0d',
-        }}>{t('trophies.view_all') || 'Vedi tutti'} →</div>
-      </div>
-
-      {/* Progress bar */}
-      <div style={{height:6, background:'var(--mut)22', borderRadius:3, overflow:'hidden'}}>
-        <div style={{
-          height:'100%',
-          width: totalLevels ? `${(earnedLevels/totalLevels)*100}%` : '0%',
-          background:'linear-gradient(90deg, var(--gold), var(--goldL))',
-          boxShadow:'0 0 6px var(--glow)', transition:'width .5s',
-        }}/>
-      </div>
-
-      {/* Recent unlocks strip */}
-      {recentUnlocks.length > 0 && (
-        <div style={{display:'flex', alignItems:'center', gap:8, marginTop:10, flexWrap:'wrap'}}>
-          <span style={{fontSize:9, color:'var(--dim)', letterSpacing:2, fontWeight:700}}>RECENTI</span>
-          <div style={{display:'flex', gap:4}}>
-            {recentUnlocks.map((a, i) => (
-              <span key={a.id+'_'+i} style={{
-                fontSize:18, lineHeight:1,
-                filter:'drop-shadow(0 0 4px var(--glow))',
-              }}>{a.icon}</span>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   // ─── Head-to-head card ───────────────────────────────────────────────
   const h2hOpponent = others.find(m => m.id === h2hId);
@@ -276,56 +212,99 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
     return s;
   }, 0);
 
+  // Compact "VS" header avatars (used both for 2-people and N-people layouts)
+  const myProfile = profiles[user];
+  const myC = COLORS[myProfile?.colorKey] || '#5b8af0';
+  const opC = COLORS[h2hOpponent?.colorKey] || '#a07ef5';
+  const showSelector = others.length > 1;
+  const winnerSide = myWinsVsThem === theirWinsVsMe ? null : (myWinsVsThem > theirWinsVsMe ? 'me' : 'them');
+
   const h2hCard = h2hOpponent && (
     <div style={{...S.card, marginBottom:10}}>
       <SecLabel>{t('h2h.title')}</SecLabel>
-      {/* Opponent selector chips */}
-      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
-        {others.map(m => {
-          const active = m.id === h2hId;
-          return (
-            <button key={m.id} onClick={() => setH2hId(m.id)}
-              style={{
-                display:'inline-flex', alignItems:'center', gap:6,
-                padding:'5px 10px 5px 5px', borderRadius:18,
-                border:`1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
-                background: active ? 'var(--gold)1a' : 'transparent',
-                color: active ? 'var(--gold)' : 'var(--dim)',
-                cursor:'pointer', fontFamily:"'Syne',sans-serif", fontSize:11, fontWeight:600,
-              }}>
-              {m.avatarUrl
-                ? <img src={m.avatarUrl} alt="" style={{width:20,height:20,borderRadius:'50%',objectFit:'cover'}}/>
-                : <span style={{fontSize:14}}>{m.avatar || '😊'}</span>}
-              <span>{m.name}</span>
-            </button>
-          );
-        })}
+
+      {/* Avatars VS header — always shown */}
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:14, marginBottom:14}}>
+        <div style={{display:'flex', flexDirection:'column', alignItems:'center', flex:1, minWidth:0}}>
+          <div style={{width:48, height:48, borderRadius:'50%',
+            background:`${myC}33`, border:`2px solid ${winnerSide==='me'?'var(--gold)':myC+'66'}`,
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, overflow:'hidden',
+            boxShadow: winnerSide==='me' ? '0 0 12px var(--glow)' : 'none',
+          }}>
+            {myProfile?.avatarUrl
+              ? <img src={myProfile.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+              : (myProfile?.avatar ?? '🙂')}
+          </div>
+          <div style={{fontSize:11, color:'var(--dim)', marginTop:6, letterSpacing:1, textTransform:'uppercase', fontWeight:700}}>{t('h2h.you')}</div>
+        </div>
+
+        <div style={{textAlign:'center', flex:'0 0 auto'}}>
+          <div style={{fontFamily:"'Playfair Display',serif", fontSize:30, fontWeight:900, lineHeight:1, color: winnerSide==='me'?'var(--gold)':'var(--txt)'}}>
+            {myWinsVsThem}
+            <span style={{margin:'0 8px', color:'var(--mut)', fontSize:18, fontWeight:600}}>VS</span>
+            <span style={{color: winnerSide==='them'?'var(--gold)':'var(--txt)'}}>{theirWinsVsMe}</span>
+          </div>
+        </div>
+
+        <div style={{display:'flex', flexDirection:'column', alignItems:'center', flex:1, minWidth:0}}>
+          <div style={{width:48, height:48, borderRadius:'50%',
+            background:`${opC}33`, border:`2px solid ${winnerSide==='them'?'var(--gold)':opC+'66'}`,
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, overflow:'hidden',
+            boxShadow: winnerSide==='them' ? '0 0 12px var(--glow)' : 'none',
+          }}>
+            {h2hOpponent.avatarUrl
+              ? <img src={h2hOpponent.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+              : (h2hOpponent.avatar ?? '🙂')}
+          </div>
+          <div style={{fontSize:11, color:'var(--dim)', marginTop:6, letterSpacing:1, textTransform:'uppercase', fontWeight:700, maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{h2hOpponent.name}</div>
+        </div>
       </div>
+
+      {/* Opponent selector — only if there are >1 other members */}
+      {showSelector && (
+        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
+          {others.map(m => {
+            const active = m.id === h2hId;
+            return (
+              <button key={m.id} onClick={() => setH2hId(m.id)}
+                style={{
+                  display:'inline-flex', alignItems:'center', gap:6,
+                  padding:'5px 10px 5px 5px', borderRadius:18,
+                  border:`1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
+                  background: active ? 'var(--gold)1a' : 'transparent',
+                  color: active ? 'var(--gold)' : 'var(--dim)',
+                  cursor:'pointer', fontFamily:"'Syne',sans-serif", fontSize:11, fontWeight:600,
+                }}>
+                {m.avatarUrl
+                  ? <img src={m.avatarUrl} alt="" style={{width:20,height:20,borderRadius:'50%',objectFit:'cover'}}/>
+                  : <span style={{fontSize:14}}>{m.avatar || '😊'}</span>}
+                <span>{m.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {h2hResolved.length === 0 ? (
         <div style={{fontSize:12, color:'var(--dim)', textAlign:'center', padding:'12px 0'}}>{t('h2h.no_data')}</div>
       ) : (
-        <div>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-around',gap:8}}>
-            <div style={{textAlign:'center',flex:1}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:myWinsVsThem>theirWinsVsMe?"var(--gold)":"var(--txt)"}}>{myWinsVsThem}</div>
-              <div style={{fontSize:10,color:'var(--dim)',letterSpacing:1,textTransform:'uppercase',marginTop:2}}>{t('h2h.you')}</div>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, paddingTop:10, borderTop:'1px solid var(--brd)'}}>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:16, fontWeight:700, color: h2hNetMe >= 0 ? 'var(--grn)' : 'var(--red)'}}>
+              {h2hNetMe >= 0 ? '+' : ''}{h2hNetMe} ₡
             </div>
-            <div style={{fontSize:14,color:'var(--mut)'}}>VS</div>
-            <div style={{textAlign:'center',flex:1}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:theirWinsVsMe>myWinsVsThem?"var(--gold)":"var(--txt)"}}>{theirWinsVsMe}</div>
-              <div style={{fontSize:10,color:'var(--dim)',letterSpacing:1,textTransform:'uppercase',marginTop:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{h2hOpponent.name}</div>
-            </div>
+            <div style={{fontSize:10, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginTop:2}}>{t('h2h.net_me')}</div>
           </div>
-          <div style={{display:'flex',justifyContent:'space-around',marginTop:12,paddingTop:10,borderTop:'1px solid var(--brd)'}}>
-            <div style={{textAlign:'center'}}>
-              <div style={{fontSize:14,fontWeight:700,color: h2hNetMe >= 0 ? 'var(--grn)' : 'var(--red)'}}>
-                {h2hNetMe >= 0 ? '+' : ''}{h2hNetMe} ₡
-              </div>
-              <div style={{fontSize:10,color:'var(--dim)'}}>{t('h2h.net_me')}</div>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:16, fontWeight:700, color:'var(--gold)'}}>{h2hResolved.length}</div>
+            <div style={{fontSize:10, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginTop:2}}>{t('h2h.bets')}</div>
+          </div>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:16, fontWeight:700, color: winnerSide==='me' ? 'var(--grn)' : winnerSide==='them' ? 'var(--red)' : 'var(--dim)'}}>
+              {winnerSide==='me' ? '🏆' : winnerSide==='them' ? '💀' : '⚖'}
             </div>
-            <div style={{textAlign:'center'}}>
-              <div style={{fontSize:14,fontWeight:700,color:'var(--gold)'}}>{h2hResolved.length}</div>
-              <div style={{fontSize:10,color:'var(--dim)'}}>{t('h2h.bets')}</div>
+            <div style={{fontSize:10, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginTop:2}}>
+              {winnerSide==='me' ? 'LEAD' : winnerSide==='them' ? 'BEHIND' : 'EVEN'}
             </div>
           </div>
         </div>
@@ -388,15 +367,12 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
     <div className="sUp">
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,marginBottom:20}}>{t('stats_view.title')}</div>
       {isDesktop?(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
-          <div>{balanceCard}{statsGrid}{bestCard}{h2hCard}{emptyMsg}</div>
-          <div>{trophiesCard}{leaderboardCard}{catCard}{hofCard}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,alignItems:"start"}}>
+          <div style={{display:'flex', flexDirection:'column', gap:10}}>{balanceCard}{statsGrid}{bestCard}{h2hCard}{emptyMsg}</div>
+          <div style={{display:'flex', flexDirection:'column', gap:10}}>{leaderboardCard}{catCard}{hofCard}</div>
         </div>
       ):(
-        <>{balanceCard}{statsGrid}{trophiesCard}{bestCard}{leaderboardCard}{h2hCard}{catCard}{hofCard}{emptyMsg}</>
-      )}
-      {showTrophies && (
-        <TrophiesModal onClose={() => setShowTrophies(false)} betsTick={bets.length} />
+        <>{balanceCard}{statsGrid}{bestCard}{leaderboardCard}{h2hCard}{catCard}{hofCard}{emptyMsg}</>
       )}
     </div>
   );

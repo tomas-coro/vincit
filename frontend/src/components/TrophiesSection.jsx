@@ -57,6 +57,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
   const earnedLevels = list.reduce((s, a) => s + a.progress.level, 0);
   const totalLevels  = list.reduce((s, a) => s + (a.levels?.length || 5), 0);
   const maxedCount   = list.filter(a => a.progress.level >= a.progress.max_level).length;
+  const totalTrophies = list.length;
 
   const fmtDate = ts => {
     if (!ts) return '';
@@ -74,13 +75,44 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
 
   return (
     <div style={embedded ? CARD_S : {}}>
+      {/* Headline: two big counters side by side */}
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14}}>
+        <div style={{
+          background:'linear-gradient(135deg, var(--gold)1a, var(--card))',
+          border:'1px solid var(--gold)44', borderRadius:12,
+          padding:'10px 14px',
+        }}>
+          <div style={{fontSize:10, color:'var(--dim)', letterSpacing:2, textTransform:'uppercase', fontWeight:700}}>
+            {t('trophies.counter_trophies')}
+          </div>
+          <div style={{display:'flex', alignItems:'baseline', gap:4, marginTop:4}}>
+            <div style={{fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:'var(--gold)', lineHeight:1}}>
+              {maxedCount}
+            </div>
+            <div style={{fontSize:14, color:'var(--dim)'}}>/{totalTrophies}</div>
+          </div>
+        </div>
+        <div style={{
+          background:'linear-gradient(135deg, var(--gold)0d, var(--card))',
+          border:'1px solid var(--brd)', borderRadius:12,
+          padding:'10px 14px',
+        }}>
+          <div style={{fontSize:10, color:'var(--dim)', letterSpacing:2, textTransform:'uppercase', fontWeight:700}}>
+            {t('trophies.counter_levels')}
+          </div>
+          <div style={{display:'flex', alignItems:'baseline', gap:4, marginTop:4}}>
+            <div style={{fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:'var(--txt)', lineHeight:1}}>
+              {earnedLevels}
+            </div>
+            <div style={{fontSize:14, color:'var(--dim)'}}>/{totalLevels}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Title + filters row */}
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, marginBottom:10, flexWrap:'wrap'}}>
         <SecLabel>
           {t('trophies.title')}
-          <span style={{marginLeft:8, color:'var(--gold)', fontWeight:700}}>{earnedLevels}/{totalLevels}</span>
-          {maxedCount > 0 && (
-            <span style={{marginLeft:6, fontSize:10, color:'var(--gold)', letterSpacing:1}}>· {maxedCount} MAX 👑</span>
-          )}
         </SecLabel>
         <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
           {['all','unlocked','max','locked'].map(f => (
@@ -133,15 +165,29 @@ function TrophyTile({ a, t, fmtDate }) {
   const ratio = isMax ? 1 :
     Math.max(0, Math.min(1, (current - prevTarget) / Math.max(1, nextTarget - prevTarget)));
 
+  // Special "completed trophy" styling for max-level entries
+  const maxBg = isMax
+    ? 'linear-gradient(135deg, rgba(200,151,63,.22) 0%, rgba(232,184,75,.10) 50%, rgba(200,151,63,.18) 100%)'
+    : (unlocked ? 'linear-gradient(180deg, var(--surf), var(--card))' : 'var(--card)');
+  const borderC = isMax ? 'var(--gold)' : (unlocked ? tierC + '55' : 'var(--brd)');
+
   return (
-    <div style={{
+    <div className={`${unlocked ? 'card-hover' : ''}${isMax ? ' pGold' : ''}`} style={{
       padding:'10px 12px 12px',
       borderRadius:12,
-      background: unlocked ? 'linear-gradient(180deg, var(--surf), var(--card))' : 'var(--card)',
-      border: `1px solid ${unlocked ? tierC + '55' : 'var(--brd)'}`,
+      background: maxBg,
+      border: `${isMax ? 2 : 1}px solid ${borderC}`,
       opacity: unlocked ? 1 : .82,
       position:'relative', overflow:'hidden',
-    }} className={unlocked ? 'card-hover' : ''}>
+    }}>
+      {/* MAX glint accent in the corner */}
+      {isMax && (
+        <div style={{
+          position:'absolute', top:-12, right:-12, width:50, height:50,
+          background:'radial-gradient(circle at 0% 100%, rgba(232,184,75,.45) 0%, transparent 60%)',
+          pointerEvents:'none',
+        }}/>
+      )}
       {/* tier stripe on left */}
       <div style={{
         position:'absolute', left:0, top:0, bottom:0, width:3,
