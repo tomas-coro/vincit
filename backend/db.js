@@ -180,6 +180,25 @@ const pool = new Pool({
     CREATE INDEX IF NOT EXISTS idx_achievements_user ON achievements(user_id);
   `);
 
+  // Migration to leveled achievements (one row per level reached).
+  await pool.query(`ALTER TABLE achievements DROP CONSTRAINT IF EXISTS achievements_pkey`);
+  await pool.query(`ALTER TABLE achievements ADD COLUMN IF NOT EXISTS level INTEGER NOT NULL DEFAULT 1`);
+  await pool.query(`ALTER TABLE achievements ADD CONSTRAINT achievements_pkey PRIMARY KEY (user_id, achievement_id, level)`)
+    .catch(() => {}); // already in place
+  // Drop legacy unlocks tied to retired achievement_ids — they'll be recomputed
+  // by refreshAchievements at the next bet resolve / page load.
+  await pool.query(`
+    DELETE FROM achievements WHERE achievement_id NOT IN (
+      'wins','win_streak','volume','earnings',
+      'single_win','high_odds','daredevil','safe_bet','high_roller',
+      'surprise','pegno','night_owl','early_bird','marathon',
+      'commentator','quick_resolve','comeback','equilibrium',
+      'losses','loss_streak','worst_loss','outsider_lost',
+      'flamed','paparazzo','counter_winner','targeted',
+      'multi_group','recruiter'
+    )
+  `);
+
   // Migrate legacy balance_500 (was based on current balance) → earnings_500 (cumulative winnings)
   await pool.query(`
     UPDATE achievements SET achievement_id='earnings_500' WHERE achievement_id='balance_500';
