@@ -7,6 +7,7 @@ const { sendPushToUser, isPrefEnabled } = require('./routes/push.js');
 // Categories: positive | challenge | mission | shadow | social | unique
 const CATALOG = [
   // ─── Positive ──────────────────────────────────────────────────────
+  { id: 'first_bet',      icon: '🌱', category: 'positive',  levels: [1, 10, 50, 100, 250] },     // 5 — total bets created
   { id: 'wins',           icon: '🏆', category: 'positive',  levels: [1, 5, 25, 100, 250] },       // 5
   { id: 'win_streak',     icon: '🔥', category: 'positive',  levels: [3, 5, 10, 15, 25] },        // 5
   { id: 'volume',         icon: '🎲', category: 'positive',  levels: [10, 50, 150, 400] },        // 4
@@ -46,7 +47,6 @@ const CATALOG = [
 
   // ─── Unique milestones (one-shot) ──────────────────────────────────
   // Easy — most players unlock these in the first session
-  { id: 'first_bet',      icon: '🌱', category: 'unique',    levels: [1] },
   { id: 'first_react',    icon: '👋', category: 'unique',    levels: [1] },
   { id: 'first_photo',    icon: '📸', category: 'unique',    levels: [1] },
   { id: 'first_vault',    icon: '🔒', category: 'unique',    levels: [1] },
@@ -127,7 +127,7 @@ async function computeProgressFor(userId) {
   const pegnoWinsCount        = wins.filter(b => (b.pegno || '').trim().length > 0).length;
   const pegnoCreatedAny       = allMine.some(b => (b.pegno || '').trim().length > 0) ? 1 : 0;
   const vaultCreatedAny       = allMine.some(b => b.is_secret === 1) ? 1 : 0;
-  const anyBetCreated         = allMine.length > 0 ? 1 : 0;
+  const totalBetsCreated      = allMine.length;
 
   // Time-of-day & marathon (best single-day count, best night-of-bets count)
   const hourBuckets = { night: 0, morning: 0 };
@@ -251,8 +251,10 @@ async function computeProgressFor(userId) {
     multi_group:    groupCount,
     recruiter:      recruits,
 
+    // first_bet has become a leveled "Creatore" trophy in the positive category
+    first_bet:       totalBetsCreated,
+
     // Unique milestones
-    first_bet:       anyBetCreated,
     first_react:     anyReactGiven,
     first_photo:     photosSent >= 1 ? 1 : 0,
     first_vault:     vaultCreatedAny,

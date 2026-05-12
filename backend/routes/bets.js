@@ -427,6 +427,49 @@ module.exports = function(broadcastUpdate) {
     }
   });
 
+  // POST /api/bets/test-reset — like /reset but ALSO wipes trophies of all
+  // group members. Use it during testing to keep stats and achievements clean.
+  router.post('/test-reset', async (req, res) => {
+    try {
+      if (!(await requirePermission(req, res, 'reset_season'))) return;
+      const roomId = req.activeRoomId;
+
+      await db.transaction(async (client) => {
+        const { rows: members } = await client.query(
+          'SELECT user_id FROM user_groups WHERE group_id=$1', [roomId]
+        );
+        const userIds = members.map(m => m.user_id);
+
+        // Cascade DELETE on counter_bets / reactions
+        await client.query(
+          'DELETE FROM reactions WHERE bet_id IN (SELECT id FROM bets WHERE room_id=$1)', [roomId]
+        );
+        await client.query(
+          'DELETE FROM counter_bets WHERE bet_id IN (SELECT id FROM bets WHERE room_id=$1)', [roomId]
+        );
+        await client.query('DELETE FROM bets WHERE room_id=$1', [roomId]);
+
+        // Reset credits to 100 for these members
+        if (userIds.length) {
+          await client.query(
+            `UPDATE credits SET amount=100 WHERE "user" = ANY($1)`,
+            [userIds]
+          );
+          await client.query(
+            `DELETE FROM achievements WHERE user_id = ANY($1)`,
+            [userIds]
+          );
+        }
+      });
+
+      broadcastUpdate(roomId);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+
   router.get('/export/:user', async (req, res) => {
     try {
       if (req.params.user !== req.userId) return res.status(403).json({ error: 'Forbidden' });

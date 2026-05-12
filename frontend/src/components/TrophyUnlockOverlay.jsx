@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from '../i18n.js';
 
 const CSS = `
@@ -27,21 +27,43 @@ const CSS = `
 
 const TIER_BY_LEVEL = { 1: '#b87333', 2: '#c0c4d0', 3: '#c0c4d0', 4: 'var(--gold)', 5: 'var(--gold)' };
 
-// queue is an array of { id, icon, level, max_level }
+// queue = array of { id, icon, level, max_level }
 export default function TrophyUnlockOverlay({ queue, onDone }) {
   const { t } = useLang();
   const [current, setCurrent] = useState(null);
   const [exiting, setExiting] = useState(false);
 
+  // Stable ref to the latest onDone so the timers below don't get a stale closure
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
+
+  // Effect A — when we set a `current`, schedule fade-out + clear. Re-runs ONLY
+  // when current changes (so queue updates can't accidentally clear the timers).
   useEffect(() => {
-    if (!current && queue.length > 0) {
+    if (!current) return;
+    setExiting(false);
+    const tExit = setTimeout(() => setExiting(true), 2900);
+    const tClear = setTimeout(() => {
+      setCurrent(null);
+      onDoneRef.current?.();
+    }, 3300);
+    return () => { clearTimeout(tExit); clearTimeout(tClear); };
+  }, [current]);
+
+  // Effect B — when the queue grows and we're idle, grab the next item
+  useEffect(() => {
+    if (current == null && queue.length > 0) {
       setCurrent(queue[0]);
-      setExiting(false);
-      const t1 = setTimeout(() => setExiting(true), 2900);
-      const t2 = setTimeout(() => { setCurrent(null); onDone?.(); }, 3300);
-      return () => { clearTimeout(t1); clearTimeout(t2); };
     }
-  }, [queue, current, onDone]);
+  }, [queue, current]);
+
+  const dismissNow = useCallback(() => {
+    setExiting(true);
+    setTimeout(() => {
+      setCurrent(null);
+      onDoneRef.current?.();
+    }, 280);
+  }, []);
 
   if (!current) return null;
   const isMax = current.level >= (current.max_level || 5);
@@ -51,6 +73,7 @@ export default function TrophyUnlockOverlay({ queue, onDone }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 9500, pointerEvents: 'none' }}>
       <style>{CSS}</style>
       <div
+        onClick={dismissNow}
         className={`tr-card${exiting ? ' exit' : ''}`}
         style={{
           position: 'absolute', top: 12, left: '50%',
@@ -61,21 +84,20 @@ export default function TrophyUnlockOverlay({ queue, onDone }) {
           borderRadius: 14,
           padding: '12px 14px',
           display: 'flex', alignItems: 'center', gap: 12,
+          pointerEvents: 'auto', cursor: 'pointer',
         }}
       >
-        {/* Sparkles around the card */}
-        <span className="tr-spark" style={{ top: -10, right: 14,  fontSize: 14, animationDelay: '0s'  }}>✨</span>
-        <span className="tr-spark" style={{ bottom: -8, left: 34, fontSize: 12, animationDelay: '.4s' }}>✨</span>
-        <span className="tr-spark" style={{ top: 8,    left: -8,  fontSize: 10, animationDelay: '.9s' }}>✨</span>
+        {/* Sparkles */}
+        <span className="tr-spark" style={{ top: -10, right: 14,  fontSize: 14, animationDelay: '0s'   }}>✨</span>
+        <span className="tr-spark" style={{ bottom: -8, left: 34, fontSize: 12, animationDelay: '.4s'  }}>✨</span>
+        <span className="tr-spark" style={{ top: 8,    left: -8,  fontSize: 10, animationDelay: '.9s'  }}>✨</span>
         <span className="tr-spark" style={{ top: 26,   right: -6, fontSize: 11, animationDelay: '1.3s' }}>✨</span>
 
-        {/* Trophy icon */}
         <div style={{
           fontSize: 34, lineHeight: 1, flexShrink: 0,
           filter: `drop-shadow(0 0 12px ${tier}aa)`,
         }}>{current.icon}</div>
 
-        {/* Text */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontSize: 9, letterSpacing: 2, fontWeight: 800, fontFamily: "'Syne',sans-serif",

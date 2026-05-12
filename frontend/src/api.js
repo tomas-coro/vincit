@@ -73,6 +73,7 @@ export const acceptBet      = (id)           => req('POST',   `/bets/${id}/accep
 export const rejectBet      = (id)           => req('POST',   `/bets/${id}/reject`);
 export const editBet        = (id, data)     => req('PATCH',  `/bets/${id}/edit`, data);
 export const resetAll       = ()             => req('POST',   '/bets/reset');
+export const resetAllTest   = ()             => req('POST',   '/bets/test-reset');
 export const commentBet     = (id, comment)  => req('PATCH',  `/bets/${id}/comment`, { comment });
 export const addReaction      = (id, emoji)   => req('POST',   `/bets/${id}/reaction`,       { emoji });
 export const addReactionPhoto = (id, dataUrl) => req('POST',   `/bets/${id}/reaction/photo`, { dataUrl });

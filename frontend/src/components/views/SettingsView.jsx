@@ -11,7 +11,7 @@ const S = {
   btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 18px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Syne',sans-serif",fontSize:13,fontWeight:600,transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
 };
 
-export default function SettingsView({user,profiles,isDark,setIsDark,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onLogout,onProfileUpdate,isAdmin=false,can}){
+export default function SettingsView({user,profiles,isDark,setIsDark,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onTestReset,onLogout,onProfileUpdate,isAdmin=false,can}){
   const { t, lang, setLang } = useLang();
   // Backward-compat: if `can` is missing, fall back to isAdmin gating
   const allow = perm => typeof can === 'function' ? can(perm) : !!isAdmin;
@@ -29,6 +29,7 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
   const [creditConfirm, setCreditConfirm] = useState(null);
   const [creditErr, setCreditErr] = useState({});
   const [showResetConfirm,setShowResetConfirm]=useState(false);
+  const [showTestResetConfirm, setShowTestResetConfirm] = useState(false);
   const [notifPrefs,setNotifPrefs]=useState({
     on_group_bet:true, on_challenged:true, on_targeted:true,
     on_resolved:true, on_expiry:true,
@@ -371,24 +372,49 @@ export default function SettingsView({user,profiles,isDark,setIsDark,customCats,
             <div style={{fontSize:13,color:'var(--dim)'}}>{t('settings.admin_only')}</div>
           </div>
         )}
-        {canReset && (showResetConfirm ? (
-          <div style={{...S.card,border:'1px solid var(--red)',background:'var(--red)0d'}}>
-            <div style={{fontSize:14,fontWeight:700,color:'var(--red)',marginBottom:8}}>{t('settings.reset_confirm_title')}</div>
-            <div style={{fontSize:12,color:'var(--dim)',marginBottom:16}}>{t('settings.reset_confirm_desc')}</div>
-            <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setShowResetConfirm(false)} style={{...S.btn,flex:1,background:'transparent',border:'1px solid var(--brd)',color:'var(--dim)'}}>{t('settings.reset_cancel')}</button>
-              <button onClick={()=>{onReset();setShowResetConfirm(false);}} style={{...S.btn,flex:1,background:'var(--red)',border:'none',color:'#fff',fontWeight:700}}>{t('settings.reset_confirm_btn')}</button>
-            </div>
-          </div>
-        ) : (
-          <div style={{...S.card,border:'1px solid var(--red)33'}}>
-            <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>{t('settings.reset_title')}</div>
-            <div style={{fontSize:12,color:'var(--dim)',marginBottom:14}}>{t('settings.reset_desc',{count:(bets||[]).filter(b=>b.status==='active').length,total:(bets||[]).length})}</div>
-            <button onClick={()=>setShowResetConfirm(true)} style={{...S.btn,width:'100%',background:'transparent',border:'1px solid var(--red)66',color:'var(--red)',fontSize:13}}>
-              🏆 {t('settings.reset_btn')}
-            </button>
-          </div>
-        ))}
+        {canReset && (
+          <>
+            {/* Test reset (wipes everything, no narrative) */}
+            {showTestResetConfirm ? (
+              <div style={{...S.card,border:'1px solid var(--red)',background:'var(--red)0d', marginBottom:10}}>
+                <div style={{fontSize:14,fontWeight:700,color:'var(--red)',marginBottom:8}}>{t('settings.test_reset_confirm_title')}</div>
+                <div style={{fontSize:12,color:'var(--dim)',marginBottom:16}}>{t('settings.test_reset_confirm_desc')}</div>
+                <div style={{display:'flex',gap:10}}>
+                  <button onClick={()=>setShowTestResetConfirm(false)} style={{...S.btn,flex:1,background:'transparent',border:'1px solid var(--brd)',color:'var(--dim)'}}>{t('settings.reset_cancel')}</button>
+                  <button onClick={()=>{onTestReset?.();setShowTestResetConfirm(false);}} style={{...S.btn,flex:1,background:'var(--red)',border:'none',color:'#fff',fontWeight:700}}>{t('settings.test_reset_confirm_btn')}</button>
+                </div>
+              </div>
+            ) : (
+              <div style={{...S.card,border:'1px dashed var(--red)44', marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>🧪 {t('settings.test_reset_title')}</div>
+                <div style={{fontSize:11,color:'var(--dim)',marginBottom:12}}>{t('settings.test_reset_desc')}</div>
+                <button onClick={()=>setShowTestResetConfirm(true)} style={{...S.btn,width:'100%',background:'transparent',border:'1px solid var(--red)44',color:'var(--red)',fontSize:12}}>
+                  {t('settings.test_reset_btn')}
+                </button>
+              </div>
+            )}
+
+            {/* Full season reset (preserves trophies) */}
+            {showResetConfirm ? (
+              <div style={{...S.card,border:'1px solid var(--red)',background:'var(--red)0d'}}>
+                <div style={{fontSize:14,fontWeight:700,color:'var(--red)',marginBottom:8}}>{t('settings.reset_confirm_title')}</div>
+                <div style={{fontSize:12,color:'var(--dim)',marginBottom:16}}>{t('settings.reset_confirm_desc')}</div>
+                <div style={{display:'flex',gap:10}}>
+                  <button onClick={()=>setShowResetConfirm(false)} style={{...S.btn,flex:1,background:'transparent',border:'1px solid var(--brd)',color:'var(--dim)'}}>{t('settings.reset_cancel')}</button>
+                  <button onClick={()=>{onReset();setShowResetConfirm(false);}} style={{...S.btn,flex:1,background:'var(--red)',border:'none',color:'#fff',fontWeight:700}}>{t('settings.reset_confirm_btn')}</button>
+                </div>
+              </div>
+            ) : (
+              <div style={{...S.card,border:'1px solid var(--red)33'}}>
+                <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>{t('settings.reset_title')}</div>
+                <div style={{fontSize:12,color:'var(--dim)',marginBottom:14}}>{t('settings.reset_desc',{count:(bets||[]).filter(b=>b.status==='active').length,total:(bets||[]).length})}</div>
+                <button onClick={()=>setShowResetConfirm(true)} style={{...S.btn,width:'100%',background:'transparent',border:'1px solid var(--red)66',color:'var(--red)',fontSize:13}}>
+                  🏆 {t('settings.reset_btn')}
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
