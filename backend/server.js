@@ -103,6 +103,7 @@ app.get('/api/health', (req, res) => {
       base_url: !!process.env.APP_BASE_URL,
       ready: mailConfigured(),
     },
+    admin: !!process.env.ADMIN_KEY,
   });
 });
 
@@ -130,6 +131,10 @@ app.use('/api/push',       authMiddleware, pushRouter);
 app.use('/api/achievements', authMiddleware, achievementsRouter);
 app.use('/api/templates',  authMiddleware, templatesRouter);
 app.use('/api/friends',    authMiddleware, friendsRouter);
+
+// Admin diagnostics — gated on a shared secret in process.env.ADMIN_KEY,
+// no JWT needed. See routes/admin.js for the route shapes.
+app.use('/api/admin',      require('./routes/admin.js'));
 
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 app.get('*', (req, res) => {
