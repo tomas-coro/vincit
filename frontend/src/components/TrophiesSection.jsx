@@ -4,7 +4,7 @@ import { useLang } from '../i18n.js';
 import * as api from '../api.js';
 
 const TIER_COLOR = { gold:'var(--gold)', silver:'#c0c4d0', bronze:'#b87333' };
-const CAT_ORDER = ['positive', 'challenge', 'mission', 'shadow'];
+const CAT_ORDER = ['positive', 'challenge', 'mission', 'shadow', 'social'];
 
 const CARD_S = { background:'var(--card)', border:'1px solid var(--brd)', borderRadius:16, padding:16 };
 

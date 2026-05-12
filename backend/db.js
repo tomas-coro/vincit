@@ -185,6 +185,11 @@ const pool = new Pool({
     UPDATE achievements SET achievement_id='earnings_500' WHERE achievement_id='balance_500';
   `).catch(() => { /* nothing to migrate */ });
 
+  // Track resolve time for the quick_resolve trophy
+  await pool.query(`
+    ALTER TABLE bets ADD COLUMN IF NOT EXISTS resolved_at BIGINT;
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS bet_templates (
       id          TEXT PRIMARY KEY,

@@ -137,7 +137,7 @@ module.exports = function(broadcastUpdate) {
           'SELECT * FROM counter_bets WHERE bet_id = $1', [bet.id]
         );
 
-        await client.query('UPDATE bets SET status = $1 WHERE id = $2', [outcome, bet.id]);
+        await client.query('UPDATE bets SET status = $1, resolved_at = $2 WHERE id = $3', [outcome, Date.now(), bet.id]);
 
         if (outcome === 'won') {
           await client.query(
