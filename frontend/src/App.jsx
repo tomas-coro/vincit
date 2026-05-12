@@ -159,30 +159,60 @@ const CSS_BASE = `
 // unlocks the secret trophy `egg_coin`; subsequent flips are pure fun.
 const COIN_LS_KEY = 'bc_egg_coin_flipped';
 
+// Stylized coin face — a gold circular disk with a Playfair "T"/"C"
+// embossed. Used in place of 🪙 (which is symmetric and unreadable on
+// landing) so testa/croce are visually unambiguous.
+function CoinFace({ side, size }) {
+  const letter = side === 'testa' ? 'T' : 'C';
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: 'radial-gradient(circle at 35% 30%, #f1d995 0%, #c4a878 45%, #8a6520 100%)',
+      border: '4px solid #d6bf94',
+      boxShadow: '0 18px 40px rgba(196,168,120,.55), inset 0 -8px 14px rgba(0,0,0,.25), inset 0 6px 10px rgba(255,255,255,.18)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: "'Playfair Display',serif", fontWeight: 900,
+      fontSize: size * 0.5,
+      color: '#3d2914',
+      textShadow: '0 1px 0 rgba(255,255,255,.4), 0 -1px 0 rgba(0,0,0,.2)',
+      letterSpacing: '-0.05em',
+    }}>{letter}</div>
+  );
+}
+
 function CoinFlipOverlay({ open, onClose }) {
   const [phase, setPhase] = React.useState('flipping'); // 'flipping' | 'settled'
   const [side, setSide]   = React.useState(null);       // 'testa' | 'croce'
+  // Keep onClose in a ref so it doesn't retrigger the effect (which was
+  // causing the random side to be re-rolled mid-flip and bias the result).
+  const onCloseRef = React.useRef(onClose);
+  React.useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
   React.useEffect(() => {
     if (!open) return;
     setPhase('flipping');
     setSide(null);
-    const result = Math.random() < .5 ? 'testa' : 'croce';
+    const result = Math.random() < 0.5 ? 'testa' : 'croce';
     const t1 = setTimeout(() => {
       setSide(result);
       setPhase('settled');
     }, 2200);
-    // First flip ever → claim the trophy.
+    // First flip ever → claim the trophy (idempotent server-side).
     try {
       if (!localStorage.getItem(COIN_LS_KEY)) {
         localStorage.setItem(COIN_LS_KEY, '1');
         api.unlockSecretAchievement('egg_coin').catch(() => {});
       }
     } catch {}
-    const t2 = setTimeout(() => onClose?.(), 4400);
+    const t2 = setTimeout(() => onCloseRef.current?.(), 4600);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [open, onClose]);
+    // open is the only real trigger — onClose intentionally NOT in deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   if (!open) return null;
+
+  const coinSize = 'clamp(140px, 32vw, 220px)';
 
   return (
     <div onClick={onClose} style={{
@@ -193,18 +223,30 @@ function CoinFlipOverlay({ open, onClose }) {
       padding:24, cursor:'pointer',
     }}>
       <div style={{
-        fontSize:'clamp(120px, 30vw, 220px)', lineHeight:1, marginBottom:32,
+        marginBottom:32,
         animation: phase==='flipping' ? 'coinFlip 2.2s cubic-bezier(.34,1.1,.64,1) forwards' : 'coinSettle .5s ease',
-        filter:'drop-shadow(0 12px 32px rgba(196,168,120,.55))',
         transformStyle:'preserve-3d',
-      }}>🪙</div>
+        // While flipping show a neutral gold disk (no letter); once
+        // settled, swap to a CoinFace showing the actual result.
+      }}>
+        {phase === 'flipping' ? (
+          <div style={{
+            width: coinSize, height: coinSize, borderRadius: '50%',
+            background: 'radial-gradient(circle at 35% 30%, #f1d995 0%, #c4a878 45%, #8a6520 100%)',
+            border: '4px solid #d6bf94',
+            boxShadow: '0 18px 40px rgba(196,168,120,.55), inset 0 -8px 14px rgba(0,0,0,.25), inset 0 6px 10px rgba(255,255,255,.18)',
+          }}/>
+        ) : (
+          <CoinFace side={side} size={parseFloat(coinSize)} />
+        )}
+      </div>
       {phase === 'settled' && side && (
         <div className="bIn" style={{textAlign:'center'}}>
           <div className="bc-meta" style={{marginBottom:10, color:'var(--gold)'}}>— Esito</div>
           <div style={{
             fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
             fontSize:'clamp(48px, 12vw, 92px)', fontWeight:600,
-            color:'var(--gold)', letterSpacing:'-0.02em', textTransform:'capitalize',
+            color:'var(--gold)', letterSpacing:'-0.02em', textTransform:'uppercase',
           }}>{side}</div>
         </div>
       )}
@@ -762,10 +804,7 @@ export default function App() {
                 <div style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic', fontSize: 18, fontWeight: 600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', lineHeight:1.05 }}>{myProfile.name}</div>
                 <div className="bc-num" style={{ fontSize: 14, color: 'var(--gold)', marginTop:2 }}>{Math.round(credits[user] ?? 0)}<span
                   onClick={e => { e.stopPropagation(); setCoinFlipOpen(true); }}
-                  title="🪙"
-                  style={{fontSize:'0.7em', opacity:.6, marginLeft:3, cursor:'pointer', transition:'opacity .15s, text-shadow .15s'}}
-                  onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.textShadow = '0 0 8px var(--gold)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '.6'; e.currentTarget.style.textShadow = 'none'; }}
+                  style={{fontSize:'0.7em', opacity:.6, marginLeft:3}}
                 >₡</span></div>
               </div>
             </div>
@@ -848,10 +887,7 @@ export default function App() {
                 <div style={{ fontSize: 9, color:'var(--dim)', letterSpacing:1.5, textTransform:'uppercase' }}>{t('app.credits')}</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gold)' }}>{Math.round(credits[user] ?? 0)} <span
                   onClick={() => setCoinFlipOpen(true)}
-                  title="🪙"
-                  style={{cursor:'pointer', transition:'text-shadow .15s, transform .15s', display:'inline-block'}}
-                  onMouseEnter={e => { e.currentTarget.style.textShadow = '0 0 8px var(--gold)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.textShadow = 'none'; e.currentTarget.style.transform = 'scale(1)'; }}
+                  style={{display:'inline-block'}}
                 >₡</span></div>
               </div>
               <div

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Btn, Inp, Toggle, SecLabel, Q_PRE, qToP, pToQ, fmtQ, clamp, DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import { useToast } from '../../Toast.jsx';
@@ -212,7 +212,10 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   // Easter egg #3: JACKPOT titles trigger a slot-machine overlay BEFORE the
   // bet is actually submitted. After the reels stop, the bet is created
   // normally so it survives as a memento in the user's bet history.
+  // The animation runs ~4.2s — long enough to be satisfying — but the
+  // user can tap anywhere to skip it and finish the submit immediately.
   const [jackpot, setJackpot] = useState(false);
+  const jackpotTimerRef = useRef(null);
   const isMagicTitle = (s) => {
     const v = s.trim().toLowerCase();
     return v === '777' || v === 'jackpot' || v === '💎💎💎';
@@ -235,6 +238,15 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     });
   };
 
+  const finishJackpot = () => {
+    if (jackpotTimerRef.current) {
+      clearTimeout(jackpotTimerRef.current);
+      jackpotTimerRef.current = null;
+    }
+    setJackpot(false);
+    doActualSubmit();
+  };
+
   const submit=()=>{
     if(!title.trim()){toast.error(t('create.err_title'));return;}
     if(stake<=0||stake>maxStake){toast.error(t('create.err_stake',{max:Math.round(maxStake)}));return;}
@@ -243,11 +255,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     if (isMagicTitle(title)) {
       setJackpot(true);
       api.unlockSecretAchievement('egg_jackpot').catch(() => {});
-      // Slot machine plays for 1.8s, then submit + close.
-      setTimeout(() => {
-        setJackpot(false);
-        doActualSubmit();
-      }, 1800);
+      jackpotTimerRef.current = setTimeout(finishJackpot, 4200);
       return;
     }
     doActualSubmit();
@@ -673,17 +681,18 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     </div>
   );
 
-  // Easter egg #3 — slot machine overlay. Spinning reels of 🎰 symbols
-  // for ~1.8s, ending on 7-7-7. Rendered over both desktop and mobile
-  // layouts, takes over the screen while it plays.
+  // Easter egg #3 — slot machine overlay. Spinning reels stop staggered
+  // over ~3.2s, then JACKPOT title pulses in, then the bet submits at 4.2s.
+  // Click anywhere to skip.
   const SlotMachine = jackpot && (
-    <div style={{
+    <div onClick={finishJackpot} style={{
       position:'fixed', inset:0, zIndex:9600,
       background:'radial-gradient(circle at 50% 45%, rgba(43,34,71,.96) 0%, rgba(15,11,35,.98) 70%)',
       backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
-      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24,
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      padding:24, cursor:'pointer',
     }}>
-      <div className="bc-meta" style={{marginBottom:18, color:'var(--gold)'}}>— Jackpot</div>
+      <div className="bc-meta" style={{marginBottom:22, color:'var(--gold)'}}>— Jackpot</div>
       <div style={{
         display:'flex', gap:'clamp(8px, 3vw, 22px)',
         padding:'clamp(18px, 5vw, 36px) clamp(20px, 6vw, 48px)',
@@ -700,7 +709,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
           }}>
             <div style={{
               display:'flex', flexDirection:'column',
-              animation: `slotReel ${1.0 + i * 0.25}s cubic-bezier(.45,.05,.55,.95) forwards`,
+              animation: `slotReel ${2.0 + i * 0.5}s cubic-bezier(.45,.05,.55,.95) forwards`,
               fontFamily:"'Playfair Display',serif",
               fontSize:'clamp(56px, 14vw, 100px)', fontWeight:900,
               color:'var(--gold)', lineHeight:1.4, textAlign:'center',
@@ -715,12 +724,17 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         ))}
       </div>
       <div style={{
-        marginTop:32,
+        marginTop:36,
         fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
         fontSize:'clamp(36px, 8vw, 72px)', fontWeight:600,
         color:'var(--gold)', letterSpacing:'-0.02em',
-        animation:'bIn .5s ease both 1.4s',
+        animation:'bIn .55s cubic-bezier(.34,1.56,.64,1) both 3.1s',
+        textShadow:'0 0 30px rgba(196,168,120,.5)',
       }}>JACKPOT!</div>
+      <div className="bc-meta" style={{
+        marginTop: 36, color:'var(--mut)', fontSize:8,
+        animation: 'fIn .4s ease both 1.2s',
+      }}>tocca per saltare</div>
     </div>
   );
 

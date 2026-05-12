@@ -45,57 +45,74 @@ const S = {
   row: {display:"flex",alignItems:"center",gap:10},
 };
 
-// Easter egg #1: the empty-state die. Click it and it rolls (CSS tumble),
-// stops on a random face. localStorage tracks which faces have been rolled
-// across sessions; when all 6 have been seen, fires the secret-achievement
-// unlock. Idempotent — the server side no-ops on duplicate unlocks.
-const DIE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅']; // unicode dice 1→6
-const DIE_LS_KEY = 'bc_egg_dice_faces';
+// Easter egg #1: the empty-state die. Click it and it rolls (CSS tumble).
+// Visual: the 🎲 emoji is kept throughout (renders reliably on every
+// platform) and a big Playfair number flashes ON TOP for ~1.2s after the
+// tumble — that's the rolled result. localStorage tracks the 6 unique
+// numbers seen across sessions; reaching all 6 fires the secret achievement.
+// A second localStorage key remembers we've already claimed so we don't
+// spam the API on repeat visits.
+const DIE_LS_FACES   = 'bc_egg_dice_faces';
+const DIE_LS_CLAIMED = 'bc_egg_dice_claimed';
 
-function RollingDie({ initial = '🎲', sizeDesktop, sizeMobile, isDesktop, style = {} }) {
-  const [face, setFace] = useState(initial);
+function RollingDie({ sizeDesktop, sizeMobile, isDesktop, style = {} }) {
   const [rolling, setRolling] = useState(false);
-  const claimedRef = useRef(false);
+  const [showNumber, setShowNumber] = useState(null); // 1..6 | null
 
   const roll = () => {
     if (rolling) return;
     setRolling(true);
-    // Settle on a new face. Avoid repeating the previous one so each click
-    // feels different.
-    const prevIdx = DIE_FACES.indexOf(face);
-    const choices = DIE_FACES.filter((_, i) => i !== prevIdx);
-    const next = choices[Math.floor(Math.random() * choices.length)];
-    const nextIdx = DIE_FACES.indexOf(next);
+    setShowNumber(null);
+    const next = 1 + Math.floor(Math.random() * 6);
 
+    // Phase 1: tumble for ~0.75s — visual only.
     setTimeout(() => {
-      setFace(next);
       setRolling(false);
-      // Record this face in localStorage. If we now have all 6, claim the egg.
+      // Phase 2: flash the rolled number for ~1.4s.
+      setShowNumber(next);
+      // Record + maybe claim.
       try {
-        const raw = localStorage.getItem(DIE_LS_KEY);
+        const raw = localStorage.getItem(DIE_LS_FACES);
         const seen = new Set(raw ? JSON.parse(raw) : []);
-        seen.add(nextIdx);
-        localStorage.setItem(DIE_LS_KEY, JSON.stringify(Array.from(seen)));
-        if (seen.size >= 6 && !claimedRef.current) {
-          claimedRef.current = true;
+        seen.add(next);
+        localStorage.setItem(DIE_LS_FACES, JSON.stringify(Array.from(seen)));
+        if (seen.size >= 6 && !localStorage.getItem(DIE_LS_CLAIMED)) {
+          localStorage.setItem(DIE_LS_CLAIMED, '1');
           api.unlockSecretAchievement('egg_dice').catch(() => {});
         }
       } catch {}
+      // Phase 3: number fades out, die returns to neutral.
+      setTimeout(() => setShowNumber(null), 1400);
     }, 750);
   };
 
   return (
-    <div onClick={roll} title="🎲" style={{
-      cursor: rolling ? 'wait' : 'pointer',
-      display:'inline-block', userSelect:'none',
-      fontSize: isDesktop ? sizeDesktop : sizeMobile,
-      transition:'transform .15s ease',
-      transform: rolling ? 'rotate(-360deg) scale(1.18)' : (style.transform || 'none'),
-      filter: rolling ? 'drop-shadow(0 0 12px var(--gold))' : 'none',
+    <div onClick={roll} style={{
+      position: 'relative', display: 'inline-block', userSelect: 'none',
+      // Intentionally no `cursor: pointer`, no `title`, no hover effects —
+      // the easter egg should not announce itself on desktop hover.
       ...style,
-      // Override conflicting overrides
-      animation: rolling ? 'dieTumble .75s cubic-bezier(.34,1.2,.64,1)' : style.animation,
-    }}>{face}</div>
+    }}>
+      <div style={{
+        fontSize: isDesktop ? sizeDesktop : sizeMobile,
+        lineHeight: 1,
+        transition: 'transform .15s ease',
+        animation: rolling ? 'dieTumble .75s cubic-bezier(.34,1.2,.64,1)' : 'none',
+        filter: rolling ? 'drop-shadow(0 0 12px var(--gold))' : 'none',
+      }}>🎲</div>
+      {showNumber != null && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: "'Playfair Display',serif", fontWeight: 900,
+          fontSize: (isDesktop ? sizeDesktop : sizeMobile) * 0.62,
+          color: 'var(--gold)',
+          textShadow: '0 0 12px rgba(196,168,120,.8)',
+          pointerEvents: 'none',
+          animation: 'bIn .35s cubic-bezier(.34,1.56,.64,1), fIn .25s ease 1.1s reverse forwards',
+        }}>{showNumber}</div>
+      )}
+    </div>
   );
 }
 
