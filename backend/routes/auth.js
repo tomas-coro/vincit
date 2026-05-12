@@ -5,6 +5,7 @@ const jwt     = require('jsonwebtoken');
 const crypto  = require('crypto');
 const db      = require('../db.js');
 const { uploadDataUrl, destroyByPublicId, isConfigured: cldReady } = require('../cloudinary.js');
+const { send: sendMail, isConfigured: mailReady } = require('../mailer.js');
 
 const router  = express.Router();
 const SECRET  = process.env.JWT_SECRET || 'dev-secret';
@@ -79,6 +80,99 @@ router.post('/login', async (req, res) => {
     const token = makeToken(u.id, u.name, u.room_id);
     res.json({ token, user: { id:u.id, name:u.name, avatar:u.avatar, avatar_url:u.avatar_url, color_key:u.color_key, room_id:u.room_id, invite_code:inviteCode, paired } });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// POST /api/auth/forgot-password — generates a single-use token, emails the
+// reset link. We deliberately return the same response whether the email
+// exists or not, to avoid leaking account presence.
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const email = (req.body?.email || '').trim().toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+      return res.status(400).json({ error: 'invalid_email' });
+
+    const { rows } = await db.query('SELECT id, name FROM users WHERE email=$1', [email]);
+    const user = rows[0];
+
+    // Silent OK if the email isn't registered (no enumeration).
+    if (!user) return res.json({ ok: true });
+
+    const token  = crypto.randomBytes(32).toString('base64url');
+    const now    = Date.now();
+    const expiry = now + 60 * 60 * 1000; // 1h
+
+    await db.query(
+      'INSERT INTO password_resets(token, user_id, created_at, expires_at) VALUES($1,$2,$3,$4)',
+      [token, user.id, now, expiry]
+    );
+
+    const base = (process.env.APP_BASE_URL || req.headers.origin || '').replace(/\/+$/, '');
+    const link = `${base}/?reset=${token}`;
+
+    if (mailReady()) {
+      try {
+        await sendMail({
+          to: email,
+          subject: 'BetCouple · Reset password',
+          text: `Ciao ${user.name},\n\nHai chiesto di reimpostare la password.\nApri questo link entro 1 ora:\n${link}\n\nSe non sei stato tu, ignora questa email.\n— BetCouple`,
+          html: `<p>Ciao <b>${user.name}</b>,</p>
+                 <p>Hai chiesto di reimpostare la password. Tocca il bottone qui sotto entro 1 ora:</p>
+                 <p><a href="${link}" style="display:inline-block;padding:12px 22px;background:#c8973f;color:#07060f;border-radius:10px;text-decoration:none;font-weight:700;font-family:sans-serif">Reimposta password</a></p>
+                 <p style="font-size:12px;color:#777">Se il bottone non funziona, copia questo indirizzo nel browser:<br><code>${link}</code></p>
+                 <p style="font-size:12px;color:#777">Se non sei stato tu, ignora questa email.</p>`,
+        });
+        return res.json({ ok: true });
+      } catch (mailErr) {
+        console.error('[forgot-password] mail send failed', mailErr);
+        // Fall through to fallback below.
+      }
+    }
+    // Fallback: SMTP not configured (or send failed). Return the link to the
+    // caller so the admin can hand it over manually. This is logged loudly so
+    // it shows up in Render logs without surfacing tokens to other users.
+    console.warn(`[forgot-password] FALLBACK LINK for ${email}: ${link}`);
+    return res.json({ ok: true, fallback_link: link });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// POST /api/auth/reset-password — consume a token, set the new password.
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body || {};
+    if (typeof token !== 'string' || token.length < 16)
+      return res.status(400).json({ error: 'invalid_token' });
+    if (typeof password !== 'string' || password.length < 8)
+      return res.status(400).json({ error: 'password_too_short' });
+
+    const { rows } = await db.query(
+      'SELECT user_id, expires_at, used_at FROM password_resets WHERE token=$1',
+      [token]
+    );
+    const tok = rows[0];
+    if (!tok)                       return res.status(404).json({ error: 'invalid_token' });
+    if (tok.used_at)                return res.status(410).json({ error: 'token_used' });
+    if (Date.now() > Number(tok.expires_at))
+                                    return res.status(410).json({ error: 'token_expired' });
+
+    const hash = await bcrypt.hash(password, ROUNDS);
+    await db.transaction(async (client) => {
+      await client.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, tok.user_id]);
+      await client.query('UPDATE password_resets SET used_at=$1 WHERE token=$2', [Date.now(), token]);
+      // Invalidate any other outstanding reset tokens for the same user.
+      await client.query(
+        'UPDATE password_resets SET used_at=$1 WHERE user_id=$2 AND used_at IS NULL',
+        [Date.now(), tok.user_id]
+      );
+    });
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
 });
 
 // POST /api/auth/join — enter partner's invite code

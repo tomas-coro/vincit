@@ -83,6 +83,7 @@ app.use('/api/auth', authRouter);
 // Health / config diagnostic — public so it can be checked from the browser
 // or curl without a token. Reveals only PRESENCE of secrets, never values.
 const { isConfigured: cldConfigured } = require('./cloudinary.js');
+const { isConfigured: mailConfigured } = require('./mailer.js');
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
@@ -93,6 +94,14 @@ app.get('/api/health', (req, res) => {
       api_key:     !!process.env.CLOUDINARY_API_KEY,
       api_secret:  !!process.env.CLOUDINARY_API_SECRET,
       ready:       cldConfigured(),
+    },
+    mailer: {
+      host: !!process.env.SMTP_HOST,
+      user: !!process.env.SMTP_USER,
+      pass: !!process.env.SMTP_PASS,
+      from: !!process.env.SMTP_FROM,
+      base_url: !!process.env.APP_BASE_URL,
+      ready: mailConfigured(),
     },
   });
 });

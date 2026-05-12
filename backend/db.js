@@ -246,6 +246,18 @@ const pool = new Pool({
     ALTER TABLE bets ADD COLUMN IF NOT EXISTS opponent_stake INTEGER;
   `);
 
+  // Forgot-password tokens. Each row is single-use, short-lived.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS password_resets (
+      token       TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at  BIGINT NOT NULL,
+      expires_at  BIGINT NOT NULL,
+      used_at     BIGINT
+    );
+    CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
+  `);
+
   // One-shot cleanup: drop auto-created "My Group" rooms that are still empty
   // (1 member, 0 bets, 0 custom categories). This wipes the auto-room that
   // old register flow used to create per user. Safe to re-run.

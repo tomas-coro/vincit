@@ -11,6 +11,7 @@ import TrophyUnlockOverlay from './components/TrophyUnlockOverlay.jsx';
 import { SkeletonDashboard, SkeletonList } from './components/Skeleton.jsx';
 import { useToast } from './Toast.jsx';
 import AuthView from './components/views/AuthView.jsx';
+import ResetPasswordView from './components/views/ResetPasswordView.jsx';
 import PairingView from './components/views/PairingView.jsx';
 import DashboardView from './components/views/DashboardView.jsx';
 import BetsHubView from './components/views/BetsHubView.jsx';
@@ -486,13 +487,28 @@ export default function App() {
     </div>
   );
 
-  // Auth gate
-  if (!token || !authUser) return (
-    <div className="bc" style={rootVars(C)}>
-      <style>{CSS_BASE}</style>
-      <AuthView onAuth={handleAuth} />
-    </div>
-  );
+  // Auth gate.  Hijack the screen for ?reset=TOKEN so an emailed link works
+  // even before the user is logged in.
+  if (!token || !authUser) {
+    const resetParam = (() => {
+      try { return new URL(window.location.href).searchParams.get('reset'); }
+      catch { return null; }
+    })();
+    return (
+      <div className="bc" style={rootVars(C)}>
+        <style>{CSS_BASE}</style>
+        {resetParam
+          ? <ResetPasswordView token={resetParam} onDone={() => {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('reset');
+              window.history.replaceState({}, '', url.toString());
+              // Force re-render by toggling a no-op state — easiest: reload.
+              window.location.reload();
+            }}/>
+          : <AuthView onAuth={handleAuth} />}
+      </div>
+    );
+  }
 
   // Loading groups (between login and getMyGroups response)
   if (!groupsLoaded) return (

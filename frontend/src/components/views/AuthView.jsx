@@ -22,6 +22,10 @@ export default function AuthView({ onAuth }) {
   const [colorKey, setColorKey] = useState('blue');
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMsg, setForgotMsg] = useState(null); // {type:'ok'|'err'|'fallback', text:string}
+  const [forgotBusy, setForgotBusy] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFile = async e => {
@@ -32,6 +36,22 @@ export default function AuthView({ onAuth }) {
       const dataUrl = await fileToSquareDataUrl(f, 512, 0.85);
       setCustomAvatar(dataUrl);
     } catch { setError(t('auth.err_generic')); }
+  };
+
+  const submitForgot = async e => {
+    e.preventDefault();
+    if (!forgotEmail.includes('@')) { setForgotMsg({ type: 'err', text: t('auth.forgot_err_email') }); return; }
+    setForgotBusy(true); setForgotMsg(null);
+    try {
+      const result = await api.forgotPassword(forgotEmail.trim().toLowerCase());
+      if (result.fallback_link) {
+        setForgotMsg({ type: 'fallback', text: result.fallback_link });
+      } else {
+        setForgotMsg({ type: 'ok', text: t('auth.forgot_ok') });
+      }
+    } catch (err) {
+      setForgotMsg({ type: 'err', text: t('auth.forgot_err_generic') });
+    } finally { setForgotBusy(false); }
   };
 
   const submit = async e => {
@@ -157,6 +177,20 @@ export default function AuthView({ onAuth }) {
 
           {error && <div style={S.err}>{error}</div>}
 
+          {tab === 'login' && (
+            <div style={{ textAlign: 'right', marginTop: 4 }}>
+              <button type="button"
+                onClick={() => { setForgotEmail(email); setForgotOpen(true); setForgotMsg(null); }}
+                style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  color: 'var(--dim)', fontSize: 12, padding: 0, textDecoration: 'underline',
+                  fontFamily: "'Syne',sans-serif",
+                }}>
+                {t('auth.forgot_link')}
+              </button>
+            </div>
+          )}
+
           <button type="submit" disabled={loading}
             style={{ width:'100%', marginTop:16, padding:'13px 0', borderRadius:12, border:'none',
               background:'var(--gold)', color:'#07060f', fontFamily:"'Syne',sans-serif",
@@ -166,6 +200,59 @@ export default function AuthView({ onAuth }) {
           </button>
         </form>
       </div>
+
+      {forgotOpen && (
+        <div onClick={() => setForgotOpen(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,.82)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 200, padding: 16,
+        }}>
+          <div onClick={e => e.stopPropagation()} className="bIn" style={{
+            background: 'var(--surf)', border: '1px solid var(--brd)',
+            borderRadius: 18, width: '100%', maxWidth: 380, padding: 22,
+            boxShadow: '0 24px 64px rgba(0,0,0,.6)',
+          }}>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 700, marginBottom: 8 }}>
+              🔑 {t('auth.forgot_title')}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--dim)', lineHeight: 1.5, marginBottom: 16 }}>
+              {t('auth.forgot_body')}
+            </div>
+            <form onSubmit={submitForgot}>
+              <Inp type="email" value={forgotEmail}
+                onChange={e => setForgotEmail(e.target.value)}
+                placeholder={t('auth.email_ph')} />
+              {forgotMsg && (
+                <div style={{
+                  marginTop: 10, padding: '10px 12px', borderRadius: 10, fontSize: 12, lineHeight: 1.5,
+                  background: forgotMsg.type === 'err' ? 'var(--red)18' : forgotMsg.type === 'fallback' ? 'var(--gold)15' : 'var(--grn)18',
+                  border: `1px solid ${forgotMsg.type === 'err' ? 'var(--red)44' : forgotMsg.type === 'fallback' ? 'var(--gold)55' : 'var(--grn)44'}`,
+                  color: forgotMsg.type === 'err' ? 'var(--red)' : forgotMsg.type === 'fallback' ? 'var(--gold)' : 'var(--grn)',
+                  wordBreak: 'break-all',
+                }}>
+                  {forgotMsg.type === 'fallback'
+                    ? <>{t('auth.forgot_fallback')}<br/><a href={forgotMsg.text} style={{ color: 'inherit' }}>{forgotMsg.text}</a></>
+                    : forgotMsg.text}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 14, justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setForgotOpen(false)} style={{
+                  padding: '8px 14px', borderRadius: 10,
+                  background: 'transparent', border: '1px solid var(--brd)',
+                  color: 'var(--dim)', cursor: 'pointer',
+                  fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 600,
+                }}>{t('reveal.cancel')}</button>
+                <button type="submit" disabled={forgotBusy} style={{
+                  padding: '10px 18px', borderRadius: 10, border: 'none',
+                  background: 'var(--gold)', color: '#07060f',
+                  fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 800,
+                  cursor: forgotBusy ? 'wait' : 'pointer', opacity: forgotBusy ? 0.7 : 1,
+                }}>{forgotBusy ? '…' : t('auth.forgot_send')}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

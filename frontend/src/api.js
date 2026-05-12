@@ -35,11 +35,13 @@ async function req(method, path, body, opts = {}) {
 }
 
 // Auth
-export const register      = d           => req('POST',  '/auth/register', d);
-export const login         = (email, pw) => req('POST',  '/auth/login', { email, password: pw });
-export const joinRoom      = code        => req('POST',  '/auth/join', { code });
-export const getMe         = ()          => req('GET',   '/auth/me');
-export const updateProfile = d           => req('PATCH', '/auth/profile', d);
+export const register        = d           => req('POST',  '/auth/register', d);
+export const login           = (email, pw) => req('POST',  '/auth/login', { email, password: pw });
+export const joinRoom        = code        => req('POST',  '/auth/join', { code });
+export const getMe           = ()          => req('GET',   '/auth/me');
+export const updateProfile   = d           => req('PATCH', '/auth/profile', d);
+export const forgotPassword  = email       => req('POST',  '/auth/forgot-password', { email });
+export const resetPassword   = (token, password) => req('POST', '/auth/reset-password', { token, password });
 
 // State
 export const fetchState     = ()             => req('GET',    '/state');
