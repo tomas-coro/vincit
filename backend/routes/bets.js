@@ -221,11 +221,25 @@ module.exports = function(broadcastUpdate) {
 
             for (const u of notifyIds) {
               if (await isPrefEnabled(u, 'on_resolved')) {
-                sendPushToUser(u, {
-                  title: outcome === 'won' ? '✅ Bet vinta' : '❌ Bet persa',
-                  body:  `"${bet.title}"`,
-                  url:   '/',
-                });
+                // Pot mode: tailor the message so the recipient sees their own
+                // outcome and the exact swing in credits.
+                let title, body;
+                if (bet.opponent_stake != null) {
+                  const won = outcome === 'won';
+                  const isCreator = u === bet.creator;
+                  const winnerIsMe = (won && isCreator) || (!won && bet.opponent === u);
+                  const myLoss  = isCreator ? bet.stake : bet.opponent_stake;
+                  const myGain  = isCreator ? bet.opponent_stake : bet.stake;
+                  const pot     = bet.stake + bet.opponent_stake;
+                  title = winnerIsMe ? '💰 Pot vinto' : '💸 Pot perso';
+                  body  = winnerIsMe
+                    ? `+${myGain} ₡ (piatto ${pot} ₡) · "${bet.title}"`
+                    : `−${myLoss} ₡ (piatto ${pot} ₡) · "${bet.title}"`;
+                } else {
+                  title = outcome === 'won' ? '✅ Bet vinta' : '❌ Bet persa';
+                  body  = `"${bet.title}"`;
+                }
+                sendPushToUser(u, { title, body, url: '/' });
               }
             }
 
@@ -399,10 +413,82 @@ module.exports = function(broadcastUpdate) {
       });
 
       broadcastUpdate(req.activeRoomId);
+
+      // Ping the creator: their challenge has been accepted. Pot mode includes
+      // the total pot in the body so they see the stakes are now locked in.
+      try {
+        if (bet.creator !== req.userId && await isPrefEnabled(bet.creator, 'on_challenged')) {
+          const body = opponentStake != null
+            ? `Hanno accettato · piatto ${bet.stake + opponentStake} ₡ · "${bet.title}"`
+            : `Hanno accettato la tua bet: "${bet.title}"`;
+          sendPushToUser(bet.creator, {
+            title: '✅ Sfida accettata',
+            body,
+            url:   '/',
+          });
+        }
+      } catch (e) { console.error('notify on accept failed', e); }
+
       res.json({ ok: true });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // PATCH /api/bets/:id/allowed-members — owner or moderate_bets co-admin
+  // can edit the invitee list while the bet is still active. Cannot remove
+  // anyone who has already counter-bet (their stake would be orphaned).
+  router.patch('/:id/allowed-members', async (req, res) => {
+    try {
+      const { rows } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
+      const bet = rows[0];
+      if (!bet) return res.status(404).json({ error: 'not_found' });
+      if (bet.room_id !== req.activeRoomId) return res.status(403).json({ error: 'forbidden' });
+      if (!['active','pending'].includes(bet.status)) return res.status(400).json({ error: 'not_active' });
+
+      // Authz: creator gets a free pass; otherwise need moderate_bets.
+      if (bet.creator !== req.userId) {
+        if (!(await requirePermission(req, res, 'moderate_bets'))) return;
+      }
+
+      const incoming = Array.isArray(req.body?.ids) ? req.body.ids : null;
+
+      // Empty / null => fall back to fully open.
+      if (!incoming || incoming.length === 0) {
+        await db.query('UPDATE bets SET allowed_members=NULL WHERE id=$1', [bet.id]);
+        broadcastUpdate(req.activeRoomId);
+        return res.json({ ok: true, allowedMembers: null });
+      }
+
+      // Validate every id is a current group member.
+      const { rows: members } = await db.query(
+        'SELECT user_id FROM user_groups WHERE group_id=$1 AND user_id = ANY($2)',
+        [bet.room_id, incoming]
+      );
+      const set = new Set(members.map(r => r.user_id));
+      set.add(bet.creator);
+
+      // Can\'t remove an existing counter-bettor.
+      const { rows: cbs } = await db.query(
+        'SELECT DISTINCT bettor FROM counter_bets WHERE bet_id=$1',
+        [bet.id]
+      );
+      for (const r of cbs) set.add(r.bettor);
+
+      const arr = Array.from(set);
+      // If the new list spans the whole group, collapse back to NULL.
+      const { rows: [{ count }] } = await db.query(
+        'SELECT COUNT(*) FROM user_groups WHERE group_id=$1', [bet.room_id]
+      );
+      const finalList = arr.length >= parseInt(count, 10) ? null : arr;
+
+      await db.query('UPDATE bets SET allowed_members=$1 WHERE id=$2', [finalList, bet.id]);
+      broadcastUpdate(req.activeRoomId);
+      res.json({ ok: true, allowedMembers: finalList });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'server_error' });
     }
   });
 

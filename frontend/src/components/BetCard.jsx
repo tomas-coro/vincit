@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Btn, Bdg, Avatar, fmtQ, fmtD, tLeft, isSoon, qNo, COLORS, DEF_CAT_IDS as DEF_IDS } from './Atoms.jsx';
 import { useLang } from '../i18n.js';
 import PhotoCaptureModal from './modals/PhotoCaptureModal.jsx';
+import SubsetEditModal from './modals/SubsetEditModal.jsx';
 
 const S = {
   card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
@@ -21,6 +22,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const [photoCaptureOpen, setPhotoCaptureOpen] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [lightbox, setLightbox] = useState(null);
+  const [editSubsetOpen, setEditSubsetOpen] = useState(false);
 
   const handlePhotoCapture = async dataUrl => {
     if (!onReactionPhoto) return;
@@ -189,8 +191,91 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             {tl&&<Bdg bg={isSoon(bet.expiresAt)?"var(--red)22":"var(--mut)33"} c={isSoon(bet.expiresAt)?"var(--red)":"var(--dim)"}>⏱ {tl}</Bdg>}
             {isPending&&<Bdg bg="var(--gold)22" c="var(--gold)">{t('bet_card.pending_label')}</Bdg>}
             {isRejected&&<Bdg bg="var(--red)22" c="var(--red)">❌ {t('bet_card.reject_btn')}</Bdg>}
-            {!isPending&&!isRejected&&done&&<Bdg bg={bet.status==="won"?"var(--grn)22":"var(--red)22"} c={bet.status==="won"?"var(--grn)":"var(--red)"}>{bet.status==="won"?`✅ +${bet.potentialWin-bet.stake} ₡`:`❌ −${bet.stake} ₡`}</Bdg>}
+            {/* Subset (👥N): only an OPEN bet restricted to a subset of the group */}
+            {Array.isArray(bet.allowedMembers) && bet.allowedMembers.length > 0 && (
+              <Bdg bg="var(--blu)22" c="var(--blu)" title={t('bet_card.subset_tip')}>
+                👥 {bet.allowedMembers.length} {t('bet_card.subset_label')}
+              </Bdg>
+            )}
+            {/* Pot mode: targeted bet where opponent picked a stake. */}
+            {bet.opponentStake != null && (
+              <Bdg bg="var(--gold)22" c="var(--gold)" title={t('bet_card.pot_tip')}>
+                💰 {t('bet_card.pot_label', { n: bet.stake + bet.opponentStake })}
+              </Bdg>
+            )}
+            {!isPending&&!isRejected&&done&&(
+              bet.opponentStake != null
+                ? (() => {
+                    const pot = bet.stake + bet.opponentStake;
+                    const won = bet.status === 'won';
+                    const isCreator = bet.creator === user;
+                    const winnerIsMe = (won && isCreator) || (!won && bet.opponent === user);
+                    const myStake = isCreator ? bet.stake : bet.opponentStake;
+                    const theirStake = isCreator ? bet.opponentStake : bet.stake;
+                    return winnerIsMe
+                      ? <Bdg bg="var(--grn)22" c="var(--grn)">✅ +{theirStake} ₡ <span style={{opacity:.7,fontSize:10}}>· pot {pot} ₡</span></Bdg>
+                      : <Bdg bg="var(--red)22" c="var(--red)">❌ −{myStake} ₡ <span style={{opacity:.7,fontSize:10}}>· pot {pot} ₡</span></Bdg>;
+                  })()
+                : <Bdg bg={bet.status==="won"?"var(--grn)22":"var(--red)22"} c={bet.status==="won"?"var(--grn)":"var(--red)"}>{bet.status==="won"?`✅ +${bet.potentialWin-bet.stake} ₡`:`❌ −${bet.stake} ₡`}</Bdg>
+            )}
           </div>
+
+          {/* Invited members stack (subset bets only, while active) */}
+          {Array.isArray(bet.allowedMembers) && bet.allowedMembers.length > 0 && !done && (() => {
+            const ids = bet.allowedMembers;
+            const counterers = new Set((bet.counterBets || []).map(cb => cb.bettor));
+            // Always include the creator at the front of the stack for context.
+            const stackIds = [bet.creator, ...ids.filter(id => id !== bet.creator)].slice(0, 6);
+            const canEditSubset = isOwner || canModerate;
+            return (
+              <div
+                onClick={canEditSubset ? () => setEditSubsetOpen(true) : undefined}
+                title={canEditSubset ? t('bet_card.manage_subset') : undefined}
+                style={{
+                display:'flex', alignItems:'center', gap:8, marginBottom:10,
+                padding:'6px 10px', borderRadius:10,
+                background:'var(--blu)0d', border:'1px solid var(--blu)33',
+                cursor: canEditSubset ? 'pointer' : 'default',
+              }}>
+                <div style={{ display:'flex', alignItems:'center' }}>
+                  {stackIds.map((id, i) => {
+                    const p = profiles[id];
+                    if (!p) return null;
+                    const color = COLORS[p.colorKey] || '#5b8af0';
+                    const acted = id === bet.creator || counterers.has(id);
+                    return (
+                      <div key={id} title={p.name + (acted ? ' ✓' : '')}
+                        style={{
+                          marginLeft: i === 0 ? 0 : -8,
+                          width: 26, height: 26, borderRadius: '50%',
+                          background: `${color}33`,
+                          border: `2px solid ${acted ? 'var(--gold)' : 'var(--surf)'}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 13, overflow: 'hidden', flexShrink: 0,
+                          zIndex: 10 - i,
+                          boxShadow: acted ? '0 0 0 1px var(--gold)55' : 'none',
+                        }}>
+                        {p.avatarUrl
+                          ? <img src={p.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                          : (p.avatar || '?')}
+                      </div>
+                    );
+                  })}
+                  {ids.length > 5 && (
+                    <span style={{ marginLeft: 4, fontSize: 11, color: 'var(--mut)' }}>+{ids.length - 5}</span>
+                  )}
+                </div>
+                <div style={{ flex: 1, fontSize: 10, color: 'var(--blu)', letterSpacing: 0.5 }}>
+                  {counterers.size > 0
+                    ? t('bet_card.subset_progress', { done: counterers.size, total: ids.length })
+                    : t('bet_card.subset_pending', { n: ids.length })}
+                </div>
+                {canEditSubset && (
+                  <span style={{ fontSize: 12, color: 'var(--blu)', opacity: .7 }}>✏️</span>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Comment */}
           {done&&bet.comment&&(
@@ -307,6 +392,18 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
         <PhotoCaptureModal
           onCapture={handlePhotoCapture}
           onClose={() => setPhotoCaptureOpen(false)}
+        />
+      )}
+
+      {editSubsetOpen && (
+        <SubsetEditModal
+          bet={bet}
+          groupMembers={Object.entries(profiles).map(([id,p]) => ({
+            id, name:p.name, avatar:p.avatar,
+            avatar_url:p.avatarUrl, color_key:p.colorKey || p.color,
+          }))}
+          onSaved={() => { /* SSE refresh will arrive shortly */ }}
+          onClose={() => setEditSubsetOpen(false)}
         />
       )}
 

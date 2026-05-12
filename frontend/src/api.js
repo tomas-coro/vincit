@@ -78,6 +78,7 @@ export const cancelBet      = (id)           => req('DELETE', `/bets/${id}`);
 export const acceptBet      = (id, body={})   => req('POST',   `/bets/${id}/accept`, body);
 export const rejectBet      = (id)           => req('POST',   `/bets/${id}/reject`);
 export const editBet        = (id, data)     => req('PATCH',  `/bets/${id}/edit`, data);
+export const editAllowed    = (id, ids)      => req('PATCH',  `/bets/${id}/allowed-members`, { ids });
 export const resetAll       = ()             => req('POST',   '/bets/reset');
 export const resetAllTest   = ()             => req('POST',   '/bets/test-reset');
 export const commentBet     = (id, comment)  => req('PATCH',  `/bets/${id}/comment`, { comment });
