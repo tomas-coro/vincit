@@ -14,7 +14,8 @@ module.exports = function(broadcastUpdate) {
       const creator = req.userId;
       const roomId  = req.activeRoomId;
       const { title, quota: quotaRaw, stake: stakeRaw,
-              category, isSecret, isCounterable, pegno, expiresAt, opponent, isSurprise, targetUser } = req.body;
+              category, isSecret, isCounterable, pegno, expiresAt, opponent, isSurprise, targetUser,
+              allowedMembers } = req.body;
 
       const quota = parseFloat(quotaRaw);
       const stake = parseInt(stakeRaw, 10);
@@ -48,15 +49,34 @@ module.exports = function(broadcastUpdate) {
         if (m.length) target = targetUser;
       }
 
+      // Validate allowed_members: must be array of group member ids; empty
+      // / missing means "open to everyone" (legacy). Creator is always
+      // implicitly included even if missing from the list.
+      let allowed = null;
+      if (Array.isArray(allowedMembers) && allowedMembers.length > 0) {
+        const { rows: validMembers } = await db.query(
+          'SELECT user_id FROM user_groups WHERE group_id=$1 AND user_id = ANY($2)',
+          [roomId, allowedMembers]
+        );
+        const set = new Set(validMembers.map(r => r.user_id));
+        set.add(creator);
+        allowed = Array.from(set);
+        // If everyone in the group is selected, treat it as legacy "open to all".
+        const { rows: [{ count }] } = await db.query(
+          'SELECT COUNT(*) FROM user_groups WHERE group_id=$1', [roomId]
+        );
+        if (allowed.length >= parseInt(count, 10)) allowed = null;
+      }
+
       await db.transaction(async (client) => {
         await client.query(
           `INSERT INTO bets
              (id, creator, room_id, title, quota, stake, potential_win,
-              category, is_secret, is_counterable, pegno, expires_at, created_at, status, opponent, is_surprise, target_user)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+              category, is_secret, is_counterable, pegno, expires_at, created_at, status, opponent, is_surprise, target_user, allowed_members)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
           [id, creator, roomId, title, quota, stake, potentialWin,
            category, isSecret ? 1 : 0, counterable ? 1 : 0,
-           pegno || null, expiresAt || null, createdAt, status, opponent || null, surprise ? 1 : 0, target]
+           pegno || null, expiresAt || null, createdAt, status, opponent || null, surprise ? 1 : 0, target, allowed]
         );
         if (!isPending) {
           await client.query(
@@ -236,6 +256,12 @@ module.exports = function(broadcastUpdate) {
       if (bet.status !== 'active') return res.status(400).json({ error: 'Bet not active' });
       if (!bet.is_counterable) return res.status(400).json({ error: 'Bet not counterable' });
       if (bet.is_secret) return res.status(400).json({ error: 'Cannot counter secret bet' });
+      // Subset enforcement
+      if (Array.isArray(bet.allowed_members) && bet.allowed_members.length > 0) {
+        const ok = bet.creator === bettor || bet.opponent === bettor
+                || bet.target_user === bettor || bet.allowed_members.includes(bettor);
+        if (!ok) return res.status(403).json({ error: 'Not invited to this bet' });
+      }
 
       const quotaUsed  = side === 'yes' ? parseFloat(bet.quota) : parseFloat((parseFloat(bet.quota) / (parseFloat(bet.quota) - 1)).toFixed(2));
       const potentialWin = Math.round(stake * quotaUsed);

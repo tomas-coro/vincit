@@ -127,6 +127,13 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   const [betType,setBetType]=useState('open');
   const [opponentId,setOpponentId]=useState(others[0]?.id ?? null);
   const [targetId,setTargetId]=useState(null);
+  // Subset of group invited to an OPEN bet. Empty = whole group (default).
+  const [allowedSet, setAllowedSet] = useState(() => new Set());
+  const toggleAllowed = id => setAllowedSet(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
   const [pegno,setPegno]=useState("");
   const [exp,setExp]=useState("");
   const [templates, setTemplates] = useState([]);
@@ -193,6 +200,12 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     if(!title.trim()){toast.error(t('create.err_title'));return;}
     if(stake<=0||stake>maxStake){toast.error(t('create.err_stake',{max:Math.round(maxStake)}));return;}
     if(needsOpponent && !opponentId){toast.error(t('create.opponent_pick'));return;}
+    // Subset only makes sense for OPEN bets, and only if the user actually
+    // picked specific members (non-empty AND not the whole group).
+    let allowedMembers;
+    if (betType === 'open' && allowedSet.size > 0 && allowedSet.size < others.length) {
+      allowedMembers = Array.from(allowedSet);
+    }
     onCreate({
       title, quota, stake, potentialWin:potWin, category:cat,
       isSecret, isSurprise,
@@ -201,6 +214,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
       expiresAt: exp ? new Date(exp).getTime() : null,
       opponent: opponent || undefined,
       targetUser: betType !== 'vault' && targetId ? targetId : undefined,
+      allowedMembers,
     });
   };
 
@@ -309,6 +323,50 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+
+  // Subset selector: only relevant for OPEN bets when the group has 3+ members.
+  // The "all" mode is the default (empty set). Toggling individuals switches
+  // to "only these" mode. Selecting everyone collapses back to "all" on submit.
+  const SubsetBlock = betType === 'open' && others.length >= 2 && (
+    <div style={{ marginBottom: 14 }}>
+      <label style={S.lbl}>{t('create.subset_label')}</label>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
+        <button onClick={() => setAllowedSet(new Set())}
+          style={{
+            padding:'8px 14px', borderRadius:24,
+            border:`1px solid ${allowedSet.size === 0 ? 'var(--gold)' : 'var(--brd)'}`,
+            background: allowedSet.size === 0 ? 'var(--gold)1a' : 'transparent',
+            color: allowedSet.size === 0 ? 'var(--gold)' : 'var(--dim)',
+            cursor:'pointer', fontFamily:"'Syne',sans-serif", fontSize:13, fontWeight:600,
+          }}>{t('create.subset_all')}</button>
+        {others.map(m => {
+          const active = allowedSet.has(m.id);
+          return (
+            <button key={m.id} onClick={() => toggleAllowed(m.id)}
+              style={{
+                display:'inline-flex', alignItems:'center', gap:8,
+                padding:'8px 14px 8px 8px', borderRadius:24,
+                border:`1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
+                background: active ? 'var(--gold)1a' : 'transparent',
+                color: active ? 'var(--gold)' : 'var(--dim)',
+                cursor:'pointer', fontFamily:"'Syne',sans-serif", fontSize:13, fontWeight:600,
+              }}>
+              {m.avatarUrl
+                ? <img src={m.avatarUrl} alt="" style={{width:24,height:24,borderRadius:'50%',objectFit:'cover'}}/>
+                : <span style={{fontSize:18,lineHeight:1}}>{m.avatar || '😊'}</span>}
+              <span>{m.name}</span>
+              {active && <span style={{ fontSize: 11, color:'var(--gold)' }}>✓</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--mut)' }}>
+        {allowedSet.size === 0
+          ? t('create.subset_hint_all')
+          : t('create.subset_hint_some', { n: allowedSet.size })}
       </div>
     </div>
   );
@@ -460,6 +518,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
               {TemplatesBlock}
               {TypeBlock}
               {OpponentBlock}
+              {SubsetBlock}
               {TargetBlock}
               {TitleBlock}
               {QuotaBlock}
@@ -531,6 +590,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         {TemplatesBlock}
         {TypeBlock}
         {OpponentBlock}
+        {SubsetBlock}
         {TargetBlock}
         {TitleBlock}
         {QuotaBlock}

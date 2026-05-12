@@ -234,6 +234,18 @@ const pool = new Pool({
     ALTER TABLE bets ADD COLUMN IF NOT EXISTS resolved_at BIGINT;
   `);
 
+  // Subset bets: open bets that target only a few group members.
+  // NULL = open to the whole group (legacy behavior).
+  await pool.query(`
+    ALTER TABLE bets ADD COLUMN IF NOT EXISTS allowed_members TEXT[];
+  `);
+
+  // Pot-mode targeted bets: when the opponent accepts they pick their own
+  // stake. NULL = legacy free-bet behavior (creator-only stake, casino payout).
+  await pool.query(`
+    ALTER TABLE bets ADD COLUMN IF NOT EXISTS opponent_stake INTEGER;
+  `);
+
   // One-shot cleanup: drop auto-created "My Group" rooms that are still empty
   // (1 member, 0 bets, 0 custom categories). This wipes the auto-room that
   // old register flow used to create per user. Safe to re-run.

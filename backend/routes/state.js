@@ -52,11 +52,19 @@ async function buildState(roomId, viewerId) {
   // Visibility filter:
   // - Vault (is_secret): only creator (the existing client-side handles this too)
   // - Surprise (is_surprise) while active/pending: only creator + opponent
+  // - Subset (allowed_members IS NOT NULL): only listed members (+ creator,
+  //   target, opponent, who are always in the loop)
   // - Resolved (won/lost/rejected): always visible to group (even if was surprise)
   const visibleRows = betRows.filter(r => {
     if (r.is_secret === 1) return r.creator === viewerId;
     if (r.is_surprise === 1 && ['active', 'pending'].includes(r.status)) {
       return r.creator === viewerId || r.opponent === viewerId;
+    }
+    if (Array.isArray(r.allowed_members) && r.allowed_members.length > 0) {
+      if (r.creator === viewerId) return true;
+      if (r.opponent === viewerId) return true;
+      if (r.target_user === viewerId) return true;
+      return r.allowed_members.includes(viewerId);
     }
     return true;
   });
@@ -80,6 +88,8 @@ async function buildState(roomId, viewerId) {
     counterBets:   countersByBetId[r.id] || [],
     opponent:      r.opponent || null,
     targetUser:    r.target_user || null,
+    allowedMembers:Array.isArray(r.allowed_members) ? r.allowed_members : null,
+    opponentStake: r.opponent_stake ?? null,
   }));
 
   const { rows: catRows } = await db.query(
