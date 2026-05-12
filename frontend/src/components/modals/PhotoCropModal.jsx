@@ -4,94 +4,125 @@ import { useLang } from '../../i18n.js';
 import { cropImageToSquare } from '../../imageUtils.js';
 
 /**
- * Square crop UI with pan + zoom. The user picks which part of the image
- * fills the circular avatar. On confirm we render the visible region into
- * a square canvas at the requested output size.
+ * Square crop UI with pan + zoom.
  *
- * Props:
- *   - img        HTMLImageElement (already decoded)
- *   - dataUrl    string (used for the <img> src in the preview)
- *   - size       output square pixel size (default 512)
- *   - quality    JPEG quality (default 0.85)
- *   - onConfirm  (croppedDataUrl) => void
- *   - onCancel   () => void
+ * Coordinate system (chosen for readability):
+ *   - The viewport is a fixed-size square of V px (computed from the modal
+ *     width so it scales to small phones, but constant once measured).
+ *   - The image is rendered with transform-origin: top-left, so
+ *     `transform: translate(imgPos.x, imgPos.y) scale(scale)` makes the
+ *     image\'s natural pixel (0,0) appear at viewport coord `imgPos`.
+ *   - The image-rendered size in CSS pixels is (naturalW*scale, naturalH*scale).
+ *   - Cover-fit constraint: imgPos.x must be in [V - naturalW*scale, 0] and
+ *     similarly for y, so the image always fills the viewport.
+ *
+ * Inverse for export:
+ *   - At viewport corner (0,0) the image-natural pixel is (-imgPos.x/scale,
+ *     -imgPos.y/scale).
+ *   - The visible region spans V/scale image pixels in both dimensions.
  */
 export default function PhotoCropModal({ img, dataUrl, size = 512, quality = 0.85, onConfirm, onCancel }) {
   const { t } = useLang();
   const viewportRef = useRef(null);
-  const [viewport, setViewport] = useState({ w: 280, h: 280 });
+  const [V, setV] = useState(280);
 
-  // Measure the actual rendered viewport size once mounted (responsive).
+  // Measure the rendered viewport on mount + on resize. Using a fixed
+  // aspect-ratio square means width === height, so we only need one number.
   useEffect(() => {
-    if (!viewportRef.current) return;
-    const r = viewportRef.current.getBoundingClientRect();
-    setViewport({ w: r.width, h: r.height });
+    const measure = () => {
+      if (!viewportRef.current) return;
+      const r = viewportRef.current.getBoundingClientRect();
+      const px = Math.round(r.width);
+      if (px > 0) setV(px);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
   }, []);
 
-  const V = Math.min(viewport.w, viewport.h);
-
-  // minScale: just enough so the image covers the viewport on its smaller side
+  // Cover-fit minimum scale: the smaller of the two axis ratios so the
+  // image\'s shorter side fully covers V (the other side overflows and can
+  // be panned).
   const minScale = img ? Math.max(V / img.naturalWidth, V / img.naturalHeight) : 1;
   const maxScale = minScale * 4;
 
-  const [scale, setScale] = useState(minScale);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [scale, setScale]   = useState(minScale);
+  const [imgPos, setImgPos] = useState({ x: 0, y: 0 });
 
-  // Re-anchor when viewport size becomes known
-  useEffect(() => { setScale(minScale); setOffset({ x: 0, y: 0 }); }, [minScale]);
+  // Recenter whenever V / minScale changes (initial measure, window resize).
+  useEffect(() => {
+    if (!img) return;
+    const w = img.naturalWidth  * minScale;
+    const h = img.naturalHeight * minScale;
+    setScale(minScale);
+    setImgPos({ x: (V - w) / 2, y: (V - h) / 2 });
+  }, [img, V, minScale]);
 
-  const clampOffset = useCallback((x, y, s) => {
-    if (!img) return { x, y };
-    const halfW = (img.naturalWidth  * s - V) / 2;
-    const halfH = (img.naturalHeight * s - V) / 2;
+  // Clamp helper so the image always covers the viewport.
+  const clamp = useCallback((p, s) => {
+    if (!img) return p;
+    const w = img.naturalWidth  * s;
+    const h = img.naturalHeight * s;
     return {
-      x: Math.max(-halfW, Math.min(halfW, x)),
-      y: Math.max(-halfH, Math.min(halfH, y)),
+      x: Math.min(0, Math.max(V - w, p.x)),
+      y: Math.min(0, Math.max(V - h, p.y)),
     };
   }, [img, V]);
 
-  // Pointer drag
+  // Pointer drag (touch + mouse share the same path through Pointer Events).
   const dragRef = useRef(null);
   const onPointerDown = e => {
     e.preventDefault();
-    dragRef.current = { x: e.clientX, y: e.clientY, oX: offset.x, oY: offset.y };
+    dragRef.current = { x: e.clientX, y: e.clientY, px: imgPos.x, py: imgPos.y };
     e.currentTarget.setPointerCapture?.(e.pointerId);
   };
   const onPointerMove = e => {
     if (!dragRef.current) return;
     const dx = e.clientX - dragRef.current.x;
     const dy = e.clientY - dragRef.current.y;
-    setOffset(clampOffset(dragRef.current.oX + dx, dragRef.current.oY + dy, scale));
+    setImgPos(clamp({ x: dragRef.current.px + dx, y: dragRef.current.py + dy }, scale));
   };
   const onPointerUp = e => {
     dragRef.current = null;
     e.currentTarget.releasePointerCapture?.(e.pointerId);
   };
 
-  // Wheel zoom (desktop). Pinch zoom is handled via the slider on touch.
+  // Wheel zoom — keep the viewport center fixed in image-space so zooming
+  // feels like \"toward the middle\" rather than slipping sideways.
   const onWheel = e => {
     if (!img) return;
     e.preventDefault();
-    const next = Math.max(minScale, Math.min(maxScale, scale * (e.deltaY < 0 ? 1.1 : 0.9)));
-    setScale(next);
-    setOffset(o => clampOffset(o.x, o.y, next));
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    applyZoom(scale * factor);
   };
 
-  const handleSlider = e => {
-    const v = parseFloat(e.target.value);
-    setScale(v);
-    setOffset(o => clampOffset(o.x, o.y, v));
+  const applyZoom = nextScaleRaw => {
+    const nextScale = Math.max(minScale, Math.min(maxScale, nextScaleRaw));
+    if (nextScale === scale) return;
+    // Anchor the zoom on the viewport center: the image-pixel under the
+    // center stays under the center after scaling.
+    const cx = V / 2, cy = V / 2;
+    const imgCenterX = (cx - imgPos.x) / scale;     // image-natural pixel under center BEFORE
+    const imgCenterY = (cy - imgPos.y) / scale;
+    const nextPos = {
+      x: cx - imgCenterX * nextScale,
+      y: cy - imgCenterY * nextScale,
+    };
+    setScale(nextScale);
+    setImgPos(clamp(nextPos, nextScale));
   };
+
+  const handleSlider = e => applyZoom(parseFloat(e.target.value));
 
   const handleConfirm = () => {
     if (!img) return;
-    // Map viewport (0,0)..(V,V) back into image-natural coordinates.
-    // Image center sits at (V/2 + offset.x, V/2 + offset.y) in viewport coords.
-    // Inverse: imageX at viewport (0,0) = imgW/2 - (V/2 + offset.x)/scale
+    // Image-natural region currently visible in the viewport:
+    //   - top-left maps to image pixel (-imgPos.x/scale, -imgPos.y/scale)
+    //   - region spans V/scale pixels in both dimensions
+    const sx = -imgPos.x / scale;
+    const sy = -imgPos.y / scale;
     const sw = V / scale;
     const sh = V / scale;
-    const sx = img.naturalWidth  / 2 - (V / 2 + offset.x) / scale;
-    const sy = img.naturalHeight / 2 - (V / 2 + offset.y) / scale;
     const out = cropImageToSquare(img, { sx, sy, sw, sh }, size, quality);
     onConfirm?.(out);
   };
@@ -135,6 +166,7 @@ export default function PhotoCropModal({ img, dataUrl, size = 512, quality = 0.8
             style={{
               position: 'relative',
               width: '100%', aspectRatio: '1/1',
+              maxWidth: 320, margin: '0 auto',
               borderRadius: '50%',
               overflow: 'hidden',
               background: '#0a0913',
@@ -151,11 +183,11 @@ export default function PhotoCropModal({ img, dataUrl, size = 512, quality = 0.8
               draggable={false}
               style={{
                 position: 'absolute',
-                left: '50%', top: '50%',
-                width: img.naturalWidth,
-                height: img.naturalHeight,
-                transform: `translate(-50%,-50%) translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-                transformOrigin: 'center center',
+                left: 0, top: 0,
+                width: img.naturalWidth + 'px',
+                height: img.naturalHeight + 'px',
+                transform: `translate(${imgPos.x}px, ${imgPos.y}px) scale(${scale})`,
+                transformOrigin: '0 0',
                 pointerEvents: 'none',
               }}
             />
@@ -167,11 +199,11 @@ export default function PhotoCropModal({ img, dataUrl, size = 512, quality = 0.8
               fontSize: 11, color: 'var(--dim)', marginBottom: 6, letterSpacing: 1,
             }}>
               <span>🔍</span><span style={{ flex: 1 }}>{t('crop.zoom')}</span>
-              <span style={{ color: 'var(--gold)' }}>×{(scale / minScale).toFixed(1)}</span>
+              <span style={{ color: 'var(--gold)' }}>×{(scale / minScale).toFixed(2)}</span>
             </div>
             <input
               type="range"
-              min={minScale} max={maxScale} step={(maxScale - minScale) / 100}
+              min={minScale} max={maxScale} step={(maxScale - minScale) / 100 || 0.001}
               value={scale}
               onChange={handleSlider}
               style={{ width: '100%' }}

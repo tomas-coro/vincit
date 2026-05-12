@@ -282,20 +282,29 @@ const pool = new Pool({
     CREATE INDEX IF NOT EXISTS idx_friend_requests_to ON friend_requests(to_user_id);
   `);
 
-  // One-shot backfill: convert existing implicit "shared a group" pairs into
-  // real accepted friendships so we don't wipe people's existing connections
-  // on the deploy that makes friendship explicit. Idempotent thanks to ON
-  // CONFLICT DO NOTHING — re-running won't add duplicates.
+  // Friendship has to be EXPLICIT — no auto-friending from shared groups.
+  // An earlier version of this migration auto-converted every group overlap
+  // into an accepted friendship; that was wrong. The one-shot wipe below
+  // erases those phantom friendships so people can build the list
+  // intentionally. Guarded by _system_flags so we don\'t wipe legitimate
+  // friendships every restart.
   await pool.query(`
-    INSERT INTO friendships (user_id_a, user_id_b, created_at)
-    SELECT ua.user_id, ub.user_id, COALESCE(MIN(LEAST(ua.joined_at, ub.joined_at)), 0)
-    FROM user_groups ua
-    JOIN user_groups ub
-      ON ua.group_id = ub.group_id
-     AND ua.user_id  < ub.user_id
-    GROUP BY ua.user_id, ub.user_id
-    ON CONFLICT DO NOTHING
-  `).catch(e => console.error('[friendship-backfill]', e.message));
+    CREATE TABLE IF NOT EXISTS _system_flags (
+      id      TEXT PRIMARY KEY,
+      set_at  BIGINT NOT NULL
+    );
+  `);
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM _system_flags WHERE id = 'wiped_implicit_friendships_v1') THEN
+        DELETE FROM friendships;
+        DELETE FROM friend_requests;
+        INSERT INTO _system_flags (id, set_at)
+        VALUES ('wiped_implicit_friendships_v1', EXTRACT(EPOCH FROM NOW())::bigint * 1000);
+      END IF;
+    END $$;
+  `).catch(e => console.error('[friendship-wipe]', e.message));
 
   // One-shot cleanup: drop auto-created "My Group" rooms that are still empty
   // (1 member, 0 bets, 0 custom categories). This wipes the auto-room that
