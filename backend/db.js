@@ -202,9 +202,27 @@ const pool = new Pool({
       'commentator','quick_resolve','comeback','equilibrium',
       'losses','loss_streak','worst_loss','outsider_lost',
       'flamed','paparazzo','counter_winner','targeted',
-      'multi_group','recruiter'
+      'multi_group','recruiter',
+      'first_bet','first_react','first_photo','first_vault',
+      'first_pegno_set','first_join',
+      'epic_night','perfect_run','outsider_streak',
+      'social_butterfly','loaded','half_marathon'
     )
   `);
+
+  // Drop achievement rows above the current per-family max_level — when we
+  // shrink a family from 5 → 3 levels, we don't want stale Lv 4/5 entries.
+  try {
+    const { CATALOG } = require('./achievements.js');
+    for (const a of CATALOG) {
+      await pool.query(
+        'DELETE FROM achievements WHERE achievement_id=$1 AND level > $2',
+        [a.id, a.levels.length]
+      );
+    }
+  } catch (e) {
+    console.warn('[migration] level-trim sweep failed (non-fatal):', e.message);
+  }
 
   // Migrate legacy balance_500 (was based on current balance) → earnings_500 (cumulative winnings)
   await pool.query(`

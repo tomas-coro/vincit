@@ -109,6 +109,10 @@ module.exports = function(broadcastUpdate) {
           }
         }
       }
+      // Milestones may fire from the act of creating (first_bet, first_vault,
+      // first_pegno_set, surprise count, night_owl, marathon, epic_night)
+      refreshAchievements(creator);
+
       res.status(201).json({ id });
     } catch (err) {
       console.error(err);

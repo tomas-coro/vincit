@@ -2,50 +2,66 @@
 const db = require('./db.js');
 const { sendPushToUser, isPrefEnabled } = require('./routes/push.js');
 
-// Leveled trophy catalog. Each entry has `levels: [t1..t5]` thresholds.
-// The frontend renders 5 segments and the current level badge.
-// categories: positive | challenge | mission | shadow | social
+// Trophy catalog. Each entry has `levels: [t1, ..., tN]` thresholds.
+// Length of `levels` controls how many segments the UI ladder shows.
+// Categories: positive | challenge | mission | shadow | social | unique
 const CATALOG = [
-  // ── Positive (scale / volume / earnings) ──
-  { id: 'wins',           icon: '🏆', category: 'positive',  levels: [1, 5, 25, 100, 250] },
-  { id: 'win_streak',     icon: '🔥', category: 'positive',  levels: [3, 5, 10, 15, 25] },
-  { id: 'volume',         icon: '🎲', category: 'positive',  levels: [10, 50, 100, 250, 500] },
-  { id: 'earnings',       icon: '💎', category: 'positive',  levels: [100, 500, 1000, 5000, 10000] },
+  // ─── Positive ──────────────────────────────────────────────────────
+  { id: 'wins',           icon: '🏆', category: 'positive',  levels: [1, 5, 25, 100, 250] },       // 5
+  { id: 'win_streak',     icon: '🔥', category: 'positive',  levels: [3, 5, 10, 15, 25] },        // 5
+  { id: 'volume',         icon: '🎲', category: 'positive',  levels: [10, 50, 150, 400] },        // 4
+  { id: 'earnings',       icon: '💎', category: 'positive',  levels: [100, 500, 2000, 5000] },    // 4
 
-  // ── Challenge (odds / single payout / stake size) ──
-  { id: 'high_odds',      icon: '🌠', category: 'challenge', levels: [2, 3, 5, 10, 20] },
-  { id: 'daredevil',      icon: '🪂', category: 'challenge', levels: [5, 10, 20, 50, 100] },
-  { id: 'safe_bet',       icon: '🛡', category: 'challenge', levels: [10, 25, 50, 100, 250] },
-  { id: 'single_win',     icon: '💰', category: 'challenge', levels: [25, 100, 250, 500, 1000] },
-  { id: 'high_roller',    icon: '🪙', category: 'challenge', levels: [100, 250, 500, 1000, 5000] },
+  // ─── Challenge ─────────────────────────────────────────────────────
+  { id: 'high_odds',      icon: '🌠', category: 'challenge', levels: [2, 3, 5, 10, 20] },         // 5
+  { id: 'daredevil',      icon: '🪂', category: 'challenge', levels: [3, 10, 25] },               // 3
+  { id: 'safe_bet',       icon: '🛡', category: 'challenge', levels: [10, 30, 75, 150] },         // 4
+  { id: 'single_win',     icon: '💰', category: 'challenge', levels: [25, 100, 300, 800] },       // 4
+  { id: 'high_roller',    icon: '🪙', category: 'challenge', levels: [100, 500, 2000] },          // 3
 
-  // ── Mission (special actions / time / surprise / target / comeback) ──
-  { id: 'surprise',       icon: '🤫', category: 'mission',   levels: [1, 5, 10, 25, 50] },
-  { id: 'pegno',          icon: '🎁', category: 'mission',   levels: [1, 5, 10, 25, 50] },
-  { id: 'night_owl',      icon: '🦉', category: 'mission',   levels: [5, 15, 30, 50, 100] },
-  { id: 'early_bird',     icon: '🌅', category: 'mission',   levels: [5, 15, 30, 50, 100] },
-  { id: 'marathon',       icon: '🏃', category: 'mission',   levels: [10, 15, 20, 30, 50] },
-  { id: 'commentator',    icon: '💬', category: 'mission',   levels: [10, 25, 50, 100, 250] },
-  { id: 'quick_resolve',  icon: '⏱️', category: 'mission',   levels: [5, 10, 25, 50, 100] },
-  { id: 'comeback',       icon: '💪', category: 'mission',   levels: [3, 5, 7, 10, 15] },
-  { id: 'equilibrium',    icon: '☯',  category: 'mission',   levels: [10, 25, 50, 100, 250] },
+  // ─── Mission ───────────────────────────────────────────────────────
+  { id: 'surprise',       icon: '🤫', category: 'mission',   levels: [1, 5, 15] },                 // 3
+  { id: 'pegno',          icon: '🎁', category: 'mission',   levels: [1, 5, 15, 40] },             // 4
+  { id: 'night_owl',      icon: '🦉', category: 'mission',   levels: [3, 15, 40] },                // 3
+  { id: 'early_bird',     icon: '🌅', category: 'mission',   levels: [3, 15, 40] },                // 3
+  { id: 'marathon',       icon: '🏃', category: 'mission',   levels: [10, 20, 35] },               // 3
+  { id: 'commentator',    icon: '💬', category: 'mission',   levels: [5, 20, 50, 150] },           // 4
+  { id: 'quick_resolve',  icon: '⏱️', category: 'mission',   levels: [3, 10, 25] },                // 3
+  { id: 'comeback',       icon: '💪', category: 'mission',   levels: [3, 5, 8, 12] },              // 4
+  { id: 'equilibrium',    icon: '☯',  category: 'mission',   levels: [10, 30, 80] },               // 3
 
-  // ── Shadow (losses / worst stakes / cruel losses) ──
-  { id: 'losses',         icon: '🥀', category: 'shadow',    levels: [1, 5, 25, 50, 100] },
-  { id: 'loss_streak',    icon: '❄️', category: 'shadow',    levels: [3, 5, 10, 15, 25] },
-  { id: 'worst_loss',     icon: '💸', category: 'shadow',    levels: [50, 100, 250, 500, 1000] },
-  { id: 'outsider_lost',  icon: '💔', category: 'shadow',    levels: [1, 3, 5, 10, 20] },
+  // ─── Shadow ────────────────────────────────────────────────────────
+  { id: 'losses',         icon: '🥀', category: 'shadow',    levels: [1, 10, 30, 75] },            // 4
+  { id: 'loss_streak',    icon: '❄️', category: 'shadow',    levels: [3, 7, 15] },                 // 3
+  { id: 'worst_loss',     icon: '💸', category: 'shadow',    levels: [50, 150, 500] },             // 3
+  { id: 'outsider_lost',  icon: '💔', category: 'shadow',    levels: [1, 3, 8] },                  // 3
 
-  // ── Social (group interactions) ──
-  { id: 'flamed',         icon: '⭐', category: 'social',    levels: [5, 15, 30, 50, 100] },
-  { id: 'paparazzo',      icon: '📷', category: 'social',    levels: [5, 15, 30, 50, 100] },
-  { id: 'counter_winner', icon: '🥊', category: 'social',    levels: [10, 25, 50, 100, 250] },
-  { id: 'targeted',       icon: '🎯', category: 'social',    levels: [1, 5, 10, 25, 50] },
-  { id: 'multi_group',    icon: '🌐', category: 'social',    levels: [3, 5, 8, 12, 20] },
-  { id: 'recruiter',      icon: '📣', category: 'social',    levels: [1, 3, 5, 10, 25] },
+  // ─── Social ────────────────────────────────────────────────────────
+  { id: 'flamed',         icon: '⭐', category: 'social',    levels: [3, 15, 40] },                // 3
+  { id: 'paparazzo',      icon: '📷', category: 'social',    levels: [3, 15, 40] },                // 3
+  { id: 'counter_winner', icon: '🥊', category: 'social',    levels: [3, 15, 40, 100] },           // 4
+  { id: 'targeted',       icon: '🎯', category: 'social',    levels: [1, 5, 15, 40] },             // 4
+  { id: 'multi_group',    icon: '🌐', category: 'social',    levels: [2, 4, 8] },                  // 3
+  { id: 'recruiter',      icon: '📣', category: 'social',    levels: [1, 3, 8] },                  // 3
+
+  // ─── Unique milestones (one-shot) ──────────────────────────────────
+  // Easy — most players unlock these in the first session
+  { id: 'first_bet',      icon: '🌱', category: 'unique',    levels: [1] },
+  { id: 'first_react',    icon: '👋', category: 'unique',    levels: [1] },
+  { id: 'first_photo',    icon: '📸', category: 'unique',    levels: [1] },
+  { id: 'first_vault',    icon: '🔒', category: 'unique',    levels: [1] },
+  { id: 'first_pegno_set',icon: '🎁', category: 'unique',    levels: [1] },
+  { id: 'first_join',     icon: '🤝', category: 'unique',    levels: [1] },
+  // Rare — particular conditions
+  { id: 'epic_night',     icon: '🌃', category: 'unique',    levels: [1] }, // 5 bets between 0-5 in a single day
+  { id: 'perfect_run',    icon: '🎼', category: 'unique',    levels: [1] }, // 5 wins in a row on odds ≥ 3
+  { id: 'outsider_streak',icon: '🦄', category: 'unique',    levels: [1] }, // 3 wins in a row on odds ≥ 5
+  { id: 'social_butterfly',icon:'🦋', category: 'unique',    levels: [1] }, // counters from 5 distinct people
+  { id: 'loaded',         icon: '👑', category: 'unique',    levels: [1] }, // balance ≥ 1000
+  { id: 'half_marathon',  icon: '🏅', category: 'unique',    levels: [1] }, // a single bet with stake ≥ 200 won
 ];
 
-// Computes per-achievement progress as: { current, level, max_level, target_next, max_target }
+// Returns map { id → { current, level, max_level, target_next, max_target } }
 async function computeProgressFor(userId) {
   const { rows: resolved } = await db.query(
     `SELECT id, creator, status, quota, stake, potential_win,
@@ -58,7 +74,7 @@ async function computeProgressFor(userId) {
     [userId]
   );
   const { rows: allMine } = await db.query(
-    `SELECT created_at, stake, pegno, is_surprise, status FROM bets WHERE creator=$1`,
+    `SELECT created_at, stake, pegno, is_surprise, is_secret, status FROM bets WHERE creator=$1`,
     [userId]
   );
 
@@ -81,6 +97,18 @@ async function computeProgressFor(userId) {
     }
   }
 
+  // Specialized streaks on odds threshold (consecutive wins where quota ≥ X)
+  let perfectRun = 0, perfectMax = 0;
+  let outsiderRun = 0, outsiderMax = 0;
+  for (const b of resolved) {
+    if (b.status === 'won' && parseFloat(b.quota) >= 3) {
+      perfectRun++; if (perfectRun > perfectMax) perfectMax = perfectRun;
+    } else perfectRun = 0;
+    if (b.status === 'won' && parseFloat(b.quota) >= 5) {
+      outsiderRun++; if (outsiderRun > outsiderMax) outsiderMax = outsiderRun;
+    } else outsiderRun = 0;
+  }
+
   const winQuotas = wins.map(b => parseFloat(b.quota || 0));
   const winMaxQuota = winQuotas.reduce((mx, q) => Math.max(mx, q), 0);
   const safeBetCount = wins.filter(b => parseFloat(b.quota) <= 1.30).length;
@@ -93,13 +121,18 @@ async function computeProgressFor(userId) {
 
   const maxStakePlaced = allMine.reduce((mx, b) => Math.max(mx, Number(b.stake) || 0), 0);
   const maxStakeLost   = losses.reduce((mx, b) => Math.max(mx, Number(b.stake) || 0), 0);
+  const maxWinningStake = wins.reduce((mx, b) => Math.max(mx, Number(b.stake) || 0), 0);
 
   const surpriseResolvedCount = resolved.filter(b => b.is_surprise === 1).length;
   const pegnoWinsCount        = wins.filter(b => (b.pegno || '').trim().length > 0).length;
+  const pegnoCreatedAny       = allMine.some(b => (b.pegno || '').trim().length > 0) ? 1 : 0;
+  const vaultCreatedAny       = allMine.some(b => b.is_secret === 1) ? 1 : 0;
+  const anyBetCreated         = allMine.length > 0 ? 1 : 0;
 
-  // Time-of-day & marathon
+  // Time-of-day & marathon (best single-day count, best night-of-bets count)
   const hourBuckets = { night: 0, morning: 0 };
   const byDay = {};
+  const nightByDay = {};
   for (const b of allMine) {
     const d = new Date(Number(b.created_at) || 0);
     const h = d.getHours();
@@ -107,8 +140,11 @@ async function computeProgressFor(userId) {
     if (h >= 5 && h < 8) hourBuckets.morning++;
     const k = d.toISOString().slice(0, 10);
     byDay[k] = (byDay[k] || 0) + 1;
+    if (h < 5) nightByDay[k] = (nightByDay[k] || 0) + 1;
   }
-  const bestDayCount = Object.values(byDay).reduce((mx, n) => Math.max(mx, n), 0);
+  const bestDayCount       = Object.values(byDay).reduce((mx, n) => Math.max(mx, n), 0);
+  const bestNightDay       = Object.values(nightByDay).reduce((mx, n) => Math.max(mx, n), 0);
+  const epicNightHit       = bestNightDay >= 5 ? 1 : 0;
 
   const quickResolveCount = resolved.filter(b => {
     const ra = Number(b.resolved_at) || 0;
@@ -123,6 +159,13 @@ async function computeProgressFor(userId) {
     [userId]
   );
   const targetCount = targetRows[0]?.n ?? 0;
+
+  // Reactions left by user (count emoji + photo)
+  const { rows: rxAny } = await db.query(
+    `SELECT COUNT(*)::int AS n FROM reactions WHERE bettor=$1`,
+    [userId]
+  );
+  const anyReactGiven = rxAny[0]?.n ? 1 : 0;
 
   const { rows: rx } = await db.query(
     `SELECT COUNT(*)::int AS photos FROM reactions WHERE bettor=$1 AND image_url IS NOT NULL`,
@@ -142,11 +185,27 @@ async function computeProgressFor(userId) {
   );
   const counterWins = cw[0]?.n ?? 0;
 
+  // Distinct people that counter-bet on my own bets (social_butterfly)
+  const { rows: distinctCounter } = await db.query(
+    `SELECT COUNT(DISTINCT cb.bettor)::int AS n
+     FROM counter_bets cb JOIN bets b ON b.id = cb.bet_id
+     WHERE b.creator=$1 AND cb.bettor != $1`,
+    [userId]
+  );
+  const socialButterflyHit = (distinctCounter[0]?.n ?? 0) >= 5 ? 1 : 0;
+
   const { rows: g } = await db.query(
     `SELECT COUNT(*)::int AS n FROM user_groups WHERE user_id=$1`,
     [userId]
   );
   const groupCount = g[0]?.n ?? 0;
+
+  // First join: at least one membership where role != 'owner' (i.e. joined an existing group)
+  const { rows: jm } = await db.query(
+    `SELECT 1 FROM user_groups WHERE user_id=$1 AND role != 'owner' LIMIT 1`,
+    [userId]
+  );
+  const firstJoinHit = jm.length ? 1 : 0;
 
   const { rows: rec } = await db.query(
     `SELECT COUNT(*)::int AS n FROM user_groups ug
@@ -156,7 +215,12 @@ async function computeProgressFor(userId) {
   );
   const recruits = rec[0]?.n ?? 0;
 
-  // Map of computed current values keyed by achievement id
+  // Balance milestone (point-in-time)
+  const { rows: cr } = await db.query('SELECT amount FROM credits WHERE "user"=$1', [userId]);
+  const balance = cr[0]?.amount ?? 0;
+  const loadedHit = balance >= 1000 ? 1 : 0;
+
+  // Map of computed current values
   const CURRENT = {
     wins:           wins.length,
     win_streak:     bestWinStreak,
@@ -186,6 +250,20 @@ async function computeProgressFor(userId) {
     targeted:       targetCount,
     multi_group:    groupCount,
     recruiter:      recruits,
+
+    // Unique milestones
+    first_bet:       anyBetCreated,
+    first_react:     anyReactGiven,
+    first_photo:     photosSent >= 1 ? 1 : 0,
+    first_vault:     vaultCreatedAny,
+    first_pegno_set: pegnoCreatedAny,
+    first_join:      firstJoinHit,
+    epic_night:      epicNightHit,
+    perfect_run:     perfectMax >= 5 ? 1 : 0,
+    outsider_streak: outsiderMax >= 3 ? 1 : 0,
+    social_butterfly: socialButterflyHit,
+    loaded:          loadedHit,
+    half_marathon:   maxWinningStake >= 200 ? 1 : 0,
   };
 
   const out = {};
@@ -208,7 +286,6 @@ async function computeProgressFor(userId) {
   return out;
 }
 
-// Insert newly-reached levels into achievements table and notify the user.
 async function refreshAchievements(userId) {
   try {
     const progress = await computeProgressFor(userId);
@@ -221,7 +298,7 @@ async function refreshAchievements(userId) {
     );
     const haveMax = Object.fromEntries(existing.map(r => [r.achievement_id, r.max_level]));
 
-    const newUnlocks = []; // [{ id, level }]
+    const newUnlocks = [];
     const now = Date.now();
     for (const [id, p] of Object.entries(progress)) {
       const had = haveMax[id] || 0;
@@ -256,7 +333,6 @@ async function refreshAchievements(userId) {
   }
 }
 
-// Returns one row per unlocked level so the frontend can show "Lv 3 reached 12 Mar"
 async function listForUser(userId) {
   const { rows } = await db.query(
     `SELECT achievement_id, level, unlocked_at FROM achievements WHERE user_id=$1 ORDER BY achievement_id, level`,

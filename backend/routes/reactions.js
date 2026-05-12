@@ -2,6 +2,7 @@
 const express = require('express');
 const db = require('../db.js');
 const { uploadDataUrl, destroyByPublicId, isConfigured: cldReady } = require('../cloudinary.js');
+const { refreshAchievements } = require('../achievements.js');
 
 const VALID_EMOJIS = ['🔥', '😂', '👀', '💀', '⚡'];
 const REACTION_FOLDER = 'betcouple/reactions';
@@ -35,6 +36,7 @@ module.exports = function(broadcastUpdate) {
         [req.params.id, bettor, emoji]
       );
       broadcastUpdate(req.roomId);
+      refreshAchievements(bettor); // first_react milestone
       res.json({ ok: true });
     } catch (err) {
       console.error(err);
@@ -73,6 +75,7 @@ module.exports = function(broadcastUpdate) {
         [req.params.id, bettor, result.secure_url]
       );
       broadcastUpdate(req.roomId);
+      refreshAchievements(bettor); // first_photo + paparazzo levels
       res.json({ image_url: result.secure_url });
     } catch (err) {
       console.error('reaction photo upload failed', err);

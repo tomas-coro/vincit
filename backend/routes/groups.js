@@ -4,6 +4,7 @@ const router  = express.Router();
 const crypto  = require('crypto');
 const db      = require('../db.js');
 const { requireOwner, requirePermission, PERMISSIONS } = require('../middleware/auth.js');
+const { refreshAchievements } = require('../achievements.js');
 
 const CHARSET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 function genCode() {
@@ -147,6 +148,12 @@ router.post('/join', async (req, res) => {
       'INSERT INTO user_groups (group_id, user_id, role, joined_at) VALUES ($1,$2,$3,$4)',
       [room.id, req.userId, 'member', Date.now()]
     );
+    // Milestones: first_join + multi_group for the joiner, recruiter for every owner of this group
+    refreshAchievements(req.userId);
+    const { rows: owners } = await db.query(
+      `SELECT user_id FROM user_groups WHERE group_id=$1 AND role='owner'`, [room.id]
+    );
+    for (const o of owners) refreshAchievements(o.user_id);
     res.json({ id: room.id, name: room.name, emoji: room.emoji, invite_code: room.invite_code, role: 'member', member_count: String(parseInt(count) + 1) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server_error' }); }
 });

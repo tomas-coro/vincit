@@ -3,7 +3,7 @@ import { SecLabel } from './Atoms.jsx';
 import { useLang } from '../i18n.js';
 import * as api from '../api.js';
 
-const CAT_ORDER = ['positive', 'challenge', 'mission', 'shadow', 'social'];
+const CAT_ORDER = ['unique', 'positive', 'challenge', 'mission', 'shadow', 'social'];
 
 // Tier color by current level reached (0 = locked)
 function tierFor(level) {
@@ -159,7 +159,7 @@ function TrophyTile({ a, t, fmtDate }) {
             letterSpacing:1, padding:'2px 6px', borderRadius:8,
             border:`1px solid ${unlocked ? tierC + '55' : 'var(--brd)'}`,
             background: unlocked ? `${tierC}11` : 'transparent',
-          }}>{isMax ? 'MAX 👑' : `Lv ${level}`}</div>
+          }}>{max_level === 1 ? (unlocked ? '✓' : '🔒') : (isMax ? 'MAX 👑' : `Lv ${level}`)}</div>
         </div>
 
         {/* Name + desc */}
@@ -173,46 +173,67 @@ function TrophyTile({ a, t, fmtDate }) {
           minHeight:26, marginTop:2,
         }}>{t('trophies.'+a.id+'_desc')}</div>
 
-        {/* 5-segment level ladder */}
-        <div style={{display:'flex', gap:3, marginTop:8}}>
-          {Array.from({length: max_level}).map((_, idx) => {
-            const lvl = idx + 1;
-            const filled = lvl <= level;
-            const isCurrent = !isMax && lvl === level + 1;
-            return (
-              <div key={lvl} style={{
-                flex:1, height:6, borderRadius:2,
-                background: filled ? tierC : 'var(--mut)22',
-                position:'relative', overflow:'hidden',
-                boxShadow: filled ? `0 0 4px ${tierC}55` : 'none',
-              }}>
-                {/* partial fill on the next-to-unlock segment */}
-                {isCurrent && (
-                  <div style={{
-                    position:'absolute', left:0, top:0, bottom:0,
-                    width: `${ratio * 100}%`,
-                    background: tierC, opacity:.6,
-                    transition:'width .3s',
-                  }}/>
-                )}
+        {/* Variants: 1-level "milestone" vs N-level "ladder" */}
+        {max_level === 1 ? (
+          <div style={{
+            marginTop:8,
+            padding:'5px 8px',
+            borderRadius:6,
+            textAlign:'center',
+            background: unlocked ? `${tierC}1f` : 'var(--mut)0f',
+            border: `1px dashed ${unlocked ? tierC + '55' : 'var(--brd)'}`,
+            fontSize:9, letterSpacing:2, fontWeight:700,
+            color: unlocked ? tierC : 'var(--mut)',
+          }}>
+            {unlocked ? `✓ ${t('trophies.unlocked_header').toUpperCase()}` : `🔒 ${t('trophies.locked').toUpperCase()}`}
+            {unlocked && a.unlockedAt && (
+              <div style={{fontSize:8, color:'var(--mut)', marginTop:2, letterSpacing:1}}>
+                {fmtDate(a.unlockedAt)}
               </div>
-            );
-          })}
-        </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* N-segment level ladder */}
+            <div style={{display:'flex', gap:3, marginTop:8}}>
+              {Array.from({length: max_level}).map((_, idx) => {
+                const lvl = idx + 1;
+                const filled = lvl <= level;
+                const isCurrent = !isMax && lvl === level + 1;
+                return (
+                  <div key={lvl} style={{
+                    flex:1, height:6, borderRadius:2,
+                    background: filled ? tierC : 'var(--mut)22',
+                    position:'relative', overflow:'hidden',
+                    boxShadow: filled ? `0 0 4px ${tierC}55` : 'none',
+                  }}>
+                    {isCurrent && (
+                      <div style={{
+                        position:'absolute', left:0, top:0, bottom:0,
+                        width: `${ratio * 100}%`,
+                        background: tierC, opacity:.6,
+                        transition:'width .3s',
+                      }}/>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
-        {/* Progress text */}
-        <div style={{
-          fontSize:9, marginTop:5,
-          color: isMax ? tierC : 'var(--dim)',
-          letterSpacing:1, fontWeight: isMax ? 700 : 500,
-        }}>
-          {isMax
-            ? `🏆 ${t('trophies.max_reached')} · ${fmtDate(a.unlockedAt)}`
-            : <>
-                {current}/{nextTarget} →
-                <span style={{color: tierC, marginLeft:4}}>Lv {level + 1}</span>
-              </>}
-        </div>
+            <div style={{
+              fontSize:9, marginTop:5,
+              color: isMax ? tierC : 'var(--dim)',
+              letterSpacing:1, fontWeight: isMax ? 700 : 500,
+            }}>
+              {isMax
+                ? `🏆 ${t('trophies.max_reached')} · ${fmtDate(a.unlockedAt)}`
+                : <>
+                    {current}/{nextTarget} →
+                    <span style={{color: tierC, marginLeft:4}}>Lv {level + 1}</span>
+                  </>}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
