@@ -173,7 +173,22 @@ router.get('/integrity', async (req, res) => {
          OR NOT EXISTS (SELECT 1 FROM rooms r WHERE r.id = ug.group_id)
     `)).rows;
 
-    res.json({ dangling_room_ids, duplicate_names, orphan_user_groups });
+    // Same email (case-insensitive) on multiple user rows — the UNIQUE
+    // constraint is case-sensitive, so 'Anna@x' and 'anna@x' can coexist.
+    // This is the exact pathology behind "password reset doesn't reach the
+    // right account" reports.
+    const duplicate_emails = (await db.query(`
+      SELECT LOWER(email) AS lemail, COUNT(*)::int AS n,
+             json_agg(json_build_object(
+               'id', id, 'email', email, 'name', name,
+               'created_at', created_at, 'room_id', room_id
+             ) ORDER BY created_at) AS users
+      FROM users
+      GROUP BY LOWER(email)
+      HAVING COUNT(*) > 1
+    `)).rows;
+
+    res.json({ dangling_room_ids, duplicate_names, orphan_user_groups, duplicate_emails });
   } catch (e) {
     console.error('[admin:integrity]', e);
     res.status(500).json({ error: 'server_error' });

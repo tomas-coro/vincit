@@ -146,7 +146,7 @@ export default function AdminView({ isDesktop }) {
       }}>
         <TabBtn id="users"     label={`Utenti (${users.length})`}/>
         <TabBtn id="groups"    label={`Gruppi (${groups.length})`}/>
-        <TabBtn id="integrity" label={`Integrità${integrity ? ` (${(integrity.dangling_room_ids?.length||0) + (integrity.duplicate_names?.length||0) + (integrity.orphan_user_groups?.length||0)})` : ''}`}/>
+        <TabBtn id="integrity" label={`Integrità${integrity ? ` (${(integrity.dangling_room_ids?.length||0) + (integrity.duplicate_names?.length||0) + (integrity.orphan_user_groups?.length||0) + (integrity.duplicate_emails?.length||0)})` : ''}`}/>
       </div>
 
       {/* ── UTENTI ─────────────────────────────────────────── */}
@@ -198,6 +198,10 @@ export default function AdminView({ isDesktop }) {
         if (!u) return null;
         const myGroups = groups; // any group for force-add
         const userGroupIds = new Set((detail?.groups || []).map(g => g.id));
+        // Other accounts that collide on lowercase email (the "reset doesn't reach" trap)
+        const emailSiblings = users.filter(o =>
+          o.id !== u.id && (o.email || '').toLowerCase() === (u.email || '').toLowerCase()
+        );
 
         return (
           <>
@@ -211,6 +215,30 @@ export default function AdminView({ isDesktop }) {
                 <div style={{ fontSize: 10, color: 'var(--mut)', marginTop: 4, fontFamily: 'monospace' }}>{u.id}</div>
               </div>
             </div>
+
+            {emailSiblings.length > 0 && (
+              <div style={{ ...S.card, borderColor: 'var(--red)55', background: 'var(--red)0d' }}>
+                <div style={{ ...S.label, color: 'var(--red)' }}>⚠ Email duplicata</div>
+                <div style={{ fontSize: 11, color: 'var(--mut)', marginTop: 4, marginBottom: 10 }}>
+                  Altri {emailSiblings.length} account hanno questa stessa email. Il login va a quello che il DB restituisce per primo — potrebbe non essere quello su cui stai impostando la password. Cancella quelli sbagliati o imposta la password sul record giusto.
+                </div>
+                {emailSiblings.map(s => (
+                  <div key={s.id} onClick={() => setSelectedId(s.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0',
+                      borderBottom: '1px solid var(--brd)33', cursor: 'pointer' }}>
+                    <Avatar p={s} size={32}/>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700 }}>{s.name}</div>
+                      <div style={{ fontSize: 10, color: 'var(--dim)' }}>
+                        <code style={{ color: 'var(--gold)' }}>{s.email}</code> · creato {new Date(Number(s.created_at)).toLocaleDateString()}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--mut)', fontFamily: 'monospace' }}>{s.id.slice(0, 12)}…</div>
+                    </div>
+                    <span style={{ color: 'var(--gold)', fontSize: 11 }}>apri →</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {u.legacy_room_id && (
               <div style={S.card}>
@@ -338,6 +366,33 @@ export default function AdminView({ isDesktop }) {
       {/* ── INTEGRITÀ ──────────────────────────────────────── */}
       {tab === 'integrity' && integrity && (
         <>
+          <div style={{ ...S.card, borderColor: integrity.duplicate_emails?.length ? 'var(--red)55' : 'var(--brd)' }}>
+            <div style={{ ...S.label, color: integrity.duplicate_emails?.length ? 'var(--red)' : 'var(--dim)' }}>
+              Email duplicate
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--mut)', marginTop: 4, marginBottom: 10 }}>
+              Stessa email su più account (es. 'Anna@x' e 'anna@x'). Causa il classico bug "reimposto la password ma lei non riesce a entrare" — la reset arriva a un record diverso da quello su cui atterra il login.
+            </div>
+            {(!integrity.duplicate_emails || integrity.duplicate_emails.length === 0) && (
+              <div style={{ fontSize: 12, color: 'var(--grn)' }}>✓ nessuno</div>
+            )}
+            {(integrity.duplicate_emails || []).map(d => (
+              <div key={d.lemail} style={{ padding: '8px 0', borderBottom: '1px solid var(--brd)33' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--red)' }}>{d.lemail} ({d.n} account)</div>
+                {d.users.map(u => (
+                  <div key={u.id} onClick={() => { setTab('users'); setSelectedId(u.id); }}
+                    style={{ fontSize: 11, color: 'var(--dim)', cursor: 'pointer', marginTop: 6, padding: '4px 0' }}>
+                    · <code style={{ color: 'var(--gold)' }}>{u.email}</code> · {u.name}
+                    <span style={{ color: 'var(--mut)', fontFamily: 'monospace', fontSize: 10, marginLeft: 6 }}>
+                      {u.id.slice(0, 12)}…
+                    </span>
+                    {u.room_id && <span style={{ color: 'var(--mut)', marginLeft: 6 }}>· room {u.room_id.slice(0,8)}…</span>}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
           <div style={S.card}>
             <div style={S.label}>Legacy room_id orfani</div>
             <div style={{ fontSize: 11, color: 'var(--mut)', marginTop: 4, marginBottom: 10 }}>
