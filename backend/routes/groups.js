@@ -26,7 +26,20 @@ router.get('/', async (req, res) => {
     const fetchGroups = () => db.query(
       `SELECT r.id, r.name, r.emoji, r.invite_code, r.max_size,
               r.acceptance_threshold, r.max_stake, ug.role, ug.permissions,
-              (SELECT COUNT(*) FROM user_groups WHERE group_id = r.id) AS member_count
+              (SELECT COUNT(*) FROM user_groups WHERE group_id = r.id) AS member_count,
+              (SELECT GREATEST(COALESCE(MAX(b.created_at),0), COALESCE(MAX(b.resolved_at),0))
+                 FROM bets b WHERE b.room_id = r.id) AS last_activity,
+              (SELECT COUNT(*)::int FROM bets b
+                 WHERE b.room_id = r.id AND b.status IN ('active','pending')) AS pending_count,
+              (SELECT jsonb_agg(jsonb_build_object(
+                        'id', m.id, 'avatar', m.avatar,
+                        'avatar_url', m.avatar_url, 'color_key', m.color_key))
+                 FROM (
+                   SELECT u.id, u.avatar, u.avatar_url, u.color_key
+                   FROM user_groups ug2 JOIN users u ON u.id = ug2.user_id
+                   WHERE ug2.group_id = r.id
+                   ORDER BY ug2.joined_at LIMIT 5
+                 ) m) AS members_preview
        FROM rooms r
        JOIN user_groups ug ON ug.group_id = r.id AND ug.user_id = $1
        ORDER BY ug.joined_at`,

@@ -233,6 +233,15 @@ const TRANSLATIONS = {
       err_no_camera:'Nessuna fotocamera trovata su questo dispositivo',
       err_in_use:"Un'altra app sta usando la fotocamera. Chiudila e riprova.",
     },
+    picker: {
+      search:'Cerca un gruppo…',
+      create:'Crea nuovo gruppo',
+      info:'Info gruppo',
+      live:'attive',
+      no_results:'Nessun gruppo trovato',
+      now:'ora',
+      ago_min:'{n}m fa', ago_h:'{n}h fa', ago_d:'{n}g fa', ago_mo:'{n}mese fa',
+    },
     pairing: {
       your_code:'Il tuo codice', share_hint:'Condividi con il partner',
       copy_btn:'Copia', copied:'Copiato! ✓', or:'oppure',
@@ -522,6 +531,15 @@ const TRANSLATIONS = {
       err_denied:'Camera permission denied · check your browser settings',
       err_no_camera:'No camera detected on this device',
       err_in_use:'Another app is using the camera. Close it and retry.',
+    },
+    picker: {
+      search:'Search a group…',
+      create:'Create new group',
+      info:'Group info',
+      live:'live',
+      no_results:'No groups found',
+      now:'now',
+      ago_min:'{n}m ago', ago_h:'{n}h ago', ago_d:'{n}d ago', ago_mo:'{n}mo ago',
     },
     pairing: {
       your_code:'Your code', share_hint:'Share with your partner',

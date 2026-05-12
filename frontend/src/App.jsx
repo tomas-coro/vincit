@@ -27,6 +27,7 @@ import CounterModal from './components/modals/CounterModal.jsx';
 import PinModal from './components/modals/PinModal.jsx';
 import CommentModal from './components/modals/CommentModal.jsx';
 import EditModal from './components/modals/EditModal.jsx';
+import GroupPicker from './components/GroupPicker.jsx';
 
 function urlB64ToUint8(b64) {
   const pad = '='.repeat((4 - b64.length % 4) % 4);
@@ -476,38 +477,15 @@ export default function App() {
   // Owner has everything; co-admin has the flagged ones; member has nothing admin
   const can = perm => isAdmin || (myRole === 'co-admin' && myPermissions[perm] === true);
 
-  const groupSwitcher = groups.length > 0 && (
-    <div style={{ display:'flex', gap:6, overflowX:'auto', padding:'8px 0', scrollbarWidth:'none' }}>
-      {groups.map(g => (
-        <div key={g.id} style={{
-          display:'flex', alignItems:'center', flexShrink:0,
-          borderRadius:20, overflow:'hidden',
-          border:`1px solid ${activeGroupId===g.id?'var(--gold)':'var(--brd)'}`,
-          background: activeGroupId===g.id ? 'var(--gold)22' : 'transparent',
-          transition:'all .18s',
-        }}>
-          <button onClick={() => switchGroup(g.id)} style={{
-            padding:'5px 10px 5px 12px', border:'none', background:'transparent',
-            color: activeGroupId===g.id?'var(--gold)':'var(--dim)',
-            fontFamily:"'Syne',sans-serif", fontSize:12, fontWeight:600, cursor:'pointer',
-            whiteSpace:'nowrap',
-          }}>
-            {g.emoji} {g.name}
-            {parseInt(g.member_count) > 1 && <span style={{ marginLeft:5, opacity:.5, fontSize:10 }}>{g.member_count}</span>}
-          </button>
-          {activeGroupId === g.id && (
-            <button onClick={() => setShowGroupInfo(true)} style={{
-              padding:'5px 10px 5px 4px', border:'none', background:'transparent',
-              color:'var(--gold)', fontSize:12, cursor:'pointer', opacity:.65,
-            }}>👥</button>
-          )}
-        </div>
-      ))}
-      <button onClick={() => setShowGroupModal(true)}
-        style={{ display:'inline-flex', alignItems:'center', padding:'5px 10px', borderRadius:20, border:'1px solid var(--brd)', background:'transparent', cursor:'pointer', fontFamily:"'Syne',sans-serif", fontSize:11, fontWeight:600, color:'var(--dim)', whiteSpace:'nowrap', flexShrink:0, transition:'all .18s' }}>
-        {t('app.new_group')}
-      </button>
-    </div>
+  const groupPickerEl = groups.length > 0 && (
+    <GroupPicker
+      groups={groups}
+      activeGroupId={activeGroupId}
+      onSwitch={switchGroup}
+      onCreate={() => setShowGroupModal(true)}
+      onOpenGroupInfo={() => setShowGroupInfo(true)}
+      compact={!isDesktop}
+    />
   );
 
   return (
@@ -543,8 +521,8 @@ export default function App() {
             </div>
           </div>
           {groups.length > 0 && (
-            <div style={{ padding:'8px 12px', borderBottom:'1px solid var(--brd)', marginBottom:4 }}>
-              {groupSwitcher}
+            <div style={{ padding:'10px 14px', borderBottom:'1px solid var(--brd)', marginBottom:4 }}>
+              {groupPickerEl}
             </div>
           )}
           <div style={{ flex: 1, padding: '4px 12px' }}>
@@ -583,8 +561,8 @@ export default function App() {
               </div>
             </div>
           </div>
-          {groups.length > 1 && (
-            <div style={{ padding:'0 20px 6px' }}>{groupSwitcher}</div>
+          {groups.length > 0 && (
+            <div style={{ padding:'0 16px 10px' }}>{groupPickerEl}</div>
           )}
         </div>
       )}
