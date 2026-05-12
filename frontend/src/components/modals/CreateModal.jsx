@@ -4,12 +4,15 @@ import { useLang } from '../../i18n.js';
 import { useToast } from '../../Toast.jsx';
 import * as api from '../../api.js';
 
+// Editorial re-skin: labels become tracked uppercase micro-meta, inputs lose
+// their box for underline-only, "btn" chips become tracked-pill outlines,
+// card pattern is a soft tinted callout for the payout summary.
 const S = {
-  lbl: {fontSize:10,color:"var(--dim)",letterSpacing:2,textTransform:"uppercase",display:"block",marginBottom:6},
-  inp: {background:"var(--inp)",border:"1px solid var(--brd)",color:"var(--txt)",borderRadius:10,padding:"10px 14px",fontFamily:"'Manrope',sans-serif",fontSize:14,outline:"none",width:"100%"},
-  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 18px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:13,fontWeight:600,transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
-  card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
-  bdg: {display:"inline-flex",alignItems:"center",gap:3,padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600},
+  lbl: {fontSize:9,color:"var(--dim)",letterSpacing:".3em",textTransform:"uppercase",fontWeight:600,display:"block",marginBottom:10},
+  inp: {background:"transparent",border:0,borderBottom:"1px solid var(--brd)",color:"var(--txt)",borderRadius:0,padding:"8px 2px",fontFamily:"'Manrope',sans-serif",fontSize:15,outline:"none",width:"100%"},
+  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px 14px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:600,letterSpacing:".08em",transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
+  card: {background:"var(--soft)",border:"1px solid var(--rule)",borderRadius:4,padding:14},
+  bdg: {display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:999,fontSize:10,fontWeight:600,letterSpacing:".06em",textTransform:"uppercase"},
 };
 
 const qNo = qY=>parseFloat((parseFloat(qY)/(parseFloat(qY)-1)).toFixed(2));
@@ -29,80 +32,90 @@ function useBreakpoint(minWidth = 768) {
   return matches;
 }
 
+// Live preview — same editorial language as BetCard: thin colored rule on
+// the left, italic Cormorant title (quoted), Playfair numerals for quota,
+// tracked uppercase meta. No card box, just the rule + content.
 function LivePreview({ title, quota, stake, potWin, cat, catLabel, isSecret, isCnt, pegno, exp, profile, opponentProfile, t }) {
   const sideColor = isSecret ? "var(--gold)" : (cat?.color ?? "var(--blu)");
   const tlValue = exp ? new Date(exp).getTime() : null;
   const titleDisplay = title.trim()
-    ? title
-    : <span style={{color:"var(--mut)",fontStyle:"italic"}}>{t('create.bet_label')}…</span>;
+    ? `“${title}”`
+    : `“${t('create.bet_label')}…”`;
   return (
-    <div style={{...S.card, position:"relative", overflow:"hidden", border:`1px solid ${isSecret?"var(--gold)44":"var(--brd)"}`}}>
-      <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:sideColor,borderRadius:"3px 0 0 3px"}}/>
-      <div style={{paddingLeft:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:8}}>
-          <div style={{flex:1,minWidth:0}}>
-            {isSecret ? (
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span>🔒</span>
-                <span style={{fontWeight:600,fontSize:14,color:"var(--gold)"}}>{t('bet_card.secret_label')}</span>
-              </div>
-            ) : (
-              <div style={{fontWeight:600,fontSize:14,lineHeight:1.35,wordBreak:"break-word"}}>{titleDisplay}</div>
-            )}
-            <div style={{fontSize:11,color:"var(--dim)",marginTop:3}}>
-              {cat?.e} {catLabel(cat)} · ora
+    <div style={{position:"relative", padding:"18px 0 18px 22px", borderBottom:"1px solid var(--rule)"}}>
+      <div style={{position:"absolute", left:0, top:18, bottom:20, width:2, background:sideColor}}/>
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:14, marginBottom:10}}>
+        <div style={{flex:1, minWidth:0}}>
+          {isSecret ? (
+            <div style={{display:"flex", alignItems:"center", gap:8}}>
+              <span style={{fontSize:16}}>🔒</span>
+              <span style={{fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:20, fontWeight:600, color:"var(--gold)"}}>{t('bet_card.secret_label')}</span>
             </div>
-          </div>
-          {!isSecret && (
-            <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:700,color:"var(--gold)"}}>{fmtQ(quota)}×</div>
-              <div style={{fontSize:10,color:"var(--dim)"}}>{qToP(quota)}%</div>
-            </div>
+          ) : (
+            <div style={{
+              fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+              fontSize:20, fontWeight:600, lineHeight:1.18, letterSpacing:'-0.005em',
+              color: title.trim() ? 'var(--txt)' : 'var(--mut)',
+              wordBreak:"break-word",
+            }}>{titleDisplay}</div>
           )}
+          <div className="bc-meta" style={{fontSize:8, marginTop:8}}>
+            <span style={{color:cat?.color}}>{cat?.e}</span> {catLabel(cat)} · ora
+          </div>
         </div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8}}>
-          {!isSecret && <>
-            <Bdg bg="var(--mut)44" c="var(--dim)">{t('bet_card.stake')} {stake} ₡</Bdg>
-            <Bdg bg="var(--grn)22" c="var(--grn)">{t('bet_card.win')} {potWin} ₡</Bdg>
-          </>}
-          {pegno && <Bdg bg="var(--gold)22" c="var(--gold)">🎁 {pegno}</Bdg>}
-          {tlValue && <Bdg bg="var(--mut)33" c="var(--dim)">⏱ {new Date(tlValue).toLocaleDateString()}</Bdg>}
-        </div>
-        {!isSecret && isCnt && opponentProfile && (
-          <div style={{borderTop:"1px solid var(--brd)",paddingTop:8,marginTop:4}}>
-            <div style={{fontSize:10,color:"var(--dim)",letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>{t('bet_card.challenge')}</div>
-            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-              <Bdg bg="var(--grn)22" c="var(--grn)">{profile?.avatar} {t('bet_card.yes')} @ {fmtQ(quota)}×</Bdg>
-              <Bdg bg="var(--red)22" c="var(--red)">{opponentProfile.avatar} {t('bet_card.no')} @ {fmtQ(qNo(quota))}×</Bdg>
+        {!isSecret && (
+          <div style={{textAlign:"right", flexShrink:0, paddingTop:2}}>
+            <div className="bc-num" style={{fontSize:24, color:"var(--gold)", lineHeight:1}}>
+              {fmtQ(quota)}<span style={{fontSize:'0.55em', opacity:.7}}>×</span>
             </div>
+            <div className="bc-meta" style={{fontSize:7, marginTop:4}}>{qToP(quota)}%</div>
           </div>
         )}
       </div>
+      <div style={{display:"flex", flexWrap:"wrap", gap:6}}>
+        {!isSecret && <>
+          <Bdg bg="var(--soft)" c="var(--dim)">{t('bet_card.stake')} {stake}₡</Bdg>
+          <Bdg bg="var(--grn)18" c="var(--grn)">{t('bet_card.win')} {potWin}₡</Bdg>
+        </>}
+        {pegno && <Bdg bg="var(--gold)22" c="var(--gold)">🎁 {pegno}</Bdg>}
+        {tlValue && <Bdg bg="var(--soft)" c="var(--dim)">⏱ {new Date(tlValue).toLocaleDateString()}</Bdg>}
+      </div>
+      {!isSecret && isCnt && opponentProfile && (
+        <div style={{borderTop:"1px solid var(--rule)", paddingTop:10, marginTop:10}}>
+          <div className="bc-meta" style={{fontSize:8, marginBottom:8}}>{t('bet_card.challenge')}</div>
+          <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
+            <Bdg bg="var(--grn)18" c="var(--grn)">{profile?.avatar} {t('bet_card.yes')} @ {fmtQ(quota)}×</Bdg>
+            <Bdg bg="var(--red)18" c="var(--red)">{opponentProfile.avatar} {t('bet_card.no')} @ {fmtQ(qNo(quota))}×</Bdg>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
+// Summary — editorial table: hairline rows, Playfair numerals, no card.
 function Summary({ stake, potWin, maxC, t }) {
   const net = potWin - stake;
   const balance = Math.round(maxC ?? 0);
   const balanceWin = balance + net;
   const balanceLose = balance - stake;
-  const row = (label, value, color) => (
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
-      <div style={{fontSize:12,color:"var(--dim)"}}>{label}</div>
-      <div style={{fontSize:14,fontWeight:700,color}}>{value}</div>
+  const row = (label, value, color, opts={}) => (
+    <div style={{
+      display:"flex", justifyContent:"space-between", alignItems:"baseline",
+      padding:"10px 0",
+      borderTop: opts.first ? 'none' : opts.dashed ? '1px dashed var(--gold)44' : '1px solid var(--rule)',
+    }}>
+      <div className="bc-meta" style={{fontSize:8}}>{label}</div>
+      <div className="bc-num" style={{fontSize:18, color}}>{value}<span style={{fontSize:'0.55em',opacity:.6,marginLeft:3}}>₡</span></div>
     </div>
   );
   return (
-    <div style={{...S.card, padding:"4px 16px"}}>
-      {row(t('create.risks'), `−${stake} ₡`, "var(--red)")}
-      <div style={{borderTop:"1px solid var(--brd)"}}/>
-      {row(t('create.net'), `+${net} ₡`, "var(--grn)")}
-      <div style={{borderTop:"1px solid var(--brd)"}}/>
-      {row(t('create.total'), `${potWin} ₡`, "var(--gold)")}
-      <div style={{borderTop:"1px dashed var(--gold)33",marginTop:4}}/>
-      {row(t('create.balance_win'), `${balanceWin} ₡`, "var(--grn)")}
-      {row(t('create.balance_lose'), `${balanceLose} ₡`, "var(--red)")}
+    <div style={{padding:"4px 0"}}>
+      {row(t('create.risks'),         `−${stake}`,   "var(--red)",  {first:true})}
+      {row(t('create.net'),           `+${net}`,     "var(--grn)")}
+      {row(t('create.total'),         `${potWin}`,   "var(--gold)")}
+      {row(t('create.balance_win'),   `${balanceWin}`,  "var(--grn)", {dashed:true})}
+      {row(t('create.balance_lose'),  `${balanceLose}`, "var(--red)")}
     </div>
   );
 }
@@ -263,36 +276,52 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     { key:'surprise',  color:'var(--pur)',  requiresOther:true  },
   ];
 
+  // Type selector — editorial: tracked uppercase tabs in a row, active state
+  // = bold + colored underline. The description sits as italic Cormorant
+  // pull-quote below the row, updating live with selection.
   const TypeBlock = (
-    <div style={{ marginBottom: 14 }}>
+    <div style={{ marginBottom: 24 }}>
       <label style={S.lbl}>{t('create.type_label')}</label>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap: 8 }}>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:'clamp(14px, 4vw, 28px)', borderBottom:'1px solid var(--rule)', paddingBottom:8, marginBottom:14 }}>
         {TYPE_OPTIONS.map(o => {
           const disabled = o.requiresOther && others.length === 0;
           const active = betType === o.key;
           return (
-            <div key={o.key}
+            <button key={o.key} type="button"
               onClick={() => { if (!disabled) setBetType(o.key); }}
+              disabled={disabled}
               style={{
-                padding: '10px 12px', borderRadius: 12,
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                background: active ? `${o.color}1a` : 'var(--card)',
-                border: `1px solid ${active ? o.color : 'var(--brd)'}`,
-                opacity: disabled ? .4 : 1,
-                transition: 'all .18s',
+                padding:'4px 0', cursor: disabled ? 'not-allowed' : 'pointer',
+                background:'transparent', border:'none',
+                fontFamily:"'Manrope',sans-serif",
+                fontSize:11, fontWeight: active ? 700 : 600,
+                letterSpacing:'.22em', textTransform:'uppercase',
+                color: active ? o.color : 'var(--dim)',
+                borderBottom: `2px solid ${active ? o.color : 'transparent'}`,
+                marginBottom:-9,
+                opacity: disabled ? .35 : 1,
+                transition:'all .18s',
               }}>
-              <div style={{ fontWeight: 600, fontSize: 13, color: active ? o.color : 'var(--txt)' }}>
-                {t('create.type_'+o.key)}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--dim)', marginTop: 2, lineHeight: 1.3 }}>
-                {t('create.type_'+o.key+'_desc')}
-              </div>
-            </div>
+              {t('create.type_'+o.key)}
+            </button>
           );
         })}
       </div>
+      {(() => {
+        const o = TYPE_OPTIONS.find(x => x.key === betType);
+        if (!o) return null;
+        return (
+          <div style={{
+            fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+            fontSize:14, fontWeight:500, lineHeight:1.5, color:'var(--dim)',
+            paddingLeft: 14, borderLeft:`2px solid ${o.color}`,
+          }}>
+            {t('create.type_'+o.key+'_desc')}
+          </div>
+        );
+      })()}
       {others.length === 0 && (
-        <div style={{ fontSize: 11, color: 'var(--mut)', marginTop: 6, fontStyle: 'italic' }}>
+        <div className="bc-meta" style={{ marginTop: 14, fontSize: 9, color: 'var(--mut)', textTransform:'none', letterSpacing:'.02em', fontStyle:'italic' }}>
           {t('create.no_others_hint')}
         </div>
       )}
@@ -300,26 +329,27 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   );
 
   const OpponentBlock = needsOpponent && others.length > 0 && (
-    <div style={{ marginBottom: 14 }}>
+    <div style={{ marginBottom: 24 }}>
       <label style={S.lbl}>{t('create.opponent_label')}</label>
-      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
         {others.map(m => {
           const active = opponentId === m.id;
           return (
-            <button key={m.id} onClick={() => setOpponentId(m.id)}
+            <button key={m.id} type="button" onClick={() => setOpponentId(m.id)}
               style={{
-                display:'inline-flex', alignItems:'center', gap:8,
-                padding:'8px 14px 8px 8px', borderRadius:24,
-                border:`1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
-                background: active ? 'var(--gold)1a' : 'transparent',
-                color: active ? 'var(--gold)' : 'var(--dim)',
-                cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight:600,
+                display:'inline-flex', alignItems:'center', gap:10,
+                padding:'6px 16px 6px 6px', borderRadius:999,
+                border:`1px solid ${active ? 'var(--gold)' : 'var(--rule)'}`,
+                background: active ? 'var(--soft)' : 'transparent',
+                color: active ? 'var(--gold)' : 'var(--txt)',
+                cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight: active ? 600 : 500,
+                letterSpacing:'.01em',
                 transition:'all .15s',
               }}>
               {m.avatarUrl
-                ? <img src={m.avatarUrl} alt="" style={{width:24,height:24,borderRadius:'50%',objectFit:'cover'}}/>
+                ? <img src={m.avatarUrl} alt="" style={{width:26,height:26,borderRadius:'50%',objectFit:'cover'}}/>
                 : <span style={{fontSize:18,lineHeight:1}}>{m.avatar || '😊'}</span>}
-              <span>{m.name}</span>
+              <span style={{fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:15}}>{m.name}</span>
             </button>
           );
         })}
@@ -412,62 +442,171 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     </div>
   );
 
+  // Centerpiece of the form — the bet title becomes a giant italic
+  // Cormorant textarea you write directly into. No box, no label above.
+  // Auto-grows with content. Quote marks render around in absolute so
+  // they don't interfere with the caret.
   const TitleBlock = (
-    <div style={{marginBottom:16}}>
-      <label style={S.lbl}>{t('create.bet_label')}</label>
-      <Inp value={title} onChange={e=>setTitle(e.target.value)} placeholder={isSecret?t('create.bet_placeholder_sec'):t('create.bet_placeholder_pub')}/>
+    <div style={{position:'relative', margin:'4px 0 32px', paddingLeft: isDesktop ? 18 : 14}}>
+      <span aria-hidden style={{
+        position:'absolute', top:-4, left:-2,
+        fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+        fontSize:'clamp(36px, 8vw, 56px)', lineHeight:1,
+        color:'var(--gold)', opacity:.55, pointerEvents:'none',
+      }}>“</span>
+      <textarea
+        value={title}
+        onChange={e=>setTitle(e.target.value)}
+        placeholder={isSecret?t('create.bet_placeholder_sec'):t('create.bet_placeholder_pub')}
+        rows={2}
+        style={{
+          width:'100%', resize:'none', overflow:'hidden',
+          background:'transparent', border:0, outline:'none',
+          fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+          fontSize:'clamp(24px, 5.5vw, 38px)', lineHeight:1.18,
+          fontWeight:600, letterSpacing:'-0.01em',
+          color:'var(--txt)',
+          padding:'0 0 8px',
+          borderBottom:'1px solid var(--rule)',
+        }}
+        onInput={e=>{
+          e.target.style.height='auto';
+          e.target.style.height = e.target.scrollHeight + 'px';
+        }}
+      />
     </div>
   );
 
+  // Probability becomes the hero — giant Playfair number drives the visual
+  // weight. Preset chips become small underline pills, slider stays as
+  // accent. Direct-quota input lives in a tiny side label.
   const QuotaBlock = (
-    <div style={{marginBottom:16}}>
+    <div style={{marginBottom:24}}>
       <label style={S.lbl}>{t('create.quota_label')}</label>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
-        {Q_PRE.map(p=>(
-          <button key={p.q} onClick={()=>setQuota(p.q)} style={{...S.btn,padding:"6px 10px",fontSize:11,background:"transparent",border:`1px solid ${Math.abs(quota-p.q)<.06?"var(--gold)":"var(--brd)"}`,color:Math.abs(quota-p.q)<.06?"var(--gold)":"var(--dim)"}}>{t('qpre.'+p.key)}</button>
-        ))}
+
+      {/* Giant probability + payoff multiplier */}
+      <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:18, marginBottom:14}}>
+        <div className="bc-num" style={{fontSize:'clamp(42px, 10vw, 72px)', color:probC, lineHeight:.9}}>
+          {prob}<span style={{fontSize:'0.45em', color:'var(--dim)', marginLeft:3, fontWeight:400}}>%</span>
+        </div>
+        <div style={{textAlign:'right', flexShrink:0, transform:'translateY(-4px)'}}>
+          <div className="bc-meta" style={{fontSize:8, marginBottom:4}}>Quota</div>
+          <div className="bc-num" style={{fontSize:'clamp(22px, 5vw, 32px)', color:'var(--gold)'}}>
+            {fmtQ(quota)}<span style={{fontSize:'0.55em', opacity:.6}}>×</span>
+          </div>
+        </div>
       </div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <div style={{fontSize:12,color:"var(--dim)"}}>{t('create.prob_label')}</div>
-        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:24,fontWeight:700,color:probC}}>{prob}%</div>
+
+      {/* Slider, hairline rule treatment */}
+      <input type="range" min="5" max="95" step="1" className="bc" value={clamp(prob,5,95)}
+        onChange={e=>setQuota(pToQ(parseInt(e.target.value)))}
+        style={{marginBottom:6, width:"100%", height:4, borderRadius:999, outline:"none", cursor:"pointer", accentColor:"var(--pur)"}}/>
+      <div className="bc-meta" style={{display:"flex", justifyContent:"space-between", fontSize:8, marginBottom:16, textTransform:'none', letterSpacing:'.18em'}}>
+        <span>{t('create.impossible')}</span><span>{t('create.certain')}</span>
       </div>
-      <input type="range" min="5" max="95" step="1" className="bc" value={clamp(prob,5,95)} onChange={e=>setQuota(pToQ(parseInt(e.target.value)))} style={{marginBottom:4,width:"100%",height:5,borderRadius:3,outline:"none",cursor:"pointer",accentColor:"var(--gold)"}}/>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--mut)",marginBottom:12}}><span>{t('create.impossible')}</span><span>{t('create.certain')}</span></div>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <span style={{fontSize:12,color:"var(--dim)",flexShrink:0}}>{t('create.direct_quota')}</span>
-        <Inp type="number" step=".05" min="1.05" max="50" value={quota} onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v>=1.05&&v<=50)setQuota(parseFloat(v.toFixed(2)));}} style={{width:90}}/>
-        {!isSecret&&isCnt&&<span style={{fontSize:11,color:"var(--dim)"}}>{t('create.no_label')} <span style={{color:"var(--red)",fontWeight:700}}>{fmtQ(qNo(quota))}×</span></span>}
+
+      {/* Presets — sit on a hairline, marked active by underline */}
+      <div style={{display:"flex", flexWrap:"wrap", gap:'clamp(10px, 3vw, 18px)', borderBottom:'1px solid var(--rule)', paddingBottom:10, marginBottom:14}}>
+        {Q_PRE.map(p=>{
+          const active = Math.abs(quota-p.q)<.06;
+          return (
+            <button key={p.q} type="button" onClick={()=>setQuota(p.q)} style={{
+              padding:'2px 0', background:'transparent', border:'none', cursor:'pointer',
+              fontFamily:"'Manrope',sans-serif", fontSize:10, fontWeight: active ? 700 : 600,
+              letterSpacing:'.2em', textTransform:'uppercase',
+              color: active ? 'var(--gold)' : 'var(--dim)',
+              borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
+              marginBottom:-11, transition:'all .18s',
+            }}>{t('qpre.'+p.key)}</button>
+          );
+        })}
+      </div>
+
+      {/* Direct numeric tweak — tiny inline */}
+      <div style={{display:"flex", alignItems:"center", gap:14}}>
+        <span className="bc-meta" style={{fontSize:8}}>{t('create.direct_quota')}</span>
+        <Inp type="number" step=".05" min="1.05" max="50" value={quota}
+          onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v>=1.05&&v<=50)setQuota(parseFloat(v.toFixed(2)));}}
+          style={{width:96, fontFamily:"'Playfair Display',serif", fontSize:18, padding:'4px 2px'}}/>
+        {!isSecret&&isCnt&&(
+          <span className="bc-meta" style={{fontSize:8}}>
+            {t('create.no_label')} <span style={{color:"var(--red)", fontWeight:700, fontFamily:"'Playfair Display',serif", fontSize:14, letterSpacing:'-0.02em', marginLeft:4}}>{fmtQ(qNo(quota))}×</span>
+          </span>
+        )}
       </div>
     </div>
   );
 
+  // Stake — same editorial language as Quota: hero numeral, underline-pill
+  // presets, summary line as hairline-separated columns (no card box).
   const StakeBlock = (
-    <div style={{marginBottom:16}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-        <label style={{...S.lbl,marginBottom:0}}>{t('create.stake_label')}</label>
-        <span style={{fontSize:11,color:"var(--dim)"}}>{t('create.stake_max')} {Math.round(maxStake)} ₡</span>
+    <div style={{marginBottom:24}}>
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:14}}>
+        <label style={{...S.lbl, marginBottom:0}}>{t('create.stake_label')}</label>
+        <span className="bc-meta" style={{fontSize:8}}>{t('create.stake_max')} <span style={{fontFamily:"'Playfair Display',serif", fontSize:14, letterSpacing:'-0.02em', color:'var(--gold)', marginLeft:3}}>{Math.round(maxStake)}₡</span></span>
       </div>
-      <div style={{display:"flex",gap:6,marginBottom:10}}>
-        {[5,10,20,50].map(s=>(
-          <button key={s} onClick={()=>s<=maxStake&&setStakeStr(String(s))} style={{...S.btn,flex:1,padding:"7px 4px",fontSize:12,background:"transparent",border:`1px solid ${stake===s?"var(--gold)":"var(--brd)"}`,color:stake===s?"var(--gold)":"var(--dim)",opacity:s>maxStake?.4:1}}>{s}</button>
-        ))}
+
+      {/* Hero stake number */}
+      <div className="bc-num" style={{fontSize:'clamp(42px, 10vw, 72px)', color:'var(--gold)', lineHeight:.9, marginBottom:14}}>
+        {stake || 0}<span style={{fontSize:'0.45em', color:'var(--dim)', marginLeft:3, fontWeight:400}}>₡</span>
       </div>
-      <Inp type="number" min="1" max={Math.floor(maxStake)} step="1" value={stakeStr} onChange={e=>setStakeStr(e.target.value)} placeholder={t('create.stake_placeholder')}/>
+
+      {/* Preset chips — underline pills */}
+      <div style={{display:"flex", gap:'clamp(14px, 4vw, 24px)', borderBottom:'1px solid var(--rule)', paddingBottom:10, marginBottom:14}}>
+        {[5,10,20,50].map(s=>{
+          const active = stake===s;
+          const disabled = s > maxStake;
+          return (
+            <button key={s} type="button" onClick={()=>!disabled&&setStakeStr(String(s))}
+              disabled={disabled}
+              style={{
+                padding:'2px 0', background:'transparent', border:'none',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight: active ? 700 : 600,
+                letterSpacing:'.2em',
+                color: active ? 'var(--gold)' : 'var(--dim)',
+                borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
+                marginBottom:-11,
+                opacity: disabled ? .35 : 1, transition:'all .18s',
+              }}>{s}</button>
+          );
+        })}
+      </div>
+
+      {/* Free numeric — underline input */}
+      <Inp type="number" min="1" max={Math.floor(maxStake)} step="1" value={stakeStr}
+        onChange={e=>setStakeStr(e.target.value)} placeholder={t('create.stake_placeholder')}/>
+
       {!isDesktop && (
         <>
           {needsApproval && (
-            <div style={{fontSize:12,color:"var(--gold)",marginTop:8,padding:"8px 12px",background:"var(--gold)12",borderRadius:8,border:"1px solid var(--gold)33"}}>
+            <div style={{
+              fontSize:11, color:"var(--gold)", marginTop:16, padding:"10px 14px",
+              background:"var(--gold)12", borderRadius:4, border:"1px solid var(--gold)33",
+              letterSpacing:'.02em', fontStyle:'italic', fontFamily:"'Cormorant Garamond',serif",
+            }}>
               {t('create.acceptance_required',{name:profiles[opponent]?.name??'...'})}
             </div>
           )}
-          <div style={{...S.card,marginTop:10,padding:"10px 14px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div><div style={{fontSize:11,color:"var(--dim)"}}>{t('create.risks')}</div><div style={{fontSize:17,fontWeight:700,color:"var(--red)"}}>−{stake} ₡</div></div>
-              <div style={{color:"var(--mut)"}}>→</div>
-              <div style={{textAlign:"right"}}><div style={{fontSize:11,color:"var(--dim)"}}>{t('create.net')}</div><div style={{fontSize:17,fontWeight:700,color:"var(--grn)"}}>+{potWin-stake} ₡</div></div>
-              <div style={{color:"var(--mut)"}}>→</div>
-              <div style={{textAlign:"right"}}><div style={{fontSize:11,color:"var(--dim)"}}>{t('create.total')}</div><div style={{fontSize:17,fontWeight:700,color:"var(--gold)"}}>{potWin} ₡</div></div>
-            </div>
+          {/* Summary — three Playfair columns separated by vertical hairlines */}
+          <div style={{
+            display:"flex", marginTop:18, padding:"14px 0",
+            borderTop:"1px solid var(--rule)", borderBottom:"1px solid var(--rule)",
+          }}>
+            {[
+              {l:t('create.risks'), v:`−${stake}`, c:'var(--red)'},
+              {l:t('create.net'),   v:`+${potWin-stake}`, c:'var(--grn)'},
+              {l:t('create.total'), v:`${potWin}`, c:'var(--gold)'},
+            ].map((s,i,arr)=>(
+              <div key={s.l} style={{
+                flex:1, textAlign: i===0?'left':i===arr.length-1?'right':'center',
+                borderLeft: i===0?'none':'1px solid var(--rule)',
+                paddingLeft: i===0?0:10,
+              }}>
+                <div className="bc-num" style={{fontSize:22, color:s.c}}>{s.v}<span style={{fontSize:'0.5em',opacity:.6,marginLeft:3}}>₡</span></div>
+                <div className="bc-meta" style={{marginTop:6, fontSize:8}}>{s.l}</div>
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -475,12 +614,25 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   );
 
   const CategoryBlock = (
-    <div style={{marginBottom:16}}>
+    <div style={{marginBottom:24}}>
       <label style={S.lbl}>{t('create.category_label')}</label>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        {cats.map(c=>(
-          <button key={c.id} onClick={()=>setCat(c.id)} style={{...S.btn,padding:"7px 12px",fontSize:12,background:"transparent",border:`1px solid ${cat===c.id?c.color:"var(--brd)"}`,color:cat===c.id?c.color:"var(--dim)"}}>{c.e} {catLabel(c)}</button>
-        ))}
+      <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
+        {cats.map(c=>{
+          const active = cat===c.id;
+          return (
+            <button key={c.id} type="button" onClick={()=>setCat(c.id)} style={{
+              padding:'7px 14px', borderRadius:999, cursor:'pointer',
+              border:`1px solid ${active ? c.color : 'var(--rule)'}`,
+              background: active ? `${c.color}14` : 'transparent',
+              color: active ? c.color : 'var(--dim)',
+              fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight: active ? 700 : 600,
+              letterSpacing:'.08em', textTransform:'uppercase',
+              transition:'all .15s',
+            }}>
+              <span style={{marginRight:6, fontSize:14}}>{c.e}</span>{catLabel(c)}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
