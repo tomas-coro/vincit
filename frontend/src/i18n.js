@@ -6,7 +6,7 @@ const lsSet = (k,v) => { try { localStorage.setItem(k,JSON.stringify(v)); } catc
 const TRANSLATIONS = {
   it: {
     date:    { locale:'it-IT', expired:'SCADUTA', days:'g', hours:'h', minutes:'m' },
-    cats:    { sport:'Sport', media:'Media', gaming:'Gaming', cibo:'Cibo', eventi:'Eventi', altro:'Altro', intimo:'Intimo', serata:'Serata', casa:'Casa' },
+    cats:    { scherzi:'Scherzi', sport:'Sport', media:'Media', gaming:'Gaming', cibo:'Cibo', eventi:'Eventi', vita:'Vita', altro:'Altro', intimo:'Intimo', serata:'Serata', casa:'Casa' },
     qpre:    { q110:'👑 Quasi certo', q130:'🔥 Molto prob.', q150:'⚡ Probabile', q200:'🎲 Fifty-fifty', q350:'💀 Outsider', q600:'🌙 Miracolo' },
     welcome: { private:'Privato · Solo per voi', subtitle:'Il vostro gioco privato di scommesse', iam:'Sono io', footer:'Quote decimali europee · Dati salvati sul server' },
     app:     { welcome_back:'Bentornato', credits:'Crediti', switch:'Switch', new_bet:'+ Nuova Bet', new_bet_label:'Nuova', new_group:'+ Nuovo gruppo', error_create:'Errore nella creazione della bet. Riprova.', error_cancel:"Errore durante l'annullamento. Riprova.", error_edit:'Errore durante la modifica. Riprova.', error_reset:'Errore durante il reset. Riprova.', error_accept:"Errore durante l'accettazione. Riprova.", error_reject:'Errore durante il rifiuto. Riprova.', reject_confirm:'Rifiutare questa bet?', sync_error:'Errore di sincronizzazione — tocca per riprovare', ok_created:'Bet creata!', ok_edited:'Bet modificata', ok_cancelled:'Bet annullata', ok_accepted:'Bet accettata', ok_rejected:'Bet rifiutata', ok_reset:'Stagione resettata', ok_profile_saved:'Profilo aggiornato', err_role:'Impossibile cambiare ruolo', err_perms:'Impossibile aggiornare i permessi' },
@@ -245,6 +245,12 @@ const TRANSLATIONS = {
       err_no_camera:'Nessuna fotocamera trovata su questo dispositivo',
       err_in_use:"Un'altra app sta usando la fotocamera. Chiudila e riprova.",
     },
+    crop: {
+      title:'Posiziona la foto',
+      zoom:'Zoom',
+      hint:'Trascina per spostare · usa lo slider per ingrandire',
+      cancel:'Annulla', confirm:'Conferma',
+    },
     picker: {
       search:'Cerca un gruppo…',
       create:'Crea nuovo gruppo',
@@ -341,7 +347,7 @@ const TRANSLATIONS = {
 
   en: {
     date:    { locale:'en-US', expired:'EXPIRED', days:'d', hours:'h', minutes:'m' },
-    cats:    { sport:'Sport', media:'Media', gaming:'Gaming', cibo:'Food', eventi:'Events', altro:'Other', intimo:'Intimate', serata:'Night Out', casa:'Home' },
+    cats:    { scherzi:'Pranks', sport:'Sport', media:'Media', gaming:'Gaming', cibo:'Food', eventi:'Events', vita:'Life', altro:'Other', intimo:'Intimate', serata:'Night Out', casa:'Home' },
     qpre:    { q110:'👑 Almost certain', q130:'🔥 Very likely', q150:'⚡ Probable', q200:'🎲 Fifty-fifty', q350:'💀 Outsider', q600:'🌙 Miracle' },
     welcome: { private:'Private · Just the two of you', subtitle:'Your personal couples betting game', iam:"That's me", footer:'European decimal odds · Data stored on server' },
     app:     { welcome_back:'Welcome back', credits:'Credits', switch:'Switch', new_bet:'+ New Bet', new_bet_label:'New', new_group:'+ New group', error_create:'Failed to create the bet. Please try again.', error_cancel:'Failed to cancel the bet. Please try again.', error_edit:'Failed to edit the bet. Please try again.', error_reset:'Reset failed. Please try again.', error_accept:'Failed to accept the bet. Please try again.', error_reject:'Failed to reject the bet. Please try again.', reject_confirm:'Reject this bet?', sync_error:'Sync error — tap to retry', ok_created:'Bet created!', ok_edited:'Bet updated', ok_cancelled:'Bet cancelled', ok_accepted:'Bet accepted', ok_rejected:'Bet rejected', ok_reset:'Season reset', ok_profile_saved:'Profile updated', err_role:"Couldn't change role", err_perms:"Couldn't update permissions" },
@@ -574,6 +580,12 @@ const TRANSLATIONS = {
       err_denied:'Camera permission denied · check your browser settings',
       err_no_camera:'No camera detected on this device',
       err_in_use:'Another app is using the camera. Close it and retry.',
+    },
+    crop: {
+      title:'Position the photo',
+      zoom:'Zoom',
+      hint:'Drag to move · use the slider to zoom',
+      cancel:'Cancel', confirm:'Confirm',
     },
     picker: {
       search:'Search a group…',

@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { Btn, Inp, AVATAR_CATEGORIES, COLORS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import { useToast } from '../../Toast.jsx';
-import { fileToSquareDataUrl } from '../../imageUtils.js';
+import { readImageFile, cropImageToSquare } from '../../imageUtils.js';
+import PhotoCropModal from './PhotoCropModal.jsx';
 import * as api from '../../api.js';
 
 export default function ProfileEditModal({ profile, onClose, onSaved }) {
@@ -17,31 +18,57 @@ export default function ProfileEditModal({ profile, onClose, onSaved }) {
   const [activeCat,   setActiveCat]   = useState(AVATAR_CATEGORIES[1].id); // default 'animals'
   const [busy,        setBusy]        = useState(false);
   const [photoBusy,   setPhotoBusy]   = useState(false);
+  const [cropSrc,     setCropSrc]     = useState(null); // { img, dataUrl } when crop modal is open
   const fileRef = useRef(null);
 
   const c = COLORS[colorKey] || '#5b8af0';
 
+  const reportPhotoError = err => {
+    console.error('[profile-avatar-upload]', err);
+    const code = err?.message || '';
+    const key = (code === 'decode_failed' || code === 'not_an_image' || code === 'invalid_image')
+      ? 'profile.err_format'
+      : (code === 'file_too_large' || code === 'image_too_large')
+        ? 'profile.err_too_big'
+        : (code === 'image_upload_unavailable')
+          ? 'profile.err_unavailable'
+          : 'profile.err_upload';
+    toast.error(t(key));
+  };
+
+  // Pick file → decode → open the crop modal (or upload as-is for HEIC).
   const handleFile = async e => {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
     setPhotoBusy(true);
     try {
-      const dataUrl = await fileToSquareDataUrl(f, 512, 0.85);
-      const { avatar_url } = await api.uploadAvatar(dataUrl);
+      const { dataUrl, img, heicFallback } = await readImageFile(f);
+      if (heicFallback) {
+        // Can\'t crop client-side; let Cloudinary center-crop with gravity:face.
+        const { avatar_url } = await api.uploadAvatar(dataUrl);
+        setAvatarUrl(avatar_url);
+        toast.success(t('profile.ok_uploaded'));
+        setPhotoBusy(false);
+        return;
+      }
+      // Open the reposition / zoom UI.
+      setCropSrc({ img, dataUrl });
+    } catch (err) {
+      reportPhotoError(err);
+    } finally { setPhotoBusy(false); }
+  };
+
+  // Called once the user confirms the crop region.
+  const handleCropConfirm = async (croppedDataUrl) => {
+    setCropSrc(null);
+    setPhotoBusy(true);
+    try {
+      const { avatar_url } = await api.uploadAvatar(croppedDataUrl);
       setAvatarUrl(avatar_url);
       toast.success(t('profile.ok_uploaded'));
     } catch (err) {
-      console.error('[profile-avatar-upload]', err);
-      const code = err?.message || '';
-      const key = (code === 'decode_failed' || code === 'not_an_image' || code === 'invalid_image')
-        ? 'profile.err_format'
-        : (code === 'file_too_large' || code === 'image_too_large')
-          ? 'profile.err_too_big'
-          : (code === 'image_upload_unavailable')
-            ? 'profile.err_unavailable'
-            : 'profile.err_upload';
-      toast.error(t(key));
+      reportPhotoError(err);
     } finally { setPhotoBusy(false); }
   };
 
@@ -235,7 +262,17 @@ export default function ProfileEditModal({ profile, onClose, onSaved }) {
   // Portal to document.body so the modal escapes any ancestor with a
   // `transform` (the `sUp` animation on the view root creates a containing
   // block that would otherwise pin position:fixed to the scrolled page).
-  return typeof document !== 'undefined'
-    ? createPortal(overlay, document.body)
-    : overlay;
+  return (
+    <>
+      {typeof document !== 'undefined' ? createPortal(overlay, document.body) : overlay}
+      {cropSrc && (
+        <PhotoCropModal
+          img={cropSrc.img}
+          dataUrl={cropSrc.dataUrl}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
+    </>
+  );
 }

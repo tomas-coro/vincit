@@ -122,7 +122,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   const [title,setTitle]=useState("");
   const [quota,setQuota]=useState(1.50);
   const [stakeStr,setStakeStr]=useState("10");
-  const [cat,setCat]=useState(cats[0]?.id||"sport");
+  const [cat,setCat]=useState(cats[0]?.id||"scherzi");
   // betType: 'vault' | 'open' | 'targeted' | 'surprise'
   const [betType,setBetType]=useState('open');
   const [opponentId,setOpponentId]=useState(others[0]?.id ?? null);

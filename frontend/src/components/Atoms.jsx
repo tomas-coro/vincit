@@ -29,22 +29,25 @@ export const AVATAR_CATEGORIES = [
 export const AVATARS = AVATAR_CATEGORIES.flatMap(c => c.items);
 export const COLORS={blue:"#5b8af0",purple:"#a07ef5",green:"#2ecc7f",red:"#e05555",gold:"#c8973f",pink:"#e878a8",teal:"#2ec8c8",orange:"#e8903f"};
 export const CAT_COLS=["#e05555","#a07ef5","#5b8af0","#e8903f","#2ecc7f","#e878a8","#f6c90e","#2ec8c8"];
-// Recalibrated for friend-group bets (the app started as a couple-only thing,
-// hence the legacy categories like "intimo" / "serata" / "casa" — those IDs
-// are preserved in DEF_CAT_IDS below so older bets still render their label.
+// Default category set for friend-group betting. Tuned to lean goliardic /
+// jokey (the use case is bets between friends, not couple intimacy).
+// Legacy IDs from the early couple-only days (intimo / serata / casa) are
+// kept in DEF_CAT_IDS so old bets still render their label.
 export const DEF_CATS=[
-  {id:"sport",  e:"⚽", label:"Sport",  color:"#5b8af0"},
-  {id:"media",  e:"🎬", label:"Media",  color:"#a07ef5"},
-  {id:"gaming", e:"🎮", label:"Gaming", color:"#2ecc7f"},
-  {id:"cibo",   e:"🍕", label:"Cibo",   color:"#e8903f"},
-  {id:"eventi", e:"🎉", label:"Eventi", color:"#e878a8"},
-  {id:"altro",  e:"🎯", label:"Altro",  color:"#8480a0"},
+  {id:"scherzi", e:"🃏", label:"Scherzi", color:"#e878a8"},
+  {id:"sport",   e:"⚽", label:"Sport",   color:"#5b8af0"},
+  {id:"media",   e:"🎬", label:"Media",   color:"#a07ef5"},
+  {id:"gaming",  e:"🎮", label:"Gaming",  color:"#2ecc7f"},
+  {id:"cibo",    e:"🍕", label:"Cibo",    color:"#e8903f"},
+  {id:"eventi",  e:"🎉", label:"Eventi",  color:"#f6c90e"},
+  {id:"vita",    e:"📅", label:"Vita",    color:"#2ec8c8"},
+  {id:"altro",   e:"🎯", label:"Altro",   color:"#8480a0"},
 ];
 // All category IDs that have a translation under cats.* in i18n.js. Used to
 // decide whether to read the label from the dictionary or from the cat object.
 // Includes legacy ids (intimo/serata/casa) so old bets created before the
 // recalibration keep showing their original label.
-export const DEF_CAT_IDS=['sport','media','gaming','cibo','eventi','altro','intimo','serata','casa'];
+export const DEF_CAT_IDS=['scherzi','sport','media','gaming','cibo','eventi','vita','altro','intimo','serata','casa'];
 export const Q_PRE = [
   {key:'q110',q:1.10},{key:'q130',q:1.30},{key:'q150',q:1.50},
   {key:'q200',q:2.00},{key:'q350',q:3.50},{key:'q600',q:6.00},
