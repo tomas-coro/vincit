@@ -62,8 +62,14 @@ export const setMemberPermissions = (groupId, userId, permissions) => req('PATCH
 export const updateGroupSettings = (groupId, data)   => req('PATCH',  `/groups/${groupId}/settings`, data);
 export const inviteFriend        = (groupId, userId) => req('POST',   `/groups/${groupId}/invite-member`, { userId });
 
-// Friends (cross-group)
-export const getFriends     = ()             => req('GET',    '/friends');
+// Friends (explicit friendships)
+export const getFriends         = ()             => req('GET',    '/friends');
+export const getFriendRequests  = ()             => req('GET',    '/friends/requests');
+export const getFriendDiscover  = ()             => req('GET',    '/friends/discover');
+export const sendFriendRequest  = (userId)       => req('POST',   '/friends/request', { userId });
+export const respondFriendReq   = (userId, accept) => req('POST', '/friends/respond', { userId, accept });
+export const cancelFriendReq    = (userId)       => req('POST',   '/friends/cancel', { userId });
+export const removeFriend       = (userId)       => req('DELETE', `/friends/${userId}`);
 
 // Bets
 export const createBet      = (data)         => req('POST',   '/bets', data);

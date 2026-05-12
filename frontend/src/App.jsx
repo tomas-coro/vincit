@@ -301,8 +301,25 @@ export default function App() {
   const [editingBet, setEditingBet]       = useState(null);
   const [acceptingBet, setAcceptingBet]   = useState(null);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [pendingFriendCount, setPendingFriendCount] = useState(0);
 
   useEffect(() => { if (user && groups.length > 0) registerPush(user); }, [user, groups.length]);
+
+  // Poll incoming friend-request count for the nav badge. Cheap (single
+  // small JSON), refreshes when the user lands on the Friends view too.
+  useEffect(() => {
+    if (!token || !user) return;
+    let cancelled = false;
+    const refreshFriendBadge = async () => {
+      try {
+        const r = await api.getFriendRequests();
+        if (!cancelled) setPendingFriendCount((r?.incoming || []).length);
+      } catch {}
+    };
+    refreshFriendBadge();
+    const id = setInterval(refreshFriendBadge, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [token, user, view]);
 
   // ─── Trophy unlock watcher ─────────────────────────────────────────
   // Detect new unlocked levels by polling /api/achievements whenever the
@@ -610,6 +627,9 @@ export default function App() {
                 {n.id === 'bets' && secretCount > 0 && (
                   <div title="Vault" style={{ position: 'absolute', right: 10, width: 16, height: 16, borderRadius: '50%', background: 'var(--gold)', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07060f' }}>🔒</div>
                 )}
+                {n.id === 'friends' && pendingFriendCount > 0 && (
+                  <div style={{ position: 'absolute', right: 10, minWidth: 16, height: 16, padding: '0 5px', borderRadius: 8, background: 'var(--gold)', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07060f' }}>{pendingFriendCount}</div>
+                )}
               </div>
             ))}
           </div>
@@ -684,6 +704,9 @@ export default function App() {
           {NAV.map(n => (
             <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => setView(n.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 10px', cursor: 'pointer', borderRadius: 12, fontSize: 10, color: view === n.id ? 'var(--gold)' : 'var(--mut)', transition: 'all .18s', position: 'relative', userSelect: 'none' }}>
               <span style={{ fontSize: 20 }}>{n.e}</span>
+              {n.id === 'friends' && pendingFriendCount > 0 && (
+                <div style={{ position: 'absolute', top: 2, right: 6, minWidth: 14, height: 14, padding: '0 4px', borderRadius: 7, background: 'var(--gold)', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07060f' }}>{pendingFriendCount}</div>
+              )}
               {n.id === 'bets' && secretCount > 0 && (
                 <div style={{ position: 'absolute', top: 2, right: 6, width: 14, height: 14, borderRadius: '50%', background: 'var(--gold)', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07060f' }}>🔒</div>
               )}

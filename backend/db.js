@@ -172,9 +172,11 @@ const pool = new Pool({
 
   // Granular notification preferences (replaces the legacy on_new_bet umbrella)
   await pool.query(`
-    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_group_bet   BOOLEAN DEFAULT true;
-    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_challenged  BOOLEAN DEFAULT true;
-    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_targeted    BOOLEAN DEFAULT true;
+    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_group_bet     BOOLEAN DEFAULT true;
+    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_challenged    BOOLEAN DEFAULT true;
+    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_targeted      BOOLEAN DEFAULT true;
+    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_friend_request BOOLEAN DEFAULT true;
+    ALTER TABLE notification_prefs ADD COLUMN IF NOT EXISTS on_friend_accept  BOOLEAN DEFAULT true;
   `);
 
   await pool.query(`
@@ -257,6 +259,43 @@ const pool = new Pool({
     );
     CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
   `);
+
+  // Explicit friendships (accepted) + pending requests.
+  // Friendships are stored in canonical pair order (user_id_a < user_id_b)
+  // so the (a, b) PK is enough — no need to insert both directions.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS friendships (
+      user_id_a   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      user_id_b   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at  BIGINT NOT NULL,
+      PRIMARY KEY (user_id_a, user_id_b),
+      CHECK (user_id_a < user_id_b)
+    );
+    CREATE INDEX IF NOT EXISTS idx_friendships_b ON friendships(user_id_b);
+    CREATE TABLE IF NOT EXISTS friend_requests (
+      from_user_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      to_user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at    BIGINT NOT NULL,
+      PRIMARY KEY (from_user_id, to_user_id),
+      CHECK (from_user_id <> to_user_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_friend_requests_to ON friend_requests(to_user_id);
+  `);
+
+  // One-shot backfill: convert existing implicit "shared a group" pairs into
+  // real accepted friendships so we don't wipe people's existing connections
+  // on the deploy that makes friendship explicit. Idempotent thanks to ON
+  // CONFLICT DO NOTHING — re-running won't add duplicates.
+  await pool.query(`
+    INSERT INTO friendships (user_id_a, user_id_b, created_at)
+    SELECT ua.user_id, ub.user_id, COALESCE(MIN(LEAST(ua.joined_at, ub.joined_at)), 0)
+    FROM user_groups ua
+    JOIN user_groups ub
+      ON ua.group_id = ub.group_id
+     AND ua.user_id  < ub.user_id
+    GROUP BY ua.user_id, ub.user_id
+    ON CONFLICT DO NOTHING
+  `).catch(e => console.error('[friendship-backfill]', e.message));
 
   // One-shot cleanup: drop auto-created "My Group" rooms that are still empty
   // (1 member, 0 bets, 0 custom categories). This wipes the auto-room that

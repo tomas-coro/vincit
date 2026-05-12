@@ -34,18 +34,24 @@ router.delete('/subscribe', async (req, res) => {
 router.post('/prefs', async (req, res) => {
   try {
     const user = req.userId;
-    const { on_group_bet, on_challenged, on_targeted, on_resolved, on_expiry } = req.body;
+    const {
+      on_group_bet, on_challenged, on_targeted, on_resolved, on_expiry,
+      on_friend_request, on_friend_accept,
+    } = req.body;
     await db.query(`
-      INSERT INTO notification_prefs("user", on_group_bet, on_challenged, on_targeted, on_resolved, on_expiry)
-      VALUES($1,$2,$3,$4,$5,$6)
+      INSERT INTO notification_prefs("user", on_group_bet, on_challenged, on_targeted, on_resolved, on_expiry, on_friend_request, on_friend_accept)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8)
       ON CONFLICT("user") DO UPDATE SET
-        on_group_bet=$2, on_challenged=$3, on_targeted=$4, on_resolved=$5, on_expiry=$6
+        on_group_bet=$2, on_challenged=$3, on_targeted=$4, on_resolved=$5, on_expiry=$6,
+        on_friend_request=$7, on_friend_accept=$8
     `, [user,
-        on_group_bet  ?? true,
-        on_challenged ?? true,
-        on_targeted   ?? true,
-        on_resolved   ?? true,
-        on_expiry     ?? true,
+        on_group_bet      ?? true,
+        on_challenged     ?? true,
+        on_targeted       ?? true,
+        on_resolved       ?? true,
+        on_expiry         ?? true,
+        on_friend_request ?? true,
+        on_friend_accept  ?? true,
     ]);
     res.json({ ok: true });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
@@ -57,11 +63,13 @@ router.get('/prefs/:user', async (req, res) => {
     const { rows } = await db.query('SELECT * FROM notification_prefs WHERE "user"=$1', [req.params.user]);
     const row = rows[0] ?? {};
     res.json({
-      on_group_bet:  row.on_group_bet  ?? true,
-      on_challenged: row.on_challenged ?? true,
-      on_targeted:   row.on_targeted   ?? true,
-      on_resolved:   row.on_resolved   ?? true,
-      on_expiry:     row.on_expiry     ?? true,
+      on_group_bet:      row.on_group_bet      ?? true,
+      on_challenged:     row.on_challenged     ?? true,
+      on_targeted:       row.on_targeted       ?? true,
+      on_resolved:       row.on_resolved       ?? true,
+      on_expiry:         row.on_expiry         ?? true,
+      on_friend_request: row.on_friend_request ?? true,
+      on_friend_accept:  row.on_friend_accept  ?? true,
     });
   } catch(e) { res.status(500).json({ error: 'Server error' }); }
 });
