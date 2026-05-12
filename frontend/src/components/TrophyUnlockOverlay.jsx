@@ -53,14 +53,14 @@ export default function TrophyUnlockOverlay({ queue, onDone }) {
       <div
         className={`tr-card${exiting ? ' exit' : ''}`}
         style={{
-          position: 'absolute', top: 18, left: '50%',
-          minWidth: 280, maxWidth: 360,
+          position: 'absolute', top: 12, left: '50%',
+          width: 'min(360px, calc(100vw - 24px))',
           background: 'linear-gradient(135deg, var(--surf), var(--card))',
           border: `1px solid ${tier}88`,
           borderLeft: `4px solid ${tier}`,
           borderRadius: 14,
-          padding: '12px 16px',
-          display: 'flex', alignItems: 'center', gap: 14,
+          padding: '12px 14px',
+          display: 'flex', alignItems: 'center', gap: 12,
         }}
       >
         {/* Sparkles around the card */}
@@ -71,7 +71,7 @@ export default function TrophyUnlockOverlay({ queue, onDone }) {
 
         {/* Trophy icon */}
         <div style={{
-          fontSize: 38, lineHeight: 1, flexShrink: 0,
+          fontSize: 34, lineHeight: 1, flexShrink: 0,
           filter: `drop-shadow(0 0 12px ${tier}aa)`,
         }}>{current.icon}</div>
 

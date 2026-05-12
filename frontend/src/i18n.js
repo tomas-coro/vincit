@@ -140,7 +140,7 @@ const TRANSLATIONS = {
     trophies: {
       title:'🏆 Trofei', empty:'Nessun trofeo sbloccato', locked:'Bloccato', unlocked_at:'Sbloccato il',
       max_reached:'MASSIMO RAGGIUNTO', unlocked_header:'Trofeo sbloccato',
-      filter_all:'Tutti', filter_unlocked:'Sbloccati', filter_locked:'Da sbloccare', filter_max:'Al massimo',
+      filter_all:'Tutti', filter_unlocked:'Sbloccati', filter_locked:'Da sbloccare', filter_max:'MAX',
       cat_positive:'Vittorie', cat_challenge:'Sfide', cat_mission:'Missioni', cat_shadow:'Lato oscuro', cat_social:'Sociale',
 
       // Positive

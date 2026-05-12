@@ -328,12 +328,12 @@ export default function GroupInfoModal({ group, userId, onClose, onLeft, onDelet
                       {PERMS.map(perm => {
                         const checked = !!(m.permissions && m.permissions[perm]);
                         return (
-                          <label key={perm} style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, cursor:'pointer' }}>
+                          <label key={perm} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:12, cursor:'pointer', lineHeight:1.35 }}>
                             <input type="checkbox" checked={checked}
                               onChange={e => handleTogglePermission(m, perm, e.target.checked)}
-                              style={{ accentColor:'var(--gold)' }}/>
-                            <span>{PERM_ICONS[perm]}</span>
-                            <span style={{ color: checked ? 'var(--txt)' : 'var(--dim)' }}>{t('group_info_perms.'+perm)}</span>
+                              style={{ accentColor:'var(--gold)', marginTop:2, flexShrink:0 }}/>
+                            <span style={{flexShrink:0}}>{PERM_ICONS[perm]}</span>
+                            <span style={{ color: checked ? 'var(--txt)' : 'var(--dim)', flex:1 }}>{t('group_info_perms.'+perm)}</span>
                           </label>
                         );
                       })}

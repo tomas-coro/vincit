@@ -111,7 +111,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
               fontSize:10, letterSpacing:2, color:'var(--dim)',
               textTransform:'uppercase', marginBottom:8, fontWeight:700,
             }}>{t('trophies.cat_'+cat)}</div>
-            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(160px, 1fr))', gap:8}}>
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(min(160px, 100%), 1fr))', gap:8}}>
               {items.map(a => <TrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate}/>)}
             </div>
           </div>
