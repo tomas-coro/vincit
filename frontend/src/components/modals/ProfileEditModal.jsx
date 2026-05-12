@@ -47,7 +47,7 @@ export default function ProfileEditModal({ profile, onClose, onSaved }) {
     try {
       await api.updateProfile({ name: name.trim(), avatar, color_key: colorKey });
       onSaved?.({ name: name.trim(), avatar, colorKey, avatarUrl });
-      toast.success(t('app.ok_edited'));
+      toast.success(t('app.ok_profile_saved'));
       onClose();
     } catch { toast.error(t('app.error_edit')); }
     finally { setBusy(false); }
