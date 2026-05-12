@@ -44,7 +44,7 @@ const S = {
   row: {display:"flex",alignItems:"center",gap:10},
 };
 
-export default function DashboardView({user,profiles,groupMembers,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onGoToVault}){
+export default function DashboardView({user,profiles,groupMembers,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onGoToVault,onConfirmOutcome,onWithdrawResolve,onOvertime}){
   const { t, lang } = useLang();
   // Multi-member ranking: include every profile in the group, sorted by wins desc
   const allMemberIds = (groupMembers && groupMembers.length
@@ -207,8 +207,8 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
   const activeBets=(myAct.length+thAct.length)>0&&(
     <>
       <SecLabel>{t('dashboard.active')}</SecLabel>
-      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} can={can} onDelete={onDelete} onEdit={onEdit}/>)}
-      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} can={can} onDelete={onDelete} onEdit={onEdit}/>)}
+      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} can={can} onDelete={onDelete} onEdit={onEdit} onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}/>)}
+      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} can={can} onDelete={onDelete} onEdit={onEdit} onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}/>)}
     </>
   );
 

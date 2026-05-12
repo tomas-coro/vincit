@@ -73,7 +73,8 @@ export const removeFriend       = (userId)       => req('DELETE', `/friends/${us
 
 // Bets
 export const createBet      = (data)         => req('POST',   '/bets', data);
-export const resolveBet     = (id, outcome)  => req('PATCH',  `/bets/${id}/resolve`, { outcome });
+export const resolveBet     = (id, outcome, opts = {}) => req('PATCH',  `/bets/${id}/resolve`, { outcome, ...opts });
+export const withdrawResolve= (id)           => req('POST',   `/bets/${id}/withdraw-resolve`);
 export const counterBet     = (betId, cb)    => req('POST',   `/bets/${betId}/counter`, cb);
 export const flameBet       = (id)           => req('PATCH',  `/bets/${id}/flame`);
 export const createCategory = (cat)          => req('POST',   '/categories', cat);

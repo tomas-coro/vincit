@@ -16,7 +16,7 @@ const qToP = q=>Math.round(100/parseFloat(q));
 const SWIPE_THRESHOLD = 80;
 const VERT_ABORT      = 40;
 
-export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,onReactionPhoto,reactions,onDelete,onEdit,isDesktop,onAccept,onReject,can}){
+export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,onReactionPhoto,reactions,onDelete,onEdit,isDesktop,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime}){
   const { t, lang } = useLang();
   const canModerate = typeof can === 'function' && can('moderate_bets');
   const [photoCaptureOpen, setPhotoCaptureOpen] = useState(false);
@@ -33,7 +33,13 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   };
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const isOwner=bet.creator===user;
+  const isOpponent=bet.opponent===user;
+  const isParty=isOwner||isOpponent;
+  const hasOpponent=bet.opponent&&bet.opponent!==bet.creator;
   const isPending=bet.status==='pending';
+  const isDisputed=bet.status==='disputed';
+  const hasProposal=!!bet.pendingOutcome&&['active','disputed'].includes(bet.status);
+  const iProposed=hasProposal&&bet.pendingOutcomeBy===user;
   const isRejected=bet.status==='rejected';
   const cat=cats.find(c=>c.id===bet.category)||cats[cats.length-1];
   const done=["won","lost","rejected"].includes(bet.status);
@@ -80,7 +86,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const [deltaX, setDeltaX] = useState(0);
 
   useEffect(() => {
-    if (isDesktop || !isOwner || done || isPending || !onResolve) return;
+    if (isDesktop || !isOwner || done || isPending || hasProposal || isDisputed || !onResolve) return;
     const el = cardRef.current;
     if (!el) return;
 
@@ -116,7 +122,9 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
     <div style={{display:"flex",gap:8,...(isDesktop?{flexDirection:"column",alignItems:"stretch",flexShrink:0,justifyContent:"center"}:{})}}>
       {bet.isSecret
         ?<Btn variant="gold" sm style={isDesktop?{}:{flex:1}} onClick={()=>onReveal(bet)}>{t('bet_card.reveal')}</Btn>
-        :<Btn variant="grn" sm style={isDesktop?{}:{flex:1}} onClick={()=>onResolve(bet)}>{t('bet_card.declare')}</Btn>
+        :(!hasProposal&&!isDisputed)
+          ?<Btn variant="grn" sm style={isDesktop?{}:{flex:1}} onClick={()=>onResolve(bet)}>{hasOpponent?t('bet_card.propose_resolve'):t('bet_card.declare')}</Btn>
+          :null
       }
       <button onClick={()=>onFlame(bet.id)} style={{...S.btn,padding:"7px 10px",background:"transparent",border:"1px solid var(--brd)",color:bet.flamed?"#f97316":"var(--dim)",fontSize:12}}>{bet.flamed?"🔥":"🤍"}</button>
       {canEditBet&&(
@@ -354,6 +362,53 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             </div>
           )}
 
+          {/* Consensual-resolve strip: pending proposal or active dispute. */}
+          {(hasProposal||isDisputed)&&isParty&&(
+            <div style={{borderTop:'1px solid var(--brd)',paddingTop:10,marginTop:6}}>
+              {isDisputed?(
+                <>
+                  <div style={{fontSize:12,fontWeight:700,color:'var(--red)',marginBottom:4}}>{t('bet_card.disputed_label')}</div>
+                  <div style={{fontSize:11,color:'var(--mut)',marginBottom:10,lineHeight:1.5}}>{t('bet_card.disputed_help')}</div>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    <Btn variant="gold" sm style={{flex:1,minWidth:140}} onClick={()=>onOvertime?.(bet)}>{t('bet_card.disputed_overtime')}</Btn>
+                    {isOwner&&<Btn variant="ghost" sm style={{flex:1,minWidth:140}} onClick={()=>onResolve?.(bet)}>{t('bet_card.disputed_repropose')}</Btn>}
+                  </div>
+                </>
+              ):iProposed?(
+                <>
+                  <div style={{fontSize:12,color:'var(--dim)',marginBottom:8}}>
+                    {t('bet_card.proposed_waiting',{
+                      label: bet.pendingOutcome==='won'?t('bet_card.yes_short'):t('bet_card.no_short'),
+                      name:  profiles[isOwner?bet.opponent:bet.creator]?.name ?? '...'
+                    })}
+                  </div>
+                  <button onClick={()=>onWithdrawResolve?.(bet)}
+                    style={{...S.btn,padding:'7px 12px',background:'transparent',border:'1px solid var(--brd)',color:'var(--dim)',fontSize:12}}>
+                    {t('bet_card.proposed_withdraw')}
+                  </button>
+                </>
+              ):(
+                <>
+                  <div style={{fontSize:12,color:'var(--dim)',marginBottom:10,lineHeight:1.4}}>
+                    {t('bet_card.proposed_other',{
+                      name:  profiles[bet.pendingOutcomeBy]?.name ?? '...',
+                      label: bet.pendingOutcome==='won'?t('bet_card.yes_short'):t('bet_card.no_short')
+                    })}
+                  </div>
+                  <div style={{display:'flex',gap:8}}>
+                    <Btn variant="grn" sm style={{flex:1}} onClick={()=>onConfirmOutcome?.(bet,bet.pendingOutcome)}>
+                      {t('bet_card.proposed_confirm',{label: bet.pendingOutcome==='won'?t('bet_card.yes_short'):t('bet_card.no_short')})}
+                    </Btn>
+                    <button onClick={()=>onConfirmOutcome?.(bet,bet.pendingOutcome==='won'?'lost':'won')}
+                      style={{...S.btn,flex:1,padding:'7px 10px',background:'transparent',border:'1px solid var(--red)44',color:'var(--red)',fontSize:12}}>
+                      {t('bet_card.proposed_reject')}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Pending acceptance UI */}
           {isPending&&(
             <div style={{borderTop:'1px solid var(--brd)',paddingTop:8,marginTop:4}}>
@@ -373,8 +428,8 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             </div>
           )}
 
-          {/* Swipe hint: mobile owned active bets */}
-          {!isDesktop&&isOwner&&!done&&!isPending&&(
+          {/* Swipe hint: mobile owned active bets, only when no proposal pending */}
+          {!isDesktop&&isOwner&&!done&&!isPending&&!hasProposal&&!isDisputed&&(
             <div style={{fontSize:9,color:'var(--mut)',textAlign:'center',marginTop:6,letterSpacing:1}}>
               ← {t('bet_card.swipe_resolve')} →
             </div>

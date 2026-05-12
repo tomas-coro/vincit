@@ -57,7 +57,7 @@ async function buildState(roomId, viewerId) {
   // - Resolved (won/lost/rejected): always visible to group (even if was surprise)
   const visibleRows = betRows.filter(r => {
     if (r.is_secret === 1) return r.creator === viewerId;
-    if (r.is_surprise === 1 && ['active', 'pending'].includes(r.status)) {
+    if (r.is_surprise === 1 && ['active', 'pending', 'disputed'].includes(r.status)) {
       return r.creator === viewerId || r.opponent === viewerId;
     }
     if (Array.isArray(r.allowed_members) && r.allowed_members.length > 0) {
@@ -69,27 +69,30 @@ async function buildState(roomId, viewerId) {
     return true;
   });
   const bets = visibleRows.map(r => ({
-    id:            r.id,
-    creator:       r.creator,
-    title:         r.title,
-    quota:         r.quota,
-    stake:         r.stake,
-    potentialWin:  r.potential_win,
-    category:      r.category,
-    isSecret:      r.is_secret === 1,
-    isSurprise:    r.is_surprise === 1,
-    isCounterable: r.is_counterable === 1,
-    pegno:         r.pegno,
-    expiresAt:     r.expires_at,
-    createdAt:     r.created_at,
-    status:        r.status,
-    flamed:        r.flamed === 1,
-    comment:       r.comment || null,
-    counterBets:   countersByBetId[r.id] || [],
-    opponent:      r.opponent || null,
-    targetUser:    r.target_user || null,
-    allowedMembers:Array.isArray(r.allowed_members) ? r.allowed_members : null,
-    opponentStake: r.opponent_stake ?? null,
+    id:               r.id,
+    creator:          r.creator,
+    title:            r.title,
+    quota:            r.quota,
+    stake:            r.stake,
+    potentialWin:     r.potential_win,
+    category:         r.category,
+    isSecret:         r.is_secret === 1,
+    isSurprise:       r.is_surprise === 1,
+    isCounterable:    r.is_counterable === 1,
+    pegno:            r.pegno,
+    expiresAt:        r.expires_at,
+    createdAt:        r.created_at,
+    status:           r.status,
+    flamed:           r.flamed === 1,
+    comment:          r.comment || null,
+    counterBets:      countersByBetId[r.id] || [],
+    opponent:         r.opponent || null,
+    targetUser:       r.target_user || null,
+    allowedMembers:   Array.isArray(r.allowed_members) ? r.allowed_members : null,
+    opponentStake:    r.opponent_stake ?? null,
+    pendingOutcome:   r.pending_outcome || null,
+    pendingOutcomeBy: r.pending_outcome_by || null,
+    pendingOutcomeAt: r.pending_outcome_at ?? null,
   }));
 
   const { rows: catRows } = await db.query(

@@ -386,9 +386,43 @@ export default function App() {
 
   const handleResolve = async (bet, outcome) => {
     try {
-      await api.resolveBet(bet.id, outcome);
-      if (outcome === 'won') setWinAnim(bet.potentialWin);
+      const r = await api.resolveBet(bet.id, outcome);
       setRevealBet(null); setResolveBet(null); setOvertimeBet(null);
+      if (r?.phase === 'resolved') {
+        if (outcome === 'won') setWinAnim(bet.potentialWin);
+        setCommentBetModal({ ...bet, status: outcome });
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  // Consensual flow — opponent of a bet confirms (matches outcome) or disputes
+  // (mismatching outcome) the proposal without going through ResolveModal.
+  const handleConfirmOutcome = async (bet, outcome) => {
+    try {
+      const r = await api.resolveBet(bet.id, outcome);
+      if (r?.phase === 'resolved') {
+        // Outcome from the confirmer's POV is "creator won" — they themselves
+        // win only if they're the creator. Win anim is keyed to the creator
+        // payout, so trigger it only for the creator.
+        if (outcome === 'won' && bet.creator === user) setWinAnim(bet.potentialWin);
+        setCommentBetModal({ ...bet, status: outcome });
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  // Either party can take back / cancel a pending proposal so a bet doesn't
+  // stay locked while waiting for confirmation.
+  const handleWithdrawResolve = async (bet) => {
+    try { await api.withdrawResolve(bet.id); } catch (e) { console.error(e); }
+  };
+
+  // Overtime coin flip uses force=true so it bypasses the consensual gate —
+  // both parties already accepted "let fate decide" by clicking through.
+  const handleOvertimeResolve = async (bet, outcome) => {
+    try {
+      await api.resolveBet(bet.id, outcome, { force: true });
+      if (outcome === 'won' && bet.creator === user) setWinAnim(bet.potentialWin);
+      setOvertimeBet(null);
       setCommentBetModal({ ...bet, status: outcome });
     } catch (e) { console.error(e); }
   };
@@ -683,7 +717,7 @@ export default function App() {
             return null;
           }
           return (<>
-            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} />}
+            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} />}
             {view === 'bets'      && <BetsHubView
                 tab={betsTab} setTab={setBetsTab}
                 user={user} profiles={profiles} bets={bets} cats={cats} isDesktop={isDesktop}
@@ -691,6 +725,7 @@ export default function App() {
                 reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto}
                 onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can}
                 onReveal={b => setRevealBet(b)} vaultUnlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin}
+                onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)}
               />}
             {view === 'stats'     && <StatsView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} isDesktop={isDesktop} />}
             {view === 'trophies'  && <TrophiesView bets={bets} isDesktop={isDesktop} />}
@@ -728,7 +763,7 @@ export default function App() {
       {revealBet      && <RevealModal bet={revealBet} cats={cats} onResolve={handleResolve} onClose={() => setRevealBet(null)} />}
       {resolveBet     && <ResolveModal bet={resolveBet} cats={cats} profiles={profiles} onResolve={handleResolve} onOvertime={b => { setResolveBet(null); setOvertimeBet(b); }} onClose={() => setResolveBet(null)} />}
       {counterTarget  && <CounterModal bet={counterTarget} user={user} profiles={profiles} credits={credits} cats={cats} onPlace={handleCounter} onClose={() => setCounterTarget(null)} />}
-      {overtimeBet    && <OvertimeModal bet={overtimeBet} profiles={profiles} onResult={handleResolve} onClose={() => setOvertimeBet(null)} />}
+      {overtimeBet    && <OvertimeModal bet={overtimeBet} profiles={profiles} onResult={handleOvertimeResolve} onClose={() => setOvertimeBet(null)} />}
       {showPin        && <PinModal user={user} profiles={profiles} vaultPin={vaultPin} onSuccess={() => { setVaultUnlocked(true); setShowPin(false); }} onClose={() => setShowPin(false)} />}
       {winAnim        && <WinOverlay amount={winAnim} onDone={() => setWinAnim(null)} />}
       {commentBetModal && <CommentModal bet={commentBetModal} onSave={handleComment} onSkip={() => setCommentBetModal(null)} />}

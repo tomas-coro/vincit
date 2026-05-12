@@ -11,6 +11,8 @@ export default function BetsHubView({
   // Bets-specific
   onResolve, onCounter, onFlame, reactions, onReaction, onReactionPhoto,
   onDelete, onEdit, onAccept, onReject, can,
+  // Consensual-resolve
+  onConfirmOutcome, onWithdrawResolve, onOvertime,
   // Vault-specific
   onReveal, vaultUnlocked, onPinRequest, vaultPin,
 }) {
@@ -87,6 +89,7 @@ export default function BetsHubView({
           reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto}
           onDelete={onDelete} onEdit={onEdit}
           onAccept={onAccept} onReject={onReject} can={can}
+          onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}
         />
       )}
     </div>

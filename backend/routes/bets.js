@@ -147,9 +147,16 @@ module.exports = function(broadcastUpdate) {
 
   router.patch('/:id/resolve', async (req, res) => {
     try {
-      const { outcome } = req.body;
+      const { outcome, force } = req.body;
       if (!['won', 'lost'].includes(outcome))
         return res.status(400).json({ error: 'outcome must be won or lost' });
+
+      // Outcome of the consensual workflow, decided inside the transaction.
+      // 'resolved' triggers the rest of the original flow (credits + notifs).
+      // 'proposed' parks the proposal and returns early.
+      // 'disputed'  marks the bet disputed and returns early.
+      let phase = 'resolved';
+      let proposalBy = null;
 
       await db.transaction(async (client) => {
         const { rows } = await client.query(
@@ -158,15 +165,57 @@ module.exports = function(broadcastUpdate) {
         const bet = rows[0];
         if (!bet) { res.status(404).json({ error: 'Bet not found' }); return; }
         if (bet.room_id !== req.activeRoomId) { res.status(403).json({ error: 'Forbidden' }); return; }
-        if (bet.status !== 'active') { res.status(400).json({ error: 'Bet not active' }); return; }
+        if (!['active', 'disputed'].includes(bet.status)) { res.status(400).json({ error: 'Bet not active' }); return; }
         if (bet.creator !== req.userId && bet.opponent !== req.userId)
           { res.status(403).json({ error: 'Forbidden' }); return; }
+
+        const hasOpponent = bet.opponent && bet.opponent !== bet.creator;
+        const consensual  = hasOpponent && !force;
+
+        if (consensual) {
+          // Three-state machine: no proposal yet → park one. Other party
+          // matches → resolve. Other party disagrees → dispute.
+          if (!bet.pending_outcome) {
+            await client.query(
+              `UPDATE bets SET pending_outcome=$1, pending_outcome_by=$2, pending_outcome_at=$3,
+                              status='active'
+               WHERE id=$4`,
+              [outcome, req.userId, Date.now(), bet.id]
+            );
+            phase = 'proposed';
+            proposalBy = req.userId;
+            return; // exit tx; payout + notif happen outside per-phase
+          }
+          if (bet.pending_outcome_by === req.userId) {
+            // Same party reiterating their proposal — keep state, signal idempotency.
+            phase = 'already_proposed';
+            proposalBy = bet.pending_outcome_by;
+            return;
+          }
+          // Other party is responding to an existing proposal.
+          if (outcome !== bet.pending_outcome) {
+            await client.query(
+              `UPDATE bets SET status='disputed',
+                              pending_outcome=NULL, pending_outcome_by=NULL, pending_outcome_at=NULL
+               WHERE id=$1`,
+              [bet.id]
+            );
+            phase = 'disputed';
+            return;
+          }
+          // Agreement — fall through to resolve below.
+        }
 
         const { rows: counters } = await client.query(
           'SELECT * FROM counter_bets WHERE bet_id = $1', [bet.id]
         );
 
-        await client.query('UPDATE bets SET status = $1, resolved_at = $2 WHERE id = $3', [outcome, Date.now(), bet.id]);
+        await client.query(
+          `UPDATE bets SET status=$1, resolved_at=$2,
+                          pending_outcome=NULL, pending_outcome_by=NULL, pending_outcome_at=NULL
+           WHERE id=$3`,
+          [outcome, Date.now(), bet.id]
+        );
 
         // Pot-mode payout: winner takes both stakes (creator\'s + opponent\'s).
         // Loser keeps their deduction. Legacy free-bet payout otherwise.
@@ -203,63 +252,120 @@ module.exports = function(broadcastUpdate) {
       if (!res.headersSent) {
         broadcastUpdate(req.activeRoomId);
 
-        // Push notification to interested parties: opponent + counter bettors + target (not the resolver)
-        try {
-          const { rows: [bet] } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
-          if (bet) {
-            // Achievements check for everyone whose stats just changed (creator, opponent, target)
-            const checkIds = new Set([bet.creator]);
-            if (bet.opponent) checkIds.add(bet.opponent);
-            if (bet.target_user) checkIds.add(bet.target_user);
-            for (const u of checkIds) refreshAchievements(u);
+        if (phase === 'resolved') {
+          // Push notification to interested parties: opponent + counter bettors + target (not the resolver)
+          try {
+            const { rows: [bet] } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
+            if (bet) {
+              // Achievements check for everyone whose stats just changed (creator, opponent, target)
+              const checkIds = new Set([bet.creator]);
+              if (bet.opponent) checkIds.add(bet.opponent);
+              if (bet.target_user) checkIds.add(bet.target_user);
+              for (const u of checkIds) refreshAchievements(u);
 
-            const notifyIds = new Set();
-            if (bet.opponent && bet.opponent !== req.userId) notifyIds.add(bet.opponent);
-            if (bet.creator !== req.userId) notifyIds.add(bet.creator);
-            const { rows: cbs } = await db.query('SELECT DISTINCT bettor FROM counter_bets WHERE bet_id=$1', [bet.id]);
-            for (const r of cbs) if (r.bettor !== req.userId) notifyIds.add(r.bettor);
+              const notifyIds = new Set();
+              if (bet.opponent && bet.opponent !== req.userId) notifyIds.add(bet.opponent);
+              if (bet.creator !== req.userId) notifyIds.add(bet.creator);
+              const { rows: cbs } = await db.query('SELECT DISTINCT bettor FROM counter_bets WHERE bet_id=$1', [bet.id]);
+              for (const r of cbs) if (r.bettor !== req.userId) notifyIds.add(r.bettor);
 
-            for (const u of notifyIds) {
-              if (await isPrefEnabled(u, 'on_resolved')) {
-                // Pot mode: tailor the message so the recipient sees their own
-                // outcome and the exact swing in credits.
-                let title, body;
-                if (bet.opponent_stake != null) {
-                  const won = outcome === 'won';
-                  const isCreator = u === bet.creator;
-                  const winnerIsMe = (won && isCreator) || (!won && bet.opponent === u);
-                  const myLoss  = isCreator ? bet.stake : bet.opponent_stake;
-                  const myGain  = isCreator ? bet.opponent_stake : bet.stake;
-                  const pot     = bet.stake + bet.opponent_stake;
-                  title = winnerIsMe ? '💰 Pot vinto' : '💸 Pot perso';
-                  body  = winnerIsMe
-                    ? `+${myGain} ₡ (piatto ${pot} ₡) · "${bet.title}"`
-                    : `−${myLoss} ₡ (piatto ${pot} ₡) · "${bet.title}"`;
-                } else {
-                  title = outcome === 'won' ? '✅ Bet vinta' : '❌ Bet persa';
-                  body  = `"${bet.title}"`;
+              for (const u of notifyIds) {
+                if (await isPrefEnabled(u, 'on_resolved')) {
+                  // Pot mode: tailor the message so the recipient sees their own
+                  // outcome and the exact swing in credits.
+                  let title, body;
+                  if (bet.opponent_stake != null) {
+                    const won = outcome === 'won';
+                    const isCreator = u === bet.creator;
+                    const winnerIsMe = (won && isCreator) || (!won && bet.opponent === u);
+                    const myLoss  = isCreator ? bet.stake : bet.opponent_stake;
+                    const myGain  = isCreator ? bet.opponent_stake : bet.stake;
+                    const pot     = bet.stake + bet.opponent_stake;
+                    title = winnerIsMe ? '💰 Pot vinto' : '💸 Pot perso';
+                    body  = winnerIsMe
+                      ? `+${myGain} ₡ (piatto ${pot} ₡) · "${bet.title}"`
+                      : `−${myLoss} ₡ (piatto ${pot} ₡) · "${bet.title}"`;
+                  } else {
+                    title = outcome === 'won' ? '✅ Bet vinta' : '❌ Bet persa';
+                    body  = `"${bet.title}"`;
+                  }
+                  sendPushToUser(u, { title, body, url: '/' });
                 }
-                sendPushToUser(u, { title, body, url: '/' });
+              }
+
+              // Target gets a dedicated notification (uses on_targeted) — for surprise bets this is
+              // the moment they finally discover the bet existed at all.
+              if (bet.target_user && bet.target_user !== req.userId
+                  && bet.target_user !== bet.creator && bet.target_user !== bet.opponent) {
+                if (await isPrefEnabled(bet.target_user, 'on_targeted')) {
+                  sendPushToUser(bet.target_user, {
+                    title: bet.is_surprise === 1 ? '🤫 Sorpresa, eri tu il bersaglio' : '🎯 Bet su di te risolta',
+                    body:  `"${bet.title}" · ${outcome === 'won' ? 'esito SÌ' : 'esito NO'}`,
+                    url:   '/',
+                  });
+                }
               }
             }
-
-            // Target gets a dedicated notification (uses on_targeted) — for surprise bets this is
-            // the moment they finally discover the bet existed at all.
-            if (bet.target_user && bet.target_user !== req.userId
-                && bet.target_user !== bet.creator && bet.target_user !== bet.opponent) {
-              if (await isPrefEnabled(bet.target_user, 'on_targeted')) {
-                sendPushToUser(bet.target_user, {
-                  title: bet.is_surprise === 1 ? '🤫 Sorpresa, eri tu il bersaglio' : '🎯 Bet su di te risolta',
-                  body:  `"${bet.title}" · ${outcome === 'won' ? 'esito SÌ' : 'esito NO'}`,
+          } catch (e) { console.error('notify on resolve failed', e); }
+        } else if (phase === 'proposed') {
+          // Tell the OTHER party there's something to confirm.
+          try {
+            const { rows: [bet] } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
+            const otherParty = req.userId === bet.creator ? bet.opponent : bet.creator;
+            if (otherParty && await isPrefEnabled(otherParty, 'on_resolved')) {
+              sendPushToUser(otherParty, {
+                title: '⚖️ Conferma esito',
+                body:  `"${bet.title}" · ${outcome === 'won' ? 'dice SÌ' : 'dice NO'} — sei d'accordo?`,
+                url:   '/',
+              });
+            }
+          } catch (e) { console.error('notify on propose failed', e); }
+        } else if (phase === 'disputed') {
+          // Both parties already know — push both so it shows in the badge stream.
+          try {
+            const { rows: [bet] } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
+            for (const u of [bet.creator, bet.opponent].filter(Boolean)) {
+              if (u === req.userId) continue;
+              if (await isPrefEnabled(u, 'on_resolved')) {
+                sendPushToUser(u, {
+                  title: '⚠️ Esiti discordi',
+                  body:  `"${bet.title}" · usate l'Overtime per decidere`,
                   url:   '/',
                 });
               }
             }
-          }
-        } catch (e) { console.error('notify on resolve failed', e); }
+          } catch (e) { console.error('notify on dispute failed', e); }
+        }
 
-        res.json({ ok: true });
+        res.json({ ok: true, phase, proposalBy });
       }
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // POST /api/bets/:id/withdraw-resolve — proposer takes back their proposed
+  // outcome. Returns the bet to plain 'active' with no pending fields. Either
+  // party can also withdraw a proposal that's stalling, including the
+  // non-proposer (so a stubborn proposer can't lock the bet forever).
+  router.post('/:id/withdraw-resolve', async (req, res) => {
+    try {
+      const { rows } = await db.query('SELECT * FROM bets WHERE id=$1', [req.params.id]);
+      const bet = rows[0];
+      if (!bet)                                         return res.status(404).json({ error: 'Bet not found' });
+      if (bet.room_id !== req.activeRoomId)             return res.status(403).json({ error: 'Forbidden' });
+      if (!bet.pending_outcome)                         return res.status(400).json({ error: 'no_pending' });
+      if (bet.creator !== req.userId && bet.opponent !== req.userId)
+                                                        return res.status(403).json({ error: 'Forbidden' });
+
+      await db.query(
+        `UPDATE bets SET pending_outcome=NULL, pending_outcome_by=NULL, pending_outcome_at=NULL
+         WHERE id=$1`,
+        [req.params.id]
+      );
+      broadcastUpdate(req.activeRoomId);
+      res.json({ ok: true });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });

@@ -286,6 +286,16 @@ const pool = new Pool({
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;
   `);
+
+  // Consensual-resolve fields. When a bet has an opponent, /resolve no longer
+  // settles unilaterally — it parks a proposed outcome here, and the bet
+  // only settles once the OTHER party confirms the same outcome. If they
+  // disagree the bet enters status='disputed' (settled through Overtime).
+  await pool.query(`
+    ALTER TABLE bets ADD COLUMN IF NOT EXISTS pending_outcome    TEXT;
+    ALTER TABLE bets ADD COLUMN IF NOT EXISTS pending_outcome_by TEXT;
+    ALTER TABLE bets ADD COLUMN IF NOT EXISTS pending_outcome_at BIGINT;
+  `);
   if (process.env.ADMIN_EMAIL) {
     await pool.query(
       'UPDATE users SET is_admin=true WHERE LOWER(email)=LOWER($1)',

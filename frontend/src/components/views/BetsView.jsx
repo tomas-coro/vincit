@@ -3,7 +3,7 @@ import { useLang } from '../../i18n.js';
 import BetCard from '../BetCard.jsx';
 import { DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
 
-export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,hideTitle=false}){
+export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime,hideTitle=false}){
   const { t } = useLang();
   const [fStatus, setFStatus] = useState('active');
   const [fCat,    setFCat]    = useState('all');
@@ -11,7 +11,7 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
 
   const visible = bets
     .filter(b => !b.isSecret)
-    .filter(b => fStatus === 'all' || b.status === fStatus || (fStatus === 'active' && b.status === 'pending'))
+    .filter(b => fStatus === 'all' || b.status === fStatus || (fStatus === 'active' && (b.status === 'pending' || b.status === 'disputed')))
     .filter(b => fCat    === 'all' || b.category === fCat)
     .filter(b => fWho    === 'all' || (fWho === 'mine' ? b.creator === user : b.creator !== user));
 
@@ -59,7 +59,8 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
             {visible.map(b => <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats}
               onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} onDelete={onDelete} onEdit={onEdit}
               isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto}
-              onAccept={onAccept} onReject={onReject} can={can}/>)}
+              onAccept={onAccept} onReject={onReject} can={can}
+              onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}/>)}
           </div>
       }
     </div>
