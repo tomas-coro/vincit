@@ -6,6 +6,7 @@ const crypto  = require('crypto');
 const db      = require('../db.js');
 const { uploadDataUrl, destroyByPublicId, isConfigured: cldReady } = require('../cloudinary.js');
 const { send: sendMail, isConfigured: mailReady } = require('../mailer.js');
+const { validatePassword } = require('../passwordPolicy.js');
 
 const router  = express.Router();
 const SECRET  = process.env.JWT_SECRET || 'dev-secret';
@@ -27,8 +28,10 @@ function makeInviteCode() {
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name, avatar, color_key } = req.body;
-    if (!email?.includes('@') || !password || password.length < 8 || !name?.trim())
-      return res.status(400).json({ error: 'Invalid fields. Password min 8 chars.' });
+    if (!email?.includes('@') || !name?.trim())
+      return res.status(400).json({ error: 'invalid_fields' });
+    const policyErr = validatePassword(password);
+    if (policyErr) return res.status(400).json({ error: policyErr });
 
     const exists = await db.query('SELECT id FROM users WHERE email=$1', [email.toLowerCase()]);
     if (exists.rows.length) return res.status(409).json({ error: 'Email already registered' });
@@ -144,8 +147,8 @@ router.post('/reset-password', async (req, res) => {
     const { token, password } = req.body || {};
     if (typeof token !== 'string' || token.length < 16)
       return res.status(400).json({ error: 'invalid_token' });
-    if (typeof password !== 'string' || password.length < 8)
-      return res.status(400).json({ error: 'password_too_short' });
+    const policyErr = validatePassword(password);
+    if (policyErr) return res.status(400).json({ error: policyErr });
 
     const { rows } = await db.query(
       'SELECT user_id, expires_at, used_at FROM password_resets WHERE token=$1',

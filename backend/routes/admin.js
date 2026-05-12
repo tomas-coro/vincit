@@ -3,6 +3,7 @@ const express = require('express');
 const jwt     = require('jsonwebtoken');
 const bcrypt  = require('bcrypt');
 const db      = require('../db.js');
+const { validatePassword } = require('../passwordPolicy.js');
 
 const SECRET = process.env.JWT_SECRET || 'dev-secret';
 const BCRYPT_ROUNDS = 10;
@@ -250,8 +251,8 @@ router.post('/groups/:groupId/regenerate-code', async (req, res) => {
 router.post('/users/:id/set-password', async (req, res) => {
   try {
     const password = req.body?.password;
-    if (typeof password !== 'string' || password.length < 8)
-      return res.status(400).json({ error: 'password_too_short' });
+    const policyErr = validatePassword(password);
+    if (policyErr) return res.status(400).json({ error: policyErr });
     const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     await db.transaction(async (client) => {
       await client.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, req.params.id]);

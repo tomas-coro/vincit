@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Inp } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
+import { validatePassword } from '../../passwordPolicy.js';
 
 const S = {
   wrap: { minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'var(--bg)' },
@@ -20,8 +21,9 @@ export default function ResetPasswordView({ token, onDone }) {
   const submit = async e => {
     e.preventDefault();
     setError(null);
-    if (pw1.length < 8)       { setError(t('reset.err_short')); return; }
-    if (pw1 !== pw2)          { setError(t('reset.err_mismatch')); return; }
+    const pwErr = validatePassword(pw1);
+    if (pwErr)          { setError(t(`pw.${pwErr.replace('password_', '')}`)); return; }
+    if (pw1 !== pw2)    { setError(t('reset.err_mismatch')); return; }
     setBusy(true);
     try {
       await api.resetPassword(token, pw1);
@@ -30,8 +32,8 @@ export default function ResetPasswordView({ token, onDone }) {
       const code = err?.message || '';
       const msg = code === 'token_used' || code === 'token_expired' || code === 'invalid_token'
         ? t('reset.err_token')
-        : code === 'password_too_short'
-          ? t('reset.err_short')
+        : code.startsWith('password_')
+          ? t(`pw.${code.replace('password_', '')}`)
           : t('reset.err_generic');
       setError(msg);
     } finally { setBusy(false); }
@@ -70,6 +72,12 @@ export default function ResetPasswordView({ token, onDone }) {
             <div style={{ marginBottom: 14 }}>
               <label style={S.label}>{t('reset.new_password')}</label>
               <Inp type="password" value={pw1} onChange={e => setPw1(e.target.value)} placeholder={t('reset.placeholder')} />
+              {(() => {
+                const pwErr = pw1 ? validatePassword(pw1) : null;
+                const tone  = !pw1 ? 'var(--dim)' : pwErr ? 'var(--red)' : 'var(--grn)';
+                const msg   = !pw1 ? t('pw.hint') : pwErr ? t(`pw.${pwErr.replace('password_', '')}`) : t('pw.ok');
+                return <div style={{ marginTop:6, fontSize:11, color:tone, fontWeight:600 }}>{msg}</div>;
+              })()}
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={S.label}>{t('reset.confirm_password')}</label>

@@ -3,6 +3,7 @@ import * as api from '../../api.js';
 import { useLang } from '../../i18n.js';
 import { useToast } from '../../Toast.jsx';
 import { COLORS } from '../Atoms.jsx';
+import { validatePassword } from '../../passwordPolicy.js';
 
 const S = {
   card:    { background: 'var(--card)', border: '1px solid var(--brd)', borderRadius: 14, padding: 14, marginBottom: 12 },
@@ -103,7 +104,8 @@ export default function AdminView({ isDesktop }) {
     toast.success(`Nuovo codice: ${r.invite_code}`);
   });
   const setPassword = wrap(async (uid, pw) => {
-    if (!pw || pw.length < 8) throw new Error('min 8 caratteri');
+    const policyErr = validatePassword(pw);
+    if (policyErr) throw new Error(t(`pw.${policyErr.replace('password_', '')}`));
     await api.adminSetPassword(uid, pw);
     setPwNew('');
   }, 'Password aggiornata ✓');
@@ -259,20 +261,34 @@ export default function AdminView({ isDesktop }) {
               ))}
             </div>
 
-            <div style={S.card}>
-              <div style={S.label}>Imposta password</div>
-              <div style={{ fontSize: 11, color: 'var(--mut)', marginTop: 4, marginBottom: 10 }}>
-                Bypass del flusso "dimentica password". Minimo 8 caratteri.
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input value={pwNew} onChange={e => setPwNew(e.target.value)} type="text"
-                  placeholder="nuova password"
-                  style={{ flex: 1, background: 'var(--inp)', border: '1px solid var(--brd)', borderRadius: 8, color: 'var(--txt)', padding: '8px 10px', fontFamily: "'Syne',sans-serif", fontSize: 13, outline: 'none' }}/>
-                <button onClick={() => setPassword(u.id, pwNew)} disabled={busy || pwNew.length < 8} style={S.btn()}>
-                  Applica
-                </button>
-              </div>
-            </div>
+            {(() => {
+              const pwErr = validatePassword(pwNew);
+              const hasInput = pwNew.length > 0;
+              return (
+                <div style={S.card}>
+                  <div style={S.label}>Imposta password</div>
+                  <div style={{ fontSize: 11, color: 'var(--mut)', marginTop: 4, marginBottom: 10 }}>
+                    Bypass del flusso "dimentica password". {t('pw.hint')}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input value={pwNew} onChange={e => setPwNew(e.target.value)} type="text"
+                      placeholder="nuova password"
+                      style={{ flex: 1, background: 'var(--inp)', border: `1px solid ${hasInput && pwErr ? 'var(--red)55' : hasInput ? 'var(--grn)55' : 'var(--brd)'}`, borderRadius: 8, color: 'var(--txt)', padding: '8px 10px', fontFamily: "'Syne',sans-serif", fontSize: 13, outline: 'none' }}/>
+                    <button onClick={() => setPassword(u.id, pwNew)} disabled={busy || !!pwErr} style={S.btn()}>
+                      Applica
+                    </button>
+                  </div>
+                  {hasInput && (
+                    <div style={{
+                      marginTop: 8, fontSize: 11, fontWeight: 600,
+                      color: pwErr ? 'var(--red)' : 'var(--grn)',
+                    }}>
+                      {pwErr ? t(`pw.${pwErr.replace('password_', '')}`) : t('pw.ok')}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div style={{ ...S.card, borderColor: 'var(--red)44' }}>
               <div style={{ ...S.label, color: 'var(--red)' }}>Danger zone</div>

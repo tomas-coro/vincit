@@ -3,6 +3,7 @@ import { Btn, Inp, AVATARS, COLORS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
 import { fileToSquareDataUrl } from '../../imageUtils.js';
+import { validatePassword } from '../../passwordPolicy.js';
 
 const S = {
   wrap:  { minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'var(--bg)' },
@@ -61,8 +62,14 @@ export default function AuthView({ onAuth }) {
     try {
       let result;
       if (tab === 'register') {
-        if (!name.trim() || !email.includes('@') || password.length < 8) {
+        if (!name.trim() || !email.includes('@')) {
           setError(t('auth.err_fields'));
+          setLoading(false);
+          return;
+        }
+        const pwErr = validatePassword(password);
+        if (pwErr) {
+          setError(t(`pw.${pwErr.replace('password_', '')}`));
           setLoading(false);
           return;
         }
@@ -78,8 +85,10 @@ export default function AuthView({ onAuth }) {
       }
       onAuth(result);
     } catch (err) {
+      const code = err?.message || '';
       if (err.status === 409) setError(t('auth.err_taken'));
       else if (err.status === 401) setError(t('auth.err_credentials'));
+      else if (code.startsWith('password_')) setError(t(`pw.${code.replace('password_', '')}`));
       else setError(t('auth.err_generic'));
     } finally {
       setLoading(false);
@@ -173,6 +182,12 @@ export default function AuthView({ onAuth }) {
           <div style={{ marginBottom:20 }}>
             <label style={S.label}>{t('auth.password_ph')}</label>
             <Inp type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t('auth.password_ph')} />
+            {tab === 'register' && (() => {
+              const pwErr = password ? validatePassword(password) : null;
+              const tone  = !password ? 'var(--dim)' : pwErr ? 'var(--red)' : 'var(--grn)';
+              const msg   = !password ? t('pw.hint') : pwErr ? t(`pw.${pwErr.replace('password_', '')}`) : t('pw.ok');
+              return <div style={{ marginTop:6, fontSize:11, color:tone, fontWeight:600 }}>{msg}</div>;
+            })()}
           </div>
 
           {error && <div style={S.err}>{error}</div>}
