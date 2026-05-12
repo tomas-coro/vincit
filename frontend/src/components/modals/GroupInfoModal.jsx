@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
+import { useToast } from '../../Toast.jsx';
 
 const EMOJI_OPTIONS = ['🎲','🔥','❤️','🏆','⚡','🎯','👥','🎪','🃏','🌙',
                        '🎉','🎮','🍻','⚽','🎵','💪','🤝','🎭','🎨','🌟'];
 
 export default function GroupInfoModal({ group, userId, onClose, onLeft, onDeleted, onRenamed, isAdmin=false }) {
   const { t } = useLang();
+  const toast = useToast();
 
   const [members,        setMembers]        = useState([]);
   const [copied,         setCopied]         = useState(false);
@@ -90,7 +92,7 @@ export default function GroupInfoModal({ group, userId, onClose, onLeft, onDelet
       onLeft?.();
     } catch (e) {
       const msg = e?.data?.error;
-      alert(msg === 'Transfer ownership before leaving'
+      toast.error(msg === 'Transfer ownership before leaving'
         ? t('group_info.leave_err')
         : (msg || t('app.error_cancel'))
       );
@@ -104,7 +106,7 @@ export default function GroupInfoModal({ group, userId, onClose, onLeft, onDelet
     try {
       await api.deleteGroup(group.id);
       onDeleted?.();
-    } catch { alert(t('group_info.delete_err')); }
+    } catch { toast.error(t('group_info.delete_err')); }
     finally { setDeleting(false); }
   };
 

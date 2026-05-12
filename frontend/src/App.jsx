@@ -6,6 +6,7 @@ import { DARK, LIGHT, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx'
 import { useLang } from './i18n.js';
 import WinOverlay from './components/WinOverlay.jsx';
 import SplashScreen from './components/SplashScreen.jsx';
+import { useToast } from './Toast.jsx';
 import AuthView from './components/views/AuthView.jsx';
 import PairingView from './components/views/PairingView.jsx';
 import DashboardView from './components/views/DashboardView.jsx';
@@ -69,6 +70,27 @@ const CSS_BASE = `
 ::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
 .bc{letter-spacing:-0.005em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 .bc h1,.bc h2{letter-spacing:-0.02em}
+
+/* Focus ring (keyboard nav) */
+.bc button:focus-visible,
+.bc input:focus-visible,
+.bc textarea:focus-visible,
+.bc select:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:2px;
+  border-radius:8px;
+}
+
+/* Hover lift on interactive surfaces — desktop pointer only */
+@media (hover:hover) and (pointer:fine){
+  .bc button:not(:disabled){transition:filter .15s ease, transform .15s ease, box-shadow .15s ease;}
+  .bc button:not(:disabled):hover{filter:brightness(1.12); transform:translateY(-1px);}
+  .bc button:not(:disabled):active{filter:brightness(.95); transform:translateY(0);}
+  .bc .card-hover{transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;}
+  .bc .card-hover:hover{transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,0,0,.32);}
+  .bc .nav-item:hover{background:var(--gold)0d !important;}
+  .bc input:hover,.bc textarea:hover,.bc select:hover{border-color:var(--gold)55 !important;}
+}
 `;
 
 const lsGet  = (k, fallback) => { try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : fallback; } catch { return fallback; } };
@@ -100,6 +122,7 @@ export default function App() {
   const C = isDark ? DARK : LIGHT;
   const isDesktop = useBreakpoint(768);
   const { t } = useLang();
+  const toast = useToast();
   const [splashDone, setSplashDone] = useState(false);
 
   // Auth state
@@ -226,17 +249,18 @@ export default function App() {
       await api.createBet({ ...data, id: `b${Date.now()}`, createdAt: Date.now() });
       setShowCreate(false);
       refresh();
-    } catch (e) { console.error(e); alert(t('app.error_create')); }
+      toast.success(t('create.submit_shared').replace(/^[^A-Za-z]+/, '') || 'Bet creata!');
+    } catch (e) { console.error(e); toast.error(t('app.error_create')); }
   };
 
   const handleEdit = async (id, data) => {
-    try { await api.editBet(id, data); setEditingBet(null); refresh(); }
-    catch(e) { console.error(e); alert(t('app.error_edit')); }
+    try { await api.editBet(id, data); setEditingBet(null); refresh(); toast.success('Bet modificata'); }
+    catch(e) { console.error(e); toast.error(t('app.error_edit')); }
   };
 
   const handleDelete = async bet => {
-    try { await api.cancelBet(bet.id); refresh(); }
-    catch (e) { console.error(e); alert(t('app.error_cancel')); }
+    try { await api.cancelBet(bet.id); refresh(); toast.info('Bet annullata'); }
+    catch (e) { console.error(e); toast.error(t('app.error_cancel')); }
   };
 
   const handleResolve = async (bet, outcome) => {
@@ -265,14 +289,14 @@ export default function App() {
   };
 
   const handleAccept = async id => {
-    try { await api.acceptBet(id); refresh(); }
-    catch(e) { console.error(e); alert(t('app.error_accept')); }
+    try { await api.acceptBet(id); refresh(); toast.success('Bet accettata'); }
+    catch(e) { console.error(e); toast.error(t('app.error_accept')); }
   };
 
   const handleReject = async id => {
     if (!window.confirm(t('app.reject_confirm'))) return;
-    try { await api.rejectBet(id); refresh(); }
-    catch(e) { console.error(e); alert(t('app.error_reject')); }
+    try { await api.rejectBet(id); refresh(); toast.info('Bet rifiutata'); }
+    catch(e) { console.error(e); toast.error(t('app.error_reject')); }
   };
 
   const handleReaction = async (betId, emoji) => {
@@ -296,8 +320,8 @@ export default function App() {
   };
 
   const handleReset = async () => {
-    try { await api.resetAll(); refresh(); }
-    catch(e) { console.error(e); alert(t('app.error_reset')); }
+    try { await api.resetAll(); refresh(); toast.success('Stagione resettata'); }
+    catch(e) { console.error(e); toast.error(t('app.error_reset')); }
   };
 
   const handleCreateCategory = async cat => {
@@ -433,7 +457,7 @@ export default function App() {
           )}
           <div style={{ flex: 1, padding: '4px 12px' }}>
             {NAV.map(n => (
-              <div key={n.id} onClick={() => setView(n.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: view === n.id ? 'var(--gold)' : 'var(--dim)', background: view === n.id ? 'var(--gold)11' : 'transparent', marginBottom: 4, transition: 'all .18s', userSelect: 'none', position: 'relative' }}>
+              <div key={n.id} onClick={() => setView(n.id)} className="nav-item" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: view === n.id ? 'var(--gold)' : 'var(--dim)', background: view === n.id ? 'var(--gold)11' : 'transparent', marginBottom: 4, transition: 'all .18s', userSelect: 'none', position: 'relative' }}>
                 <span style={{ fontSize: 18 }}>{n.e}</span>
                 {n.l}
                 {n.id === 'vault' && secretCount > 0 && (

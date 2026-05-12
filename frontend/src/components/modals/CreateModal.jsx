@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Btn, Inp, Toggle, SecLabel, Q_PRE, qToP, pToQ, fmtQ, clamp } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
+import { useToast } from '../../Toast.jsx';
 
 const S = {
   lbl: {fontSize:10,color:"var(--dim)",letterSpacing:2,textTransform:"uppercase",display:"block",marginBottom:6},
@@ -108,6 +109,7 @@ function Summary({ stake, potWin, maxC, t }) {
 
 export default function CreateModal({user,profiles,maxC,cats,settings={},onCreate,onClose}){
   const { t } = useLang();
+  const toast = useToast();
   const isDesktop = useBreakpoint(768);
   const catLabel = c => c && (DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label);
   const [title,setTitle]=useState("");
@@ -128,8 +130,8 @@ export default function CreateModal({user,profiles,maxC,cats,settings={},onCreat
   const selectedCat = cats.find(c=>c.id===cat) || cats[0];
 
   const submit=()=>{
-    if(!title.trim()){alert(t('create.err_title'));return;}
-    if(stake<=0||stake>maxStake){alert(t('create.err_stake',{max:Math.round(maxStake)}));return;}
+    if(!title.trim()){toast.error(t('create.err_title'));return;}
+    if(stake<=0||stake>maxStake){toast.error(t('create.err_stake',{max:Math.round(maxStake)}));return;}
     onCreate({title,quota,stake,potentialWin:potWin,category:cat,isSecret,isCounterable:!isSecret&&isCnt,pegno,expiresAt:exp?new Date(exp).getTime():null,opponent:opponent||undefined});
   };
 

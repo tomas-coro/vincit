@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Btn, Inp, SecLabel, Q_PRE, qToP, pToQ, fmtQ, clamp } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
+import { useToast } from '../../Toast.jsx';
 
 const S = {
   lbl: {fontSize:10,color:"var(--dim)",letterSpacing:2,textTransform:"uppercase",display:"block",marginBottom:6},
@@ -14,6 +15,7 @@ const DEF_IDS=['intimo','serata','casa','cibo','gaming','altro'];
 
 export default function EditModal({bet, user, cats, onSave, onClose}){
   const { t } = useLang();
+  const toast = useToast();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const [title, setTitle]   = useState(bet.title);
   const [quota, setQuota]   = useState(parseFloat(bet.quota));
@@ -28,7 +30,7 @@ export default function EditModal({bet, user, cats, onSave, onClose}){
   const probC  = prob >= 70 ? "var(--grn)" : prob >= 40 ? "var(--gold)" : "var(--red)";
 
   const submit = () => {
-    if (!title.trim()) { alert(t('create.err_title')); return; }
+    if (!title.trim()) { toast.error(t('create.err_title')); return; }
     onSave(bet.id, {
       creator: user, title, quota, category: cat, pegno,
       expiresAt: exp ? new Date(exp).getTime() : null,

@@ -108,7 +108,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   );
 
   return(
-    <div ref={cardRef} className="sUp" style={{
+    <div ref={cardRef} className={`sUp${isDesktop ? ' card-hover' : ''}`} style={{
       ...S.card, marginBottom:10, position:"relative", overflow:"hidden",
       opacity:done?0.78:1,
       border:`1px solid ${deltaX > 40 ? 'var(--grn)' : deltaX < -40 ? 'var(--red)' : bet.isSecret ? 'var(--gold)44' : 'var(--brd)'}`,
