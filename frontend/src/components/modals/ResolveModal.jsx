@@ -11,7 +11,7 @@ const Bdg = ({c,bg,children}) => (
   <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"5px 11px",borderRadius:999,fontSize:10,fontWeight:600,letterSpacing:".06em",textTransform:"uppercase",background:bg,color:c}}>{children}</span>
 );
 
-export function ResolveModal({bet,cats,profiles,onResolve,onOvertime,onClose}){
+export function ResolveModal({bet,cats,profiles,onResolve,onClose}){
   const { t } = useLang();
   const [done,setDone]=useState(false);
   const go = o => { setDone(true); setTimeout(()=>onResolve(bet,o),200); };
@@ -55,21 +55,18 @@ export function ResolveModal({bet,cats,profiles,onResolve,onOvertime,onClose}){
           </div>
         )}
 
-        {/* Decisions — stacked pills, primary states obvious */}
+        {/* Decisions — stacked pills, primary states obvious. Overtime
+            is no longer offered here: a coin flip in a non-disputed
+            resolve doesn't make sense. The "🪙 Decidi col caso" path
+            stays in BetCard, but only appears when creator and
+            opponent have actually proposed conflicting outcomes (true
+            dispute). That's where the coin earns its keep as a tiebreaker. */}
         <Btn variant="grn" full style={{marginBottom:10}} disabled={done} onClick={()=>go("won")}>
           {t('resolve.yes_btn',{net:bet.potentialWin-bet.stake})}
         </Btn>
         <Btn variant="red" full style={{marginBottom:18}} disabled={done} onClick={()=>go("lost")}>
           {t('resolve.no_btn',{stake:bet.stake})}
         </Btn>
-
-        {/* Overtime — written as a quiet link, not a third heavy CTA */}
-        <button disabled={done} onClick={()=>onOvertime(bet)} style={{
-          width:"100%", padding:"4px 0", marginBottom:14,
-          background:"transparent", border:"none", cursor:"pointer",
-          fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:600,
-          letterSpacing:".22em", textTransform:"uppercase", color:"#f97316",
-        }}>{t('resolve.overtime')}</button>
 
         <button onClick={onClose} style={{
           width:"100%", padding:"4px 0",
