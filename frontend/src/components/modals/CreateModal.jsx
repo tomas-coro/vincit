@@ -120,7 +120,60 @@ function Summary({ stake, potWin, maxC, t }) {
   );
 }
 
-export default function CreateModal({user,profiles,groupMembers,maxC,cats,settings={},onCreate,onClose}){
+// One slot column. Renders the symbol stack inside a fixed-height window
+// and uses a `transform` transition to settle on the final "7" centered
+// in the window. The parent supplies a `key` that changes every spin so
+// this component remounts → initial translateY(0) → next-frame transition
+// to the final translate. This guarantees the same animation plays even
+// for a second jackpot in the same modal session.
+function SlotReel({ symbols, cellW, itemH, fontPx, reelLen, durationMs }) {
+  const [y, setY] = useState(0);
+  const finalY = -(reelLen - 1) * itemH;
+  useEffect(() => {
+    // Two RAFs: the first lets React commit translateY(0); the second
+    // flips the transform to the final value so the browser interpolates.
+    const r1 = requestAnimationFrame(() => {
+      const r2 = requestAnimationFrame(() => setY(finalY));
+      // store so cleanup can cancel
+      cancelHolder.r2 = r2;
+    });
+    const cancelHolder = { r1, r2: 0 };
+    return () => {
+      cancelAnimationFrame(cancelHolder.r1);
+      if (cancelHolder.r2) cancelAnimationFrame(cancelHolder.r2);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div style={{
+      width: cellW, height: itemH,
+      overflow: 'hidden', position: 'relative',
+      background: 'rgba(0,0,0,.35)', borderRadius: 4,
+      border: '1px solid var(--gold)55',
+    }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column',
+        transform: `translateY(${y}px)`,
+        // Strong ease-out so the reel feels like it crash-decelerates.
+        transition: `transform ${durationMs}ms cubic-bezier(.07,.78,.32,1)`,
+      }}>
+        {symbols.map((s, j) => (
+          <div key={j} style={{
+            height: itemH, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: "'Playfair Display',serif", fontWeight: 900,
+            fontSize: fontPx, lineHeight: 1,
+            color: 'var(--gold)',
+            filter: 'drop-shadow(0 0 6px rgba(196,168,120,.6))',
+          }}>{s}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function CreateModal({user,profiles,groupMembers,maxC,cats,settings={},onCreate,onClose,onEggUnlock}){
   const { t } = useLang();
   const toast = useToast();
   const isDesktop = useBreakpoint(768);
@@ -218,6 +271,11 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   // Tap anywhere skips ahead to 'fading'.
   const [jackpotPhase, setJackpotPhase] = useState(null); // null | 'spinning' | 'celebrating' | 'fading'
   const jackpotTimersRef = useRef([]);
+  // Bumps every time the jackpot fires — used as a React `key` on each
+  // reel so they remount with translateY(0) and re-trigger their
+  // transition to the final position. Without this, a second jackpot in
+  // the same modal session would render reels already at the final 7.
+  const [slotInstance, setSlotInstance] = useState(0);
   const isMagicTitle = (s) => {
     const v = s.trim().toLowerCase();
     return v === '777' || v === 'jackpot' || v === '💎💎💎';
@@ -261,11 +319,18 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     if(needsOpponent && !opponentId){toast.error(t('create.opponent_pick'));return;}
 
     if (isMagicTitle(title)) {
+      setSlotInstance(n => n + 1);
       setJackpotPhase('spinning');
-      api.unlockSecretAchievement('egg_jackpot').catch(e => console.error('[egg_jackpot] unlock failed', e));
+      // Idempotent: server returns alreadyUnlocked:true on repeats. We
+      // chain onEggUnlock so the trophy poller fires immediately rather
+      // than waiting for the bet-insert SSE refresh — that was the cause
+      // of the missing 777 unlock pop-up on desktop.
+      api.unlockSecretAchievement('egg_jackpot')
+        .then(() => onEggUnlock?.())
+        .catch(e => console.error('[egg_jackpot] unlock failed', e));
       // Phase transition timers — kept in a ref so user-skip can clear them.
-      jackpotTimersRef.current.push(setTimeout(() => setJackpotPhase('celebrating'), 3100));
-      jackpotTimersRef.current.push(setTimeout(startJackpotFade, 4000));
+      jackpotTimersRef.current.push(setTimeout(() => setJackpotPhase('celebrating'), 3700));
+      jackpotTimersRef.current.push(setTimeout(startJackpotFade, 4600));
       return;
     }
     doActualSubmit();
@@ -696,9 +761,32 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
 
   // Easter egg #3 — slot machine overlay. Three phases:
   // 'spinning'    → reels translate downward, columns stop staggered.
-  // 'celebrating' → reels frozen, JACKPOT text pulses in.
+  // 'celebrating' → reels frozen with the 7s centered, JACKPOT text pulses in.
   // 'fading'      → whole overlay fades out smoothly before submit fires.
   // Tap anywhere at any time jumps straight to the fade.
+  //
+  // The reel geometry is intentionally pixel-fixed (not clamp/vw) so the
+  // final translateY lands the "7" exactly centered in the visible
+  // window. The reel is a vertical stack of `SLOT_REEL_LEN` cells, each
+  // `SLOT_ITEM_H` tall; the last cell is "7", and after a transition to
+  // translateY(-(SLOT_REEL_LEN-1) * SLOT_ITEM_H) only that "7" cell sits
+  // inside the visible window.
+  const SLOT_ITEM_H   = isDesktop ? 130 : 96;
+  const SLOT_CELL_W   = isDesktop ? 100 : 74;
+  const SLOT_FONT_PX  = isDesktop ? 78 : 60;
+  const SLOT_REEL_LEN = 18; // 17 random fillers + one final '7'
+  const SLOT_FILLERS  = ['🍒','🍋','💎','🔔','⭐','🍀','🎰','🍇'];
+  // Per-reel filler stack — deterministic so React keys are stable across
+  // renders inside a single jackpot instance.
+  const buildReel = (seed) => {
+    const out = [];
+    for (let i = 0; i < SLOT_REEL_LEN - 1; i++) {
+      out.push(SLOT_FILLERS[(seed * 17 + i * 11) % SLOT_FILLERS.length]);
+    }
+    out.push('7');
+    return out;
+  };
+
   const SlotMachine = jackpotPhase && (
     <div onClick={startJackpotFade} style={{
       position:'fixed', inset:0, zIndex:9600,
@@ -712,8 +800,8 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     }}>
       <div className="bc-meta" style={{marginBottom:22, color:'var(--gold)'}}>— Jackpot</div>
       <div style={{
-        display:'flex', gap:'clamp(8px, 3vw, 22px)',
-        padding:'clamp(18px, 5vw, 36px) clamp(20px, 6vw, 48px)',
+        display:'flex', gap: isDesktop ? 18 : 10,
+        padding: isDesktop ? '28px 38px' : '20px 22px',
         border:'2px solid var(--gold)', borderRadius:6,
         background:'rgba(15,11,35,.6)',
         boxShadow: jackpotPhase === 'celebrating'
@@ -722,26 +810,15 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         transition: 'box-shadow .5s ease',
       }}>
         {[0, 1, 2].map(i => (
-          <div key={i} style={{
-            width:'clamp(60px, 16vw, 110px)', height:'clamp(90px, 22vw, 160px)',
-            overflow:'hidden', position:'relative',
-            background:'rgba(0,0,0,.35)', borderRadius:4,
-            border:'1px solid var(--gold)55',
-          }}>
-            <div style={{
-              display:'flex', flexDirection:'column',
-              animation: `slotReel ${2.0 + i * 0.5}s cubic-bezier(.45,.05,.55,.95) forwards`,
-              fontFamily:"'Playfair Display',serif",
-              fontSize:'clamp(56px, 14vw, 100px)', fontWeight:900,
-              color:'var(--gold)', lineHeight:1.4, textAlign:'center',
-              filter:'drop-shadow(0 0 6px rgba(196,168,120,.6))',
-            }}>
-              {['🍒','🍋','💎','🔔','⭐','🍀','🎰','7'].map((s, j) => (
-                <div key={j} style={{padding:'0 0 12px'}}>{s}</div>
-              ))}
-              <div style={{padding:'0 0 12px', color:'var(--gold)'}}>7</div>
-            </div>
-          </div>
+          <SlotReel
+            key={`${slotInstance}-${i}`}
+            symbols={buildReel(slotInstance * 31 + i + 1)}
+            cellW={SLOT_CELL_W}
+            itemH={SLOT_ITEM_H}
+            fontPx={SLOT_FONT_PX}
+            reelLen={SLOT_REEL_LEN}
+            durationMs={2400 + i * 600}
+          />
         ))}
       </div>
       {/* JACKPOT title — only visible from 'celebrating' phase onward */}

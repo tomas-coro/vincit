@@ -8,6 +8,7 @@ import WinOverlay from './components/WinOverlay.jsx';
 import SplashScreen from './components/SplashScreen.jsx';
 import OnboardingTour from './components/OnboardingTour.jsx';
 import TrophyUnlockOverlay from './components/TrophyUnlockOverlay.jsx';
+import DieFace from './components/DieFace.jsx';
 import { SkeletonDashboard, SkeletonList } from './components/Skeleton.jsx';
 import { useToast } from './Toast.jsx';
 import AuthView from './components/views/AuthView.jsx';
@@ -170,55 +171,114 @@ const CSS_BASE = `
 // unlocks the secret trophy `egg_coin`; subsequent flips are pure fun.
 const COIN_LS_KEY = 'bc_egg_coin_flipped';
 
-// Stylized coin face — a gold disk with the side label embossed. Used as
-// each side of the 3D coin so during the flip the user actually sees
-// TESTA → CROCE → TESTA → CROCE alternating as the coin rotates.
-function CoinFace({ label, sublabel, size }) {
+// Shared "blank" coin disk: gold radial gradient, embossed rim, twin inner
+// rings. Both testa and croce reuse this so the disk feels consistent
+// regardless of which side is showing.
+function CoinDisk({ size, children }) {
   return (
     <div style={{
       width: '100%', height: '100%', borderRadius: '50%',
-      background: 'radial-gradient(circle at 35% 30%, #f4dba0 0%, #c4a878 45%, #6f4f1a 100%)',
-      border: `${Math.max(3, size * 0.025)}px solid #d6bf94`,
-      boxShadow: 'inset 0 -8px 18px rgba(0,0,0,.28), inset 0 8px 14px rgba(255,255,255,.25), 0 18px 36px rgba(0,0,0,.4)',
-      display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center',
-      position:'relative',
+      background: 'radial-gradient(circle at 35% 28%, #fbeaa6 0%, #e2c172 30%, #b4892f 70%, #6f4f1a 100%)',
+      border: `${Math.max(3, size * 0.025)}px solid #e2c886`,
+      boxShadow:
+        'inset 0 -10px 22px rgba(60,30,5,.42), ' +
+        'inset 0 8px 16px rgba(255,255,255,.45), ' +
+        '0 20px 42px rgba(0,0,0,.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'relative', overflow: 'hidden',
     }}>
-      {/* Decorative ring near the rim */}
-      <div style={{
-        position:'absolute', inset: size * 0.08,
-        borderRadius:'50%',
-        border: '1px dashed rgba(45,20,8,.4)',
-      }}/>
-      <div style={{
-        fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontWeight: 700,
-        fontSize: size * 0.32, lineHeight:1, letterSpacing:'-0.02em',
-        color:'#3d2412',
-        textShadow:'0 1px 0 rgba(255,255,255,.45), 0 -1px 0 rgba(0,0,0,.25)',
-      }}>{label}</div>
-      {sublabel && (
-        <div style={{
-          fontFamily:"'Manrope',sans-serif", fontWeight:700,
-          fontSize: size * 0.07, letterSpacing:'.3em', textTransform:'uppercase',
-          color:'#3d2412', opacity:.6, marginTop: size * 0.04,
-        }}>{sublabel}</div>
-      )}
+      {/* Outer rim engraving */}
+      <div style={{position:'absolute', inset: size*0.05, borderRadius:'50%',
+        border:'1.5px solid rgba(50,25,8,.4)'}}/>
+      {/* Inner hairline */}
+      <div style={{position:'absolute', inset: size*0.12, borderRadius:'50%',
+        border:'1px solid rgba(50,25,8,.22)'}}/>
+      {children}
     </div>
   );
 }
 
+// CROCE — the "tails" / design side. Decorative monogram BC (the app
+// brand) framed by 12 small dots like a clock face, with sweeping laurel
+// curves at the bottom for that classic numismatic feel.
+function CoinFaceCroce({ size }) {
+  return (
+    <CoinDisk size={size}>
+      {/* SVG decorations — 12 rim dots + laurel sweep */}
+      <svg viewBox="-50 -50 100 100" style={{position:'absolute', inset:0, width:'100%', height:'100%'}} aria-hidden>
+        {/* 12 dots like clock positions */}
+        {Array.from({length:12}).map((_,i) => {
+          const ang = (i * 30) * Math.PI / 180;
+          const r = 41;
+          const x = Math.sin(ang) * r;
+          const y = -Math.cos(ang) * r;
+          return <circle key={i} cx={x} cy={y} r="1.3" fill="#3d2412" opacity=".55"/>;
+        })}
+        {/* Laurel sweep — a thin curve hugging the bottom rim */}
+        <path d="M -32,18 Q 0,42 32,18" stroke="#3d2412" strokeWidth="1" opacity=".4" fill="none"/>
+        {/* Tiny leaves on the sweep */}
+        {[-26,-18,-10,10,18,26].map(x => (
+          <ellipse key={x} cx={x} cy={28} rx="2" ry="3.5"
+            transform={`rotate(${x*1.5} ${x} 28)`} fill="#3d2412" opacity=".5"/>
+        ))}
+      </svg>
+      {/* BC monogram center */}
+      <div style={{
+        fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontWeight:700,
+        fontSize: size * 0.42, lineHeight: 1, letterSpacing: '-0.04em',
+        color:'#3d2412',
+        textShadow: '0 1px 0 rgba(255,255,255,.55), 0 -1px 0 rgba(0,0,0,.35)',
+        position:'relative', zIndex: 1,
+        transform: `translateY(${-size * 0.05}px)`,
+      }}>BC</div>
+    </CoinDisk>
+  );
+}
+
+// TESTA — the "heads" / value side. Big "1 €" denomination centered with
+// the brand arched around the top rim and a small subtitle below.
+function CoinFaceTesta({ size }) {
+  return (
+    <CoinDisk size={size}>
+      {/* Arched rim text */}
+      <svg viewBox="-50 -50 100 100" style={{position:'absolute', inset:0, width:'100%', height:'100%'}} aria-hidden>
+        <defs>
+          <path id="coinTopArc" d="M -38,2 A 38,38 0 0 1 38,2" fill="none"/>
+          <path id="coinBotArc" d="M -34,2 A 34,34 0 0 0 34,2" fill="none"/>
+        </defs>
+        <text fontSize="6" fontWeight="700" letterSpacing="3" fill="#3d2412"
+              fontFamily="Manrope,sans-serif" opacity=".7">
+          <textPath href="#coinTopArc" startOffset="50%" textAnchor="middle">★ BETCOUPLE ★</textPath>
+        </text>
+        <text fontSize="4" fontWeight="600" letterSpacing="2.5" fill="#3d2412"
+              fontFamily="Manrope,sans-serif" opacity=".55">
+          <textPath href="#coinBotArc" startOffset="50%" textAnchor="middle">UN CREDITO</textPath>
+        </text>
+      </svg>
+      {/* Center denomination "1 €" */}
+      <div style={{
+        display:'flex', alignItems:'baseline', gap: size*0.015,
+        fontFamily:"'Playfair Display',serif", fontWeight: 900,
+        fontSize: size * 0.46, lineHeight: 1, letterSpacing: '-0.04em',
+        color: '#3d2412',
+        textShadow: '0 1px 0 rgba(255,255,255,.55), 0 -1px 0 rgba(0,0,0,.35)',
+        position: 'relative', zIndex: 1,
+      }}>
+        <span>1</span>
+        <span style={{fontSize: size*0.22, fontWeight: 700, fontStyle:'italic'}}>€</span>
+      </div>
+    </CoinDisk>
+  );
+}
+
 // 3D coin: two stacked faces, one on each side of an invisible card. The
-// parent rotates on X-axis with CSS keyframes — the user actually sees
-// TESTA → edge → CROCE → edge → TESTA alternate during the flip. The
-// final rotation lands the chosen face forward.
+// parent rotates on X-axis with CSS keyframes — during the flip the user
+// actually sees TESTA → edge → CROCE → edge → TESTA alternate. Final
+// rotation lands the chosen face forward.
 function Coin3D({ result, size }) {
-  // testa face up = even multiple of 360deg; croce face up = odd multiple of 180deg.
-  // Five full spins + final settle, total ~1980deg for croce or ~1800deg for testa.
   const animName = result === 'croce' ? 'coinFlip3dCroce' : 'coinFlip3dTesta';
   return (
-    <div style={{
-      width: size, height: size,
-      perspective: 1200,
-    }}>
+    <div style={{ width: size, height: size, perspective: 1200 }}>
       <div style={{
         position:'relative', width:'100%', height:'100%',
         transformStyle:'preserve-3d',
@@ -229,7 +289,7 @@ function Coin3D({ result, size }) {
           position:'absolute', inset:0,
           backfaceVisibility:'hidden', WebkitBackfaceVisibility:'hidden',
         }}>
-          <CoinFace label="T" sublabel="Testa" size={size}/>
+          <CoinFaceTesta size={size}/>
         </div>
         {/* CROCE face — back (rotated 180deg around X) */}
         <div style={{
@@ -237,9 +297,89 @@ function Coin3D({ result, size }) {
           backfaceVisibility:'hidden', WebkitBackfaceVisibility:'hidden',
           transform:'rotateX(180deg)',
         }}>
-          <CoinFace label="C" sublabel="Croce" size={size}/>
+          <CoinFaceCroce size={size}/>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Easter egg #1: fullscreen die roll overlay. Triggered by tapping the
+// small static die in the dashboard empty state. The face cycles rapidly
+// while the die tumbles, then lands on a random value. First roll ever
+// unlocks the secret trophy `egg_dice` (idempotent server-side, so
+// rolling repeatedly is safe).
+const DIE_LS_KEY = 'bc_egg_dice_rolled';
+
+function DieRollOverlay({ open, onClose, onEggUnlock }) {
+  const [face, setFace] = React.useState(1);
+  const [phase, setPhase] = React.useState('rolling'); // 'rolling' | 'settled'
+  const cycleRef = React.useRef(null);
+  const onCloseRef = React.useRef(onClose);
+  const onEggUnlockRef = React.useRef(onEggUnlock);
+  React.useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  React.useEffect(() => { onEggUnlockRef.current = onEggUnlock; }, [onEggUnlock]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    setPhase('rolling');
+    const finalValue = 1 + Math.floor(Math.random() * 6);
+    cycleRef.current = setInterval(() => {
+      setFace(1 + Math.floor(Math.random() * 6));
+    }, 75);
+    const tStop = setTimeout(() => {
+      if (cycleRef.current) { clearInterval(cycleRef.current); cycleRef.current = null; }
+      setFace(finalValue);
+      setPhase('settled');
+      // Idempotent unlock — server returns alreadyUnlocked:true on repeats.
+      // We always call onEggUnlock so the trophy poll re-runs even if the
+      // unlock fired on a previous device (and is therefore already in
+      // the DB but not yet in this client's baseline).
+      try { localStorage.setItem(DIE_LS_KEY, '1'); } catch {}
+      api.unlockSecretAchievement('egg_dice')
+        .then(() => onEggUnlockRef.current?.())
+        .catch(e => console.error('[egg_dice] unlock failed', e));
+    }, 1300);
+    const tClose = setTimeout(() => onCloseRef.current?.(), 4500);
+    return () => {
+      if (cycleRef.current) { clearInterval(cycleRef.current); cycleRef.current = null; }
+      clearTimeout(tStop);
+      clearTimeout(tClose);
+    };
+  }, [open]);
+
+  if (!open) return null;
+  const cssSize = window.innerWidth < 480 ? 180 : 240;
+
+  return (
+    <div onClick={onClose} style={{
+      position:'fixed', inset:0, zIndex:9500,
+      background:'radial-gradient(circle at 50% 45%, rgba(43,34,71,.95) 0%, rgba(15,11,35,.96) 70%)',
+      backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      padding:24, cursor:'pointer',
+      animation: 'fIn .35s ease',
+    }}>
+      <div style={{
+        marginBottom: 36,
+        animation: phase === 'rolling' ? 'dieTumble 1.3s cubic-bezier(.34,1.05,.55,1)' : 'none',
+        transformOrigin: 'center',
+        filter: phase === 'rolling'
+          ? 'drop-shadow(0 0 24px rgba(196,168,120,.65))'
+          : 'drop-shadow(0 0 14px rgba(196,168,120,.4))',
+      }}>
+        <DieFace value={face} size={cssSize}/>
+      </div>
+      {phase === 'settled' && (
+        <div className="bIn" style={{textAlign:'center'}}>
+          <div className="bc-meta" style={{marginBottom:10, color:'var(--gold)'}}>— Esito</div>
+          <div style={{
+            fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+            fontSize:'clamp(48px, 12vw, 92px)', fontWeight:600,
+            color:'var(--gold)', letterSpacing:'-0.02em', lineHeight: 1,
+          }}>{face}</div>
+        </div>
+      )}
     </div>
   );
 }
@@ -490,7 +630,8 @@ export default function App() {
   const [editingBet, setEditingBet]       = useState(null);
   const [acceptingBet, setAcceptingBet]   = useState(null);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
-  const [coinFlipOpen,    setCoinFlipOpen]    = useState(false); // easter egg #2
+  const [coinFlipOpen,    setCoinFlipOpen]    = useState(false); // easter egg #2 (coin)
+  const [dieRollOpen,     setDieRollOpen]     = useState(false); // easter egg #1 (dice)
   const [eggTick,         setEggTick]         = useState(0);     // bumps after a secret unlock so trophy polling refreshes
   const bumpEggTick = useCallback(() => setEggTick(n => n + 1), []);
   const [pendingFriendCount, setPendingFriendCount] = useState(0);
@@ -977,7 +1118,7 @@ export default function App() {
             return null;
           }
           return (<>
-            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={bumpEggTick} />}
+            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={bumpEggTick} onOpenDie={() => setDieRollOpen(true)} />}
             {view === 'bets'      && <BetsHubView
                 tab={betsTab} setTab={setBetsTab}
                 user={user} profiles={profiles} bets={bets} cats={cats} isDesktop={isDesktop}
@@ -1049,7 +1190,7 @@ export default function App() {
       )}
 
       {/* Modals */}
-      {showCreate     && <CreateModal user={user} profiles={profiles} groupMembers={groupMembers} maxC={credits[user]??0} cats={cats} settings={settings} onCreate={handleCreate} onClose={() => setShowCreate(false)} />}
+      {showCreate     && <CreateModal user={user} profiles={profiles} groupMembers={groupMembers} maxC={credits[user]??0} cats={cats} settings={settings} onCreate={handleCreate} onClose={() => setShowCreate(false)} onEggUnlock={bumpEggTick} />}
       {revealBet      && <RevealModal bet={revealBet} cats={cats} onResolve={handleResolve} onClose={() => setRevealBet(null)} />}
       {resolveBet     && <ResolveModal bet={resolveBet} cats={cats} profiles={profiles} onResolve={handleResolve} onOvertime={b => { setResolveBet(null); setOvertimeBet(b); }} onClose={() => setResolveBet(null)} />}
       {counterTarget  && <CounterModal bet={counterTarget} user={user} profiles={profiles} credits={credits} cats={cats} onPlace={handleCounter} onClose={() => setCounterTarget(null)} />}
@@ -1077,6 +1218,9 @@ export default function App() {
       )}
       {/* Easter egg #2: coin flip overlay */}
       <CoinFlipOverlay open={coinFlipOpen} onClose={() => setCoinFlipOpen(false)} onEggUnlock={bumpEggTick} />
+
+      {/* Easter egg #1: die roll overlay */}
+      <DieRollOverlay open={dieRollOpen} onClose={() => setDieRollOpen(false)} onEggUnlock={bumpEggTick} />
 
       {/* Trophy unlock animation — small banner top-center, ~3s per unlock */}
       <TrophyUnlockOverlay queue={trophyQueue} onDone={consumeTrophy} />
