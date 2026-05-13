@@ -149,6 +149,63 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
       {CAT_ORDER.map(cat => {
         const items = byCat[cat];
         if (!items?.length) return null;
+
+        // Secret category gets the hero treatment — bigger tiles, a poster
+        // header with the "scoperti / totali" counter, and tiles that lean
+        // into the mystery (gold glow + italic Cormorant for the ones still
+        // to discover). Mirrors the Duolingo-hero direction used in the
+        // dashboard streak block.
+        if (cat === 'secret') {
+          const unlocked = items.filter(a => a.unlocked).length;
+          const totalSec = items.length;
+          return (
+            <div key={cat} style={{marginBottom: 24, marginTop: 6}}>
+              <div style={{
+                display:'flex', alignItems:'flex-end', gap: 16,
+                marginBottom: 14,
+                padding: '14px 16px 12px',
+                background: 'linear-gradient(135deg, var(--gold)14 0%, var(--card) 100%)',
+                border: '1px solid var(--gold)33',
+                borderLeft: '4px solid var(--gold)',
+                borderRadius: 12,
+              }}>
+                <span style={{fontSize: 44, lineHeight: 1, filter: 'drop-shadow(0 4px 18px var(--glow))'}}>✨</span>
+                <div style={{flex: 1, minWidth: 0}}>
+                  <div style={{
+                    fontSize: 9, letterSpacing: 2, color: 'var(--gold)',
+                    textTransform: 'uppercase', fontWeight: 800,
+                    fontFamily: "'Manrope',sans-serif",
+                  }}>{t('trophies.cat_secret')}</div>
+                  <div style={{
+                    fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+                    fontSize: 22, fontWeight: 600, color: 'var(--txt)',
+                    lineHeight: 1.05, marginTop: 2, letterSpacing:'-0.01em',
+                  }}>{unlocked === 0
+                      ? t('trophies.secret_hero_empty')
+                      : unlocked === totalSec
+                        ? t('trophies.secret_hero_all')
+                        : t('trophies.secret_hero_some', { n: unlocked, total: totalSec })}</div>
+                </div>
+                <div style={{textAlign: 'right', flexShrink: 0}}>
+                  <div className="bc-num" style={{
+                    fontSize: 'clamp(28px, 4vw, 44px)',
+                    color: unlocked > 0 ? 'var(--gold)' : 'var(--mut)',
+                    lineHeight: .9,
+                  }}>{unlocked}<span style={{fontSize:'0.5em', color:'var(--dim)', marginLeft: 2, fontWeight: 400}}>/{totalSec}</span></div>
+                  <div className="bc-meta" style={{fontSize: 7, marginTop: 4}}>SCOPERTI</div>
+                </div>
+              </div>
+              <div style={{
+                display:'grid',
+                gridTemplateColumns:'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
+                gap: 10,
+              }}>
+                {items.map(a => <SecretTrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate}/>)}
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div key={cat} style={{marginBottom:18}}>
             <div style={{
@@ -161,6 +218,68 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Hero variant of TrophyTile reserved for the `secret` category. Bigger
+// emoji, more generous padding, and a "still to discover" state that uses
+// italic Cormorant to feel inviting rather than locked-down.
+function SecretTrophyTile({ a, t, fmtDate }) {
+  const unlocked = a.unlocked;
+  const masked = !unlocked;
+  return (
+    <div className={unlocked ? 'card-hover pGold' : ''} style={{
+      position:'relative', overflow:'hidden',
+      padding:'18px 16px 16px',
+      borderRadius: 14,
+      background: unlocked
+        ? 'linear-gradient(135deg, rgba(200,151,63,.22) 0%, rgba(232,184,75,.10) 50%, rgba(200,151,63,.18) 100%)'
+        : 'linear-gradient(180deg, var(--surf), var(--card))',
+      border: unlocked
+        ? '1.5px solid var(--gold)'
+        : '1px dashed var(--brd)',
+      boxShadow: unlocked ? '0 6px 24px -10px var(--glow)' : 'none',
+      minHeight: 150,
+    }}>
+      {/* Big emoji centerpiece — masked shows italic "?" in Playfair so it
+          reads as a piece of editorial typography, not a placeholder. */}
+      <div style={{
+        fontSize: masked ? 52 : 56, lineHeight: 1,
+        textAlign:'center', marginBottom: 10,
+        fontFamily: masked ? "'Playfair Display',serif" : undefined,
+        fontStyle: masked ? 'italic' : undefined,
+        fontWeight: masked ? 900 : undefined,
+        color: masked ? 'var(--mut)' : undefined,
+        filter: masked
+          ? 'drop-shadow(0 2px 12px var(--brd))'
+          : 'drop-shadow(0 4px 16px var(--gold)88)',
+      }}>{masked ? '?' : a.icon}</div>
+      <div style={{
+        fontFamily: masked ? "'Cormorant Garamond',serif" : "'Manrope',sans-serif",
+        fontStyle: masked ? 'italic' : 'normal',
+        fontSize: 16, fontWeight: masked ? 600 : 700,
+        color: unlocked ? 'var(--gold)' : 'var(--dim)',
+        textAlign:'center',
+        letterSpacing: masked ? '.02em' : '-0.01em',
+        lineHeight: 1.15,
+      }}>{masked ? t('trophies.secret_locked') : t('trophies.'+a.id)}</div>
+      <div style={{
+        fontSize: 10, color:'var(--mut)', textAlign:'center',
+        marginTop: 4, lineHeight: 1.4,
+        fontStyle: masked ? 'italic' : 'normal',
+      }}>{masked ? t('trophies.secret_locked_desc') : t('trophies.'+a.id+'_desc')}</div>
+      {unlocked && a.unlockedAt && (
+        <div style={{
+          marginTop: 10, paddingTop: 8,
+          borderTop: '1px solid var(--gold)33',
+          textAlign:'center',
+          fontSize: 8, letterSpacing: 1.5, fontWeight: 700,
+          color: 'var(--gold)',
+          fontFamily:"'Manrope',sans-serif",
+          textTransform: 'uppercase',
+        }}>✓ {fmtDate(a.unlockedAt)}</div>
+      )}
     </div>
   );
 }

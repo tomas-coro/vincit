@@ -364,107 +364,158 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
     streakTapTimerRef.current = setTimeout(() => setStreakTapCount(0), 1800);
   };
 
-  // Shared streak-pill renderer — used by BOTH desktop spine and mobile
-  // spine so the two surfaces stay in lockstep. `size` switches between
-  // "lg" (desktop) and "md" (mobile) for the typography + W/L badge size.
-  const renderStreakPill = (size = 'md') => {
+  // Streak hero block — the Duolingo move: 🔥/❄️ giant emoji + huge number,
+  // sitting alongside the credit balance as a peer hero block, not a pill.
+  // Tap-triple still opens the matching easter-egg overlay.
+  const isWinStreak = fireKind === 'win';
+  const isHotStreak = isWinStreak && fireLevel >= 5;
+  const streakAccent = isWinStreak ? (isHotStreak ? 'var(--red)' : 'var(--gold)') : 'var(--blu)';
+
+  const renderStreakHero = () => {
     if (fireLevel < 1) return null;
-    const isWin = fireKind === 'win';
-    const isHot = isWin && fireLevel >= 5;
-    const accent = isWin ? (isHot ? 'var(--red)' : 'var(--gold)') : 'var(--blu)';
-    const big = size === 'lg';
     return (
       <div
         onClick={handleStreakTap}
         style={{
           position:'relative',
-          display:'flex', flexDirection:'column', alignItems:'center',
-          gap: big ? 6 : 4,
-          padding: big ? '14px 18px 14px 18px' : '10px 14px 12px 14px',
-          background: `${accent}1f`,
-          border: `1px solid ${accent}55`,
-          borderRadius: big ? 20 : 18,
-          minWidth: big ? 168 : 132,
+          display:'flex', alignItems:'center', gap: isDesktop ? 14 : 10,
           cursor:'pointer', userSelect:'none',
           WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
-          transition:'box-shadow .2s, transform .2s',
-          boxShadow: streakTapCount > 0 ? `0 0 0 2px ${accent}66` : 'none',
+          padding: '6px 10px', borderRadius: 16,
+          boxShadow: streakTapCount > 0 ? `0 0 0 2px ${streakAccent}66` : 'none',
+          transition:'box-shadow .2s',
+          alignSelf: isDesktop ? 'flex-end' : 'flex-start',
         }}>
-        {/* Emoji — pulses on each tap */}
         <span key={streakPulseKey} style={{
-          fontSize: big ? 36 : 28, lineHeight: 1,
+          fontSize: isDesktop ? 84 : 64, lineHeight: 1,
           display:'inline-block',
           animation: streakPulseKey > 0 ? 'bcStreakTap .35s cubic-bezier(.3,1.6,.5,1) both' : 'none',
+          filter: `drop-shadow(0 6px 22px ${streakAccent}66)`,
         }}>
-          {isWin ? '🔥' : '❄️'}
+          {isWinStreak ? '🔥' : '❄️'}
         </span>
-        {/* Number — editorial */}
-        <span className="bc-num" style={{
-          fontSize: big ? 38 : 28, color: accent, lineHeight: 1,
-        }}>{fireLevel}</span>
-        {/* Label — tracked uppercase */}
-        <span style={{
-          fontFamily:"'Manrope',sans-serif",
-          fontSize: big ? 9 : 8, letterSpacing:'.22em', fontWeight: 700,
-          color:'var(--dim)', textTransform:'uppercase',
-        }}>{t('dashboard_extra.streak_short')}</span>
-        {/* W/L "form guide" — bigger badges with letter inside, fills the
-            empty horizontal space below the label. Newest on the right with
-            a glow halo; older ones gradually fade their alpha. */}
-        {lastFive.length > 0 && (
-          <span style={{
-            display:'flex', gap: big ? 5 : 4, marginTop: big ? 8 : 6,
-          }}>
-            {lastFive.map((s, i) => {
-              const won = s === 'won';
-              const badgeBg = won ? 'var(--grn)' : 'var(--red)';
-              const isLatest = i === lastFive.length - 1;
-              const fade = lastFive.length === 1 ? 1
-                : 0.55 + (i / (lastFive.length - 1)) * 0.45;
-              const dim = big ? 28 : 22;
-              return (
-                <span key={i} style={{
-                  width: dim, height: dim, borderRadius: 6,
-                  background: badgeBg,
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  fontFamily:"'Manrope',sans-serif",
-                  fontSize: big ? 13 : 11, fontWeight: 800,
-                  color:'#fff', letterSpacing: 0,
-                  opacity: fade,
-                  transform: isLatest ? 'scale(1.08)' : 'scale(1)',
-                  boxShadow: isLatest ? `0 0 10px ${badgeBg}cc, 0 2px 6px ${badgeBg}66` : 'none',
-                  border: `1px solid ${badgeBg}`,
-                }}>{t(won ? 'dashboard_extra.trail_won' : 'dashboard_extra.trail_lost')}</span>
-              );
-            })}
-          </span>
-        )}
-        {/* Tap counter — small "n/3" badge top-right while tapping */}
+        <div style={{display:'flex', flexDirection:'column'}}>
+          <div className="bc-num" style={{
+            fontSize: 'clamp(48px, 11vw, 92px)',
+            color: streakAccent, lineHeight: .92,
+          }}>{fireLevel}</div>
+          <div className="bc-meta" style={{marginTop:6, fontSize:8}}>
+            — {t('dashboard_extra.streak_short')}
+          </div>
+        </div>
         {streakTapCount > 0 && (
           <span style={{
-            position:'absolute', top: 6, right: 8,
-            fontSize: 9, color: accent, fontWeight: 800,
-            fontFamily:"'Manrope',sans-serif",
-            letterSpacing:'.1em',
+            position:'absolute', top: 4, right: 4,
+            fontSize: 10, fontWeight: 800, color: streakAccent,
+            fontFamily:"'Manrope',sans-serif", letterSpacing:'.1em',
           }}>{streakTapCount}/3</span>
         )}
       </div>
     );
   };
-  // Broken-grid hero — name escapes its grid cell, credit balance floats
-  // diagonally below to the right with a deliberate stagger, KPI strip below
-  // skews each cell vertically so it never reads as a clean grid.
+
+  // Form trail W/L — full-width strip with big badges, sits ABOVE the rule
+  // that separates the hero from the KPI cells. Mirrors the FotMob/FIFA
+  // form-guide layout (oldest left → newest right with glow halo).
+  const renderFormTrail = () => {
+    if (lastFive.length === 0) return null;
+    return (
+      <div style={{
+        display:'flex', alignItems:'center', gap: 14,
+        marginTop: isDesktop ? 28 : 22,
+        paddingTop: 16, paddingRight: isDesktop ? 24 : 8,
+        borderTop: '1px solid var(--rule)',
+      }}>
+        <span className="bc-meta" style={{fontSize: 8, flexShrink: 0}}>
+          — {t('dashboard_extra.trail_label')}
+        </span>
+        <span style={{display:'flex', gap: isDesktop ? 8 : 6, marginLeft: 'auto'}}>
+          {lastFive.map((s, i) => {
+            const won = s === 'won';
+            const badgeBg = won ? 'var(--grn)' : 'var(--red)';
+            const isLatest = i === lastFive.length - 1;
+            const fade = lastFive.length === 1 ? 1
+              : 0.55 + (i / (lastFive.length - 1)) * 0.45;
+            const dim = isDesktop ? 42 : 34;
+            return (
+              <span key={i} style={{
+                width: dim, height: dim, borderRadius: 8,
+                background: badgeBg,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontFamily:"'Manrope',sans-serif",
+                fontSize: isDesktop ? 18 : 15, fontWeight: 800,
+                color:'#fff',
+                opacity: fade,
+                transform: isLatest ? 'scale(1.1)' : 'scale(1)',
+                boxShadow: isLatest
+                  ? `0 4px 14px ${badgeBg}88, 0 0 18px ${badgeBg}55`
+                  : `0 2px 6px ${badgeBg}22`,
+              }}>{t(won ? 'dashboard_extra.trail_won' : 'dashboard_extra.trail_lost')}</span>
+            );
+          })}
+        </span>
+      </div>
+    );
+  };
+
+  // Sub-hero row — OGGI count + LIVE bet title. One step down in scale from
+  // the STREAK + BALANCE hero, but still big enough to read as part of the
+  // hero composition. Sits below the form trail.
+  const renderSubHero = () => {
+    if (todayCount === 0 && !latestBet) return null;
+    return (
+      <div style={{
+        display:'flex', alignItems:'baseline',
+        gap: isDesktop ? 28 : 18,
+        marginTop: isDesktop ? 22 : 18,
+        paddingRight: isDesktop ? 24 : 8,
+        flexWrap:'wrap',
+      }}>
+        {todayCount > 0 && (
+          <div style={{display:'flex', alignItems:'baseline', gap: 8, flexShrink: 0}}>
+            <span className="bc-num" style={{
+              fontSize: 'clamp(28px, 4vw, 38px)',
+              color:'var(--txt)', lineHeight: 1,
+            }}>{todayCount}</span>
+            <span className="bc-meta" style={{fontSize: 8}}>OGGI · GRUPPO</span>
+          </div>
+        )}
+        {latestBet && (
+          <div style={{
+            display:'flex', alignItems:'baseline', gap: 10,
+            flex: 1, minWidth: 0,
+          }}>
+            <span style={{
+              fontSize: 9, color:'var(--gold)', fontWeight: 800,
+              letterSpacing: '.22em', flexShrink: 0,
+              fontFamily:"'Manrope',sans-serif",
+            }}>LIVE →</span>
+            <span style={{
+              fontFamily:"'Cormorant Garamond',serif",
+              fontStyle: 'italic',
+              fontSize: 'clamp(16px, 2vw, 24px)',
+              color:'var(--gold)',
+              whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+              flex: 1, minWidth: 0, lineHeight: 1.15,
+            }}>"{latestBet.title}"</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+  // Duolingo-hero composition: greeting → giant NAME → hero row with
+  // STREAK + BALANCE side by side (stacked on mobile) → full-width form
+  // trail → sub-hero row (OGGI + LIVE) → existing KPI strip. The streak
+  // is no longer a side-pill; it's a peer of the credit balance.
   const hero = (
     <div style={{
       position:'relative',
       padding: isDesktop ? '40px 0 56px' : '24px 0 36px',
       marginBottom: 8,
-      // Allow the giant name to bleed left a hair without triggering scroll;
-      // the App.jsx wrapper now has overflow-x: hidden to catch slop.
       marginLeft: isDesktop ? -12 : -6,
     }}>
       <div className="bc-meta" style={{
-        marginBottom: 16,
+        marginBottom: 14,
         paddingLeft: isDesktop ? 64 : 28,
         opacity: .85,
       }}>
@@ -473,146 +524,49 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
       <div className="bc-hero" style={{
         fontSize: 'clamp(64px, 18vw, 180px)',
         whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-        // Pull baseline slightly down so the next block (credit) overlaps it.
-        marginBottom: isDesktop ? -28 : -16,
-        // Cap the name's width on desktop so the status spine on the right
-        // has room to breathe instead of being shoved off-screen.
-        maxWidth: isDesktop ? '70%' : undefined,
+        // Slight overlap with the hero row below — keeps the broken-grid
+        // editorial feel that was here before.
+        marginBottom: isDesktop ? -12 : -6,
       }}>
         {myProfile.name}
       </div>
 
-      {/* Status spine — desktop pinned top-right (fills editorial gap next
-          to giant name); mobile compressed into a single inline pill row
-          floating above the credit balance. Three quick reads: streak,
-          today's group activity, latest live bet. */}
-      {isDesktop ? (
-        (fireLevel > 0 || todayCount > 0 || latestBet) && (
-          <div style={{
-            position:'absolute', top: 48, right: 0,
-            width: 240,
-            display:'flex', flexDirection:'column', gap: 16,
-            alignItems:'flex-end', textAlign:'right',
-            pointerEvents:'auto',
-          }}>
-            {renderStreakPill('lg')}
-
-            {todayCount > 0 && (
-              <div>
-                <div className="bc-num" style={{
-                  fontSize: 'clamp(22px, 2.6vw, 32px)',
-                  color: 'var(--txt)',
-                  lineHeight: 1,
-                }}>
-                  {todayCount}<span style={{fontSize:'0.55em', color:'var(--dim)', marginLeft: 4, fontWeight: 400}}>
-                    {todayCount === 1 ? 'bet' : 'bets'}
-                  </span>
-                </div>
-                <div className="bc-meta" style={{marginTop: 4, fontSize: 7}}>OGGI · GRUPPO</div>
-              </div>
-            )}
-
-            {latestBet && (
-              <div style={{
-                maxWidth: 240,
-                paddingTop: 12,
-                borderTop: '1px solid var(--rule)',
-                opacity: .88,
-              }}>
-                <div className="bc-meta" style={{fontSize: 7, marginBottom: 4}}>— LIVE NEL GRUPPO</div>
-                <div style={{
-                  fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
-                  fontSize: 'clamp(16px, 1.4vw, 20px)', fontWeight: 500,
-                  color: 'var(--gold)', lineHeight: 1.2,
-                  whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-                  letterSpacing:'-0.01em',
-                }}>"{latestBet.title}"</div>
-                <div className="bc-meta" style={{fontSize: 7, marginTop: 4, opacity: .7}}>
-                  {profiles[latestBet.creator]?.name ?? '...'}
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      ) : (
-        // Mobile mini-spine: inline pill row above the credit balance.
-        // Compact (icon + number, no labels) so it doesn't compete with
-        // the giant "Tomas" name. Hidden entirely if there's nothing to show.
-        (fireLevel > 0 || todayCount > 0 || latestBet) && (
-          <div style={{
-            display:'flex', flexWrap:'wrap', justifyContent:'flex-end',
-            alignItems:'center', gap: 10,
-            paddingRight: 2,
-            // Clear the giant name (which has marginBottom: -16 to overlap
-            // with the credit balance below). Push the spine into safe space.
-            marginTop: 40,
-            marginBottom: 6,
-            opacity: .95,
-          }}>
-            {renderStreakPill('md')}
-
-            {todayCount > 0 && (
-              <div style={{
-                display:'flex', alignItems:'baseline', gap: 6,
-                padding:'6px 14px',
-                background: 'var(--mut)22',
-                border: '1px solid var(--brd)',
-                borderRadius: 999,
-              }}>
-                <span style={{
-                  fontFamily:"'Playfair Display',serif",
-                  fontSize: 20, fontWeight: 700,
-                  color: 'var(--txt)', lineHeight: 1,
-                }}>{todayCount}</span>
-                <span className="bc-meta" style={{fontSize: 10}}>OGGI</span>
-              </div>
-            )}
-
-            {latestBet && (
-              <div style={{
-                display:'flex', alignItems:'center', gap: 8,
-                padding:'6px 14px',
-                background: 'var(--gold)11',
-                border: '1px solid var(--gold)33',
-                borderRadius: 999,
-                maxWidth: 'min(70vw, 260px)',
-                overflow:'hidden',
-              }}>
-                <span style={{
-                  fontSize: 9, color:'var(--gold)', opacity:.75,
-                  letterSpacing: 1.4, fontWeight: 700,
-                }}>LIVE</span>
-                <span style={{
-                  fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
-                  fontSize: 16, fontWeight: 500,
-                  color: 'var(--gold)',
-                  whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-                  lineHeight: 1.1,
-                }}>"{latestBet.title}"</span>
-              </div>
-            )}
-          </div>
-        )
-      )}
-      {/* Credit balance — drifts right + drops below the name, intentionally
-          breaking the horizontal axis. Tracked meta sits beneath, not above,
-          so the giant number leads. */}
+      {/* Hero row — STREAK (left/top) + BALANCE (right/bottom). Desktop:
+          horizontal, baseline aligned. Mobile: stacked. If there's no
+          streak yet the row collapses to just the balance, still right-
+          aligned (no layout shift). */}
       <div style={{
-        display:'flex', flexDirection:'column', alignItems:'flex-end',
+        display:'flex',
+        flexDirection: isDesktop ? 'row' : 'column',
+        alignItems: isDesktop ? 'flex-end' : 'stretch',
+        justifyContent: 'space-between',
+        gap: isDesktop ? 32 : 14,
+        marginTop: isDesktop ? 32 : 22,
         paddingRight: isDesktop ? 24 : 8,
-        marginTop: 0,
       }}>
-        <div className="bc-num" style={{
-          fontSize: 'clamp(48px, 11vw, 92px)',
-          color:'var(--gold)',
-          lineHeight: .92,
+        {renderStreakHero()}
+        <div style={{
+          display:'flex', flexDirection:'column', alignItems:'flex-end',
+          marginLeft: 'auto',
         }}>
-          {Math.round(credits[user] ?? 0)}<span style={{fontSize:'0.45em', color:'var(--dim)', marginLeft:6, fontWeight:400}}>₡</span>
-        </div>
-        <div className="bc-meta" style={{marginTop:6, fontSize:8}}>
-          — {t('app.credits')}
+          <div className="bc-num" style={{
+            fontSize: 'clamp(48px, 11vw, 92px)',
+            color:'var(--gold)',
+            lineHeight: .92,
+          }}>
+            {Math.round(credits[user] ?? 0)}<span style={{fontSize:'0.45em', color:'var(--dim)', marginLeft:6, fontWeight:400}}>₡</span>
+          </div>
+          <div className="bc-meta" style={{marginTop:6, fontSize:8}}>
+            — {t('app.credits')}
+          </div>
         </div>
       </div>
+
+      {/* Form trail — full-width W/L strip */}
+      {renderFormTrail()}
+
+      {/* Sub-hero — OGGI + LIVE */}
+      {renderSubHero()}
       {/* Quick stats — staggered vertically AND horizontally inside each
           cell: every cell sits in a different spot (anchor + nudge) so the
           row reads as a deliberately broken grid instead of a flush-left

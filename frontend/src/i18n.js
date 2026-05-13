@@ -306,6 +306,9 @@ const TRANSLATIONS = {
       egg_phoenix:'Inferno',            egg_phoenix_desc:'Hai dato fuoco alla tua streak vincente',
       secret_locked:'???',              secret_locked_desc:'Trofeo segreto · ancora da scoprire',
       secret_category:'Segreti',
+      secret_hero_empty:'C\'è qualcosa di nascosto qui dentro…',
+      secret_hero_some:'{n} su {total} scoperti — ne mancano ancora',
+      secret_hero_all:'Tutti i segreti svelati ✨',
       egg_first_tip:'✨ Questi easter egg si attivano con 3 click sull\'emoji',
     },
     dashboard_extra: {
@@ -806,6 +809,9 @@ const TRANSLATIONS = {
       egg_phoenix:'Inferno',             egg_phoenix_desc:'You set your winning streak ablaze',
       secret_locked:'???',               secret_locked_desc:'Secret trophy · still to discover',
       secret_category:'Secrets',
+      secret_hero_empty:'Something hidden is waiting in here…',
+      secret_hero_some:'{n} of {total} uncovered — keep looking',
+      secret_hero_all:'All secrets unveiled ✨',
       egg_first_tip:'✨ These easter eggs trigger with 3 taps on the emoji',
     },
     dashboard_extra: {
