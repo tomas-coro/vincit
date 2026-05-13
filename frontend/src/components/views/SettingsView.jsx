@@ -3,6 +3,19 @@ import { Btn, Inp, Toggle, SecLabel, COLORS, CAT_COLS, fmtQ } from '../Atoms.jsx
 import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
 import { useToast } from '../../Toast.jsx';
+import { registerPush } from '../../App.jsx';
+
+const isIOS = typeof navigator !== 'undefined' && (
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+);
+
+// Read the live Notification.permission state. Returns one of the
+// standard values or 'unsupported' on browsers that lack the API.
+function readPushState() {
+  if (typeof Notification === 'undefined') return 'unsupported';
+  return Notification.permission; // 'default' | 'granted' | 'denied'
+}
 
 // Editorial section pattern: no card box, hairline separator, generous
 // vertical breathing. Components that legitimately need a raised look
@@ -350,6 +363,9 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
         )}
       </div>
 
+      {/* PUSH STATUS — diagnostic + manual enable button */}
+      <PushStatusPanel user={user} S={S} t={t} toast={toast}/>
+
       {/* NOTIFICATIONS */}
       <SecLabel mt={16}>{t('settings.notif_title')}</SecLabel>
       <div style={{...S.card,marginBottom:12}}>
@@ -516,5 +532,87 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Push status diagnostic panel ────────────────────────────────────
+// Shows the live permission state, with a manual "Abilita" button when
+// permission is still default (silent dismiss at first login is the
+// #1 reason users miss push notifications). Denied state shows
+// platform-specific recovery instructions, since the browser will not
+// re-prompt programmatically.
+function PushStatusPanel({ user, S, t, toast }) {
+  const [state, setState] = React.useState(readPushState());
+  const [busy, setBusy]   = React.useState(false);
+
+  // Refresh state on focus so toggling permission in browser settings
+  // reflects without a hard reload.
+  React.useEffect(() => {
+    const refresh = () => setState(readPushState());
+    window.addEventListener(focus, refresh);
+    return () => window.removeEventListener(focus, refresh);
+  }, []);
+
+  const enable = async () => {
+    setBusy(true);
+    try {
+      const result = await registerPush(user);
+      setState(readPushState());
+      if (result === "granted")      toast.success(t("settings.push_enabled_ok"));
+      else if (result === "denied")  toast.error(t("settings.push_denied"));
+      else if (result === "unsupported") toast.error(t("settings.push_unsupported"));
+      else toast.info(t("settings.push_default"));
+    } catch (e) {
+      console.error(e);
+      toast.error(t("settings.push_error"));
+    } finally { setBusy(false); }
+  };
+
+  const statusColor =
+      state === "granted" ? "var(--grn)"
+    : state === "denied"  ? "var(--red)"
+    :                       "var(--gold)";
+
+  const statusLabel = t("settings.push_state_" + state) || state;
+
+  return (
+    <>
+      <SecLabel mt={16}>{t("settings.push_title")}</SecLabel>
+      <div style={{...S.card, marginBottom: 12}}>
+        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:14, padding:"6px 0"}}>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:13, fontWeight:600, color:"var(--txt)"}}>
+              {t("settings.push_state_label")}
+            </div>
+            <div style={{fontSize:11, color: statusColor, marginTop:2, fontWeight:600, letterSpacing:".06em", textTransform:"uppercase"}}>
+              {statusLabel}
+            </div>
+          </div>
+          {state !== "granted" && state !== "unsupported" && (
+            <button onClick={enable} disabled={busy} style={{
+              ...S.btn, background:"var(--gold)", color:"#1a1530",
+              opacity: busy ? .5 : 1, cursor: busy ? "wait" : "pointer",
+            }}>
+              {state === "denied" ? t("settings.push_retry") : t("settings.push_enable")}
+            </button>
+          )}
+        </div>
+        {state === "denied" && (
+          <div style={{fontSize:11.5, color:"var(--dim)", lineHeight:1.5, marginTop:10, paddingTop:10, borderTop:"1px solid var(--brd)"}}>
+            {isIOS ? t("settings.push_hint_ios") : t("settings.push_hint_android")}
+          </div>
+        )}
+        {state === "default" && (
+          <div style={{fontSize:11.5, color:"var(--dim)", lineHeight:1.5, marginTop:10, paddingTop:10, borderTop:"1px solid var(--brd)"}}>
+            {t("settings.push_hint_default")}
+          </div>
+        )}
+        {state === "unsupported" && (
+          <div style={{fontSize:11.5, color:"var(--dim)", lineHeight:1.5, marginTop:10, paddingTop:10, borderTop:"1px solid var(--brd)"}}>
+            {t("settings.push_hint_unsupported")}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

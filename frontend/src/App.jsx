@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSync } from './useSync.js';
 import * as api from './api.js';
 
@@ -40,20 +40,34 @@ function urlB64ToUint8(b64) {
   const raw = atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));
   return Uint8Array.from(raw, c => c.charCodeAt(0));
 }
-async function registerPush(user) {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+// Push registration. Returns one of:
+//   'granted'      → subscription created & sent to server
+//   'denied'       → user/browser blocked notifications (cannot re-prompt)
+//   'unsupported'  → browser has no PushManager / service worker
+//   'no-vapid'     → server has no VAPID key configured
+//   'error'        → unknown failure
+//
+// Exported so SettingsView can call it from a Re-enable button (the
+// initial silent attempt at login often fails because some users blank-
+// dismiss the OS prompt without realizing it was the notifications one).
+export async function registerPush(user) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return 'unsupported';
   try {
     const reg = await navigator.serviceWorker.register('/sw.js');
     const { publicKey } = await fetch('/api/push/vapid-key').then(r => r.json());
-    if (!publicKey) return;
-    if (Notification.permission === 'denied') return;
+    if (!publicKey) return 'no-vapid';
+    if (Notification.permission === 'denied') return 'denied';
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') return;
+    if (perm !== 'granted') return perm; // 'denied' | 'default'
     const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlB64ToUint8(publicKey) });
-    // token already set in localStorage at this point
     const token = localStorage.getItem('bc_token');
     await fetch('/api/push/subscribe', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify({user, subscription:sub.toJSON()}) });
-  } catch(e) { console.warn('Push registration failed:', e); }
+    return 'granted';
+  } catch(e) {
+    console.warn('Push registration failed:', e);
+    return 'error';
+  }
 }
 
 const CSS_BASE = `
@@ -551,6 +565,26 @@ export default function App() {
     const id = setInterval(refreshFriendBadge, 60_000);
     return () => { cancelled = true; clearInterval(id); };
   }, [token, user, view]);
+
+  // In-app toast when the friend-request count jumps up — fires even if
+  // the user denied OS-level push permission. Skips the initial load
+  // (otherwise you'd get a toast every refresh for pre-existing requests).
+  const prevFriendCountRef = useRef(0);
+  const friendCountReadyRef = useRef(false);
+  useEffect(() => {
+    if (!friendCountReadyRef.current) {
+      friendCountReadyRef.current = true;
+      prevFriendCountRef.current = pendingFriendCount;
+      return;
+    }
+    if (pendingFriendCount > prevFriendCountRef.current) {
+      const delta = pendingFriendCount - prevFriendCountRef.current;
+      toast.info(delta === 1
+        ? '👋 Nuova richiesta di amicizia'
+        : `👋 ${delta} nuove richieste di amicizia`);
+    }
+    prevFriendCountRef.current = pendingFriendCount;
+  }, [pendingFriendCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Trophy unlock watcher ─────────────────────────────────────────
   // Detect new unlocked levels by polling /api/achievements whenever the
