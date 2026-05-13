@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Btn, Bdg, Avatar, fmtQ, fmtD, tLeft, isSoon, qNo, COLORS, DEF_CAT_IDS as DEF_IDS } from './Atoms.jsx';
 import { useLang } from '../i18n.js';
-import PhotoCaptureModal from './modals/PhotoCaptureModal.jsx';
+import CameraModal from './modals/CameraModal.jsx';
 import SubsetEditModal from './modals/SubsetEditModal.jsx';
 
 const S = {
@@ -445,7 +445,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
       </div>
 
       {photoCaptureOpen && (
-        <PhotoCaptureModal
+        <CameraModal
           onCapture={handlePhotoCapture}
           onClose={() => setPhotoCaptureOpen(false)}
         />
