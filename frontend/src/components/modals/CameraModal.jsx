@@ -52,6 +52,14 @@ const IconCameraOff = ({ size = 48 }) => (
   </svg>
 );
 
+const IconCamera = ({ size = 48 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14.5 4h-5l-1.5 2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.5z"/>
+    <circle cx="12" cy="13" r="4"/>
+  </svg>
+);
+
 // ─── Component-local CSS (keyframes + :active fill) ──────────────────
 const CSS = `
 @keyframes camRingPulse {
@@ -95,7 +103,14 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
 
   const [facingMode, setFacingMode] = useState('environment');
   const [hasMultipleCams, setHasMultipleCams] = useState(false);
-  const [phase, setPhase] = useState('starting'); // 'starting' | 'live' | 'error' | 'capturing'
+  // Phases:
+  //   'gate'      — initial. Permission rationale shown; nothing accessed.
+  //                 User must tap Consenti to advance.
+  //   'starting'  — getUserMedia in flight (post-Consenti tap).
+  //   'live'      — stream attached, lens shows the video.
+  //   'capturing' — shutter pressed, canvas grab in progress.
+  //   'error'     — getUserMedia rejected (denied / no cam / in use).
+  const [phase, setPhase] = useState('gate');
   const [error, setError] = useState(null);       // { msg, hint? }
 
   const stopStream = useCallback(() => {
@@ -195,8 +210,11 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
   }, [facingMode, stopStream, t, buildErr]);
 
   // ─── Lifecycle ─────────────────────────────────────────────────────
+  // No auto-start: the modal opens at the 'gate' phase showing a
+  // permission rationale. The user must tap Consenti to actually call
+  // getUserMedia — that matches native-app UX where every camera access
+  // is preceded by an explicit "may we use the camera?" screen.
   useEffect(() => {
-    startCamera('environment');
     return () => stopStream(); // unmount cleanup — turns the LED off
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -299,7 +317,8 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
   // Status pill text — always visible in the header so the user can SEE
   // what's happening even if a stage/dock region somehow fails to render.
   const statusText =
-      phase === 'starting'  ? t('photo.starting')
+      phase === 'gate'      ? `· ${t('photo.gate_status')}`
+    : phase === 'starting'  ? t('photo.starting')
     : phase === 'live'      ? (facingMode === 'user' ? '· FRONT' : '· REAR')
     : phase === 'capturing' ? '· ...'
     : '· ERR';
@@ -376,7 +395,7 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
         </button>
       </div>
 
-      {/* ─── Stage: lens or error panel — grows to fill ─────────── */}
+      {/* ─── Stage: gate / lens / error panel — grows to fill ──── */}
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -385,7 +404,57 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
           padding: '4px 16px',
         }}
       >
-        {isError ? (
+        {phase === 'gate' ? (
+          // ─── Permission rationale ──────────────────────────────
+          <div className="bIn" style={{
+            maxWidth: 340, textAlign: 'center', color: 'var(--txt)',
+          }}>
+            <div style={{ color: 'var(--gold)', marginBottom: 14, display: 'inline-flex' }}>
+              <IconCamera size={56}/>
+            </div>
+            <div className="bc-meta" style={{ marginBottom: 8, color: 'var(--gold)' }}>
+              — {t('photo.gate_status')}
+            </div>
+            <div style={{
+              fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
+              fontSize: 'clamp(22px, 5.5vw, 28px)', fontWeight: 600,
+              lineHeight: 1.2, letterSpacing: '-0.01em',
+              marginBottom: 12, color: 'var(--txt)',
+            }}>
+              {t('photo.gate_title')}
+            </div>
+            <div style={{
+              fontFamily: "'Manrope',sans-serif", fontSize: 13, lineHeight: 1.5,
+              color: 'var(--dim)', marginBottom: 24,
+            }}>
+              {t('photo.gate_body')}
+            </div>
+            <button onClick={() => startCamera('environment')} style={{
+              padding: '13px 28px', borderRadius: 999,
+              background: 'var(--gold)', border: 'none',
+              color: '#1a1530', cursor: 'pointer',
+              fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 800,
+              letterSpacing: '.22em', textTransform: 'uppercase',
+              boxShadow: '0 10px 28px rgba(196,168,120,.35)',
+              marginBottom: 18,
+              WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+            }}>
+              {t('photo.gate_consent')}
+            </button>
+            <div
+              onClick={() => fileRef.current?.click()}
+              style={{
+                fontFamily: "'Manrope',sans-serif", fontSize: 12,
+                color: 'var(--dim)', cursor: 'pointer',
+                letterSpacing: '.02em', userSelect: 'none',
+                padding: '6px 12px',
+                WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+              }}
+            >
+              {t('photo.gate_gallery_link')}
+            </div>
+          </div>
+        ) : isError ? (
           <div className="bIn" style={{
             maxWidth: 340, textAlign: 'center', color: 'var(--txt)',
           }}>
@@ -447,7 +516,8 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
         )}
       </div>
 
-      {/* ─── Dock: ALWAYS visible — flip / shutter|retry / gallery ─ */}
+      {/* ─── Dock: hidden during 'gate' (rationale has its own CTA) ─ */}
+      {phase !== 'gate' && (
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -528,6 +598,7 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
           <IconGallery size={20}/>
         </button>
       </div>
+      )}
 
       <input
         ref={fileRef}
