@@ -129,6 +129,25 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
       return;
     }
 
+    // Proactive permission check: on Android (Chrome) the browser
+    // remembers a previous "deny" and won't re-prompt — getUserMedia just
+    // throws NotAllowedError silently with no UI. Detecting this up front
+    // lets us show the error state immediately with platform-specific
+    // recovery instructions instead of waiting on a never-coming prompt.
+    try {
+      if (navigator.permissions?.query) {
+        const perm = await navigator.permissions.query({ name: 'camera' });
+        if (perm.state === 'denied') {
+          setError({
+            msg: t('photo.err_denied'),
+            hint: isIOS ? t('photo.err_denied_ios') : t('photo.err_denied_android'),
+          });
+          setPhase('error');
+          return;
+        }
+      }
+    } catch { /* permissions API not supported — fall through to getUserMedia */ }
+
     let stream;
     try {
       // Prefer the requested facing direction.
@@ -256,13 +275,12 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
   };
 
   // ─── Styles ────────────────────────────────────────────────────────
-  // Lens size is the minimum of (60% viewport width, 50% viewport height,
-  // 320px). This GUARANTEES the lens fits both axes regardless of phone
-  // size or orientation. On iPhone SE (375×667, safe-area ~80px), 50vh
-  // = 333 but capped at 320; 60vw = 225, so lens = 225px — plenty of
-  // room below for orbital controls + label.
-  const LENS = 'min(60vw, 50vh, 320px)';
-  const isLive = phase === 'live';
+  // Lens size: min(60vw, 45vh, 280px). Conservative — guarantees the
+  // lens fits both axes regardless of phone size, orientation, or
+  // whether dvh is supported. On iPhone SE (375×667) lens = 225px.
+  const LENS = 'min(60vw, 45vh, 280px)';
+  const isLive  = phase === 'live';
+  const isError = phase === 'error';
 
   const orbitBtn = (disabled) => ({
     width: 50, height: 50, borderRadius: '50%',
@@ -277,38 +295,60 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
     touchAction: 'manipulation',
   });
 
+  // Status pill text — always visible in the header so the user can SEE
+  // what's happening even if a stage/dock region somehow fails to render.
+  const statusText =
+      phase === 'starting'  ? t('photo.starting')
+    : phase === 'live'      ? (facingMode === 'user' ? '· FRONT' : '· REAR')
+    : phase === 'capturing' ? '· ...'
+    : '· ERR';
+
   return (
     <div
       onClick={onClose}
       className="cam-overlay"
       style={{
-        position: 'fixed', inset: 0, zIndex: 9700,
-        background: 'radial-gradient(circle at 50% 42%, rgba(43,34,71,.94) 0%, rgba(8,6,18,.97) 70%)',
+        // position:fixed + inset:0 fills the visual viewport WITHOUT
+        // relying on 100dvh — that was the Android collapse bug. We add
+        // an explicit minHeight:100vh as a final safety net for very old
+        // engines that mis-handle inset shorthand.
+        position: 'fixed',
+        top: 0, left: 0, right: 0, bottom: 0,
+        width: '100%', minHeight: '100vh',
+        zIndex: 9700,
+        // Solid background — radial-gradient with rgba on some Android
+        // Chrome builds was rendering with broken alpha so the page
+        // behind leaked through. Solid color is bulletproof.
+        background: 'rgba(8, 6, 18, 0.96)',
         backdropFilter: 'blur(14px) saturate(120%)',
         WebkitBackdropFilter: 'blur(14px) saturate(120%)',
-        // Explicit grid layout: 3 rows (header / stage / dock) so the
-        // X is always anchored at the top and the controls are always
-        // anchored at the bottom — no flex-center surprises with iOS dvh
-        // jitter, no chance of any region falling off-screen.
-        display: 'grid',
-        gridTemplateRows: 'auto 1fr auto',
-        height: '100dvh', maxHeight: '100dvh', overflow: 'hidden',
+        // Flex column survives browsers where 1fr in grid collapses on
+        // an indeterminate-height parent. Each row has explicit
+        // flex-grow/shrink so the layout can't accidentally collapse.
+        display: 'flex', flexDirection: 'column',
         paddingTop:    'env(safe-area-inset-top)',
         paddingRight:  'env(safe-area-inset-right)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft:   'env(safe-area-inset-left)',
+        overflow: 'hidden',
       }}
     >
       <style>{CSS}</style>
 
-      {/* ─── Row 1: header strip with the X ────────────────────────── */}
+      {/* ─── Header: status pill (left) + close X (right) ───────── */}
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+          flexShrink: 0,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '10px 14px', minHeight: 56,
         }}
       >
+        <div className="bc-meta" style={{
+          fontSize: 9, letterSpacing: '.32em',
+          color: isError ? 'var(--red)' : 'var(--gold)', opacity: .9,
+          paddingLeft: 4,
+        }}>{statusText}</div>
         <button
           onClick={onClose}
           className="cam-close"
@@ -316,7 +356,7 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
           style={{
             width: 44, height: 44, borderRadius: '50%',
             background: 'rgba(255,255,255,.06)', border: '1px solid var(--brd)',
-            color: 'var(--dim)', opacity: .85,
+            color: 'var(--dim)', opacity: .9,
             cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
@@ -327,16 +367,16 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
         </button>
       </div>
 
-      {/* ─── Row 2: stage (lens or error panel), grows ─────────────── */}
+      {/* ─── Stage: lens or error panel — grows to fill ─────────── */}
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
+          flex: '1 1 auto', minHeight: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '8px 16px', minHeight: 0,
+          padding: '4px 16px',
         }}
       >
-        {phase === 'error' ? (
-          // ─── Error state ─────────────────────────────────────────
+        {isError ? (
           <div className="bIn" style={{
             maxWidth: 340, textAlign: 'center', color: 'var(--txt)',
           }}>
@@ -357,32 +397,13 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
             {error?.hint && (
               <div style={{
                 fontFamily: "'Manrope',sans-serif", fontSize: 12.5, lineHeight: 1.5,
-                color: 'var(--dim)', marginBottom: 18,
+                color: 'var(--dim)', marginBottom: 4,
               }}>
                 {error.hint}
               </div>
             )}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={() => startCamera(facingMode)} style={{
-                padding: '11px 22px', borderRadius: 999,
-                background: 'transparent', border: '1px solid var(--gold)',
-                color: 'var(--gold)', cursor: 'pointer',
-                fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
-                letterSpacing: '.22em', textTransform: 'uppercase',
-                WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
-              }}>{t('photo.retry')}</button>
-              <button onClick={() => fileRef.current?.click()} style={{
-                padding: '11px 22px', borderRadius: 999,
-                background: 'transparent', border: '1px solid var(--brd)',
-                color: 'var(--dim)', cursor: 'pointer',
-                fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
-                letterSpacing: '.22em', textTransform: 'uppercase',
-                WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
-              }}>{t('photo.gallery')}</button>
-            </div>
           </div>
         ) : (
-          // ─── Circular lens ─────────────────────────────────────────
           <div style={{
             position: 'relative',
             width: LENS, height: LENS,
@@ -406,48 +427,62 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
                 color: 'var(--dim)',
               }}>
                 <div className="bc-meta" style={{
-                  fontSize: 10, letterSpacing: '.3em', opacity: .8,
+                  fontSize: 10, letterSpacing: '.3em',
+                  // Higher contrast than before so the placeholder is
+                  // actually readable while waiting on permission.
+                  color: 'var(--gold)', opacity: .9,
                 }}>{t('photo.starting')}</div>
-              </div>
-            )}
-            {isLive && (
-              <div style={{
-                position: 'absolute',
-                top: 'clamp(10px, 4%, 18px)',
-                left: '50%', transform: 'translateX(-50%)',
-                fontFamily: "'Manrope',sans-serif",
-                fontSize: 8, fontWeight: 700, letterSpacing: '.32em',
-                color: 'rgba(255,255,255,.55)',
-                pointerEvents: 'none', userSelect: 'none',
-                textShadow: '0 1px 2px rgba(0,0,0,.5)',
-              }}>
-                {facingMode === 'user' ? 'FRONT' : 'REAR'}
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* ─── Row 3: dock with shutter + flip + gallery ─────────────── */}
-      {phase !== 'error' && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 'clamp(28px, 9vw, 56px)',
-            padding: '14px 16px 22px',
-          }}
+      {/* ─── Dock: ALWAYS visible — flip / shutter|retry / gallery ─ */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 'clamp(28px, 9vw, 56px)',
+          padding: '14px 16px 22px',
+        }}
+      >
+        {/* Flip — disabled when not live or only one cam */}
+        <button
+          onClick={flipCamera}
+          disabled={!isLive || !hasMultipleCams}
+          aria-label={t('photo.flip')}
+          className="cam-orbit-btn"
+          style={orbitBtn(!isLive || !hasMultipleCams)}
         >
-          <button
-            onClick={flipCamera}
-            disabled={!isLive || !hasMultipleCams}
-            aria-label={t('photo.flip')}
-            className="cam-orbit-btn"
-            style={orbitBtn(!isLive || !hasMultipleCams)}
-          >
-            <IconFlip size={20}/>
-          </button>
+          <IconFlip size={20}/>
+        </button>
 
+        {/* Shutter — in error state becomes a Retry button (same gold
+            ring, refresh glyph) so the dock keeps the same shape and
+            the user has one obvious primary action everywhere. */}
+        {isError ? (
+          <button
+            onClick={() => startCamera(facingMode)}
+            aria-label={t('photo.retry')}
+            style={{
+              position: 'relative',
+              width: 82, height: 82, borderRadius: '50%',
+              background: 'rgba(196,168,120,.08)',
+              border: '3px solid var(--gold)',
+              cursor: 'pointer',
+              boxShadow: '0 0 24px rgba(196,168,120,.45), inset 0 0 0 4px rgba(15,11,35,.85)',
+              flexShrink: 0,
+              color: 'var(--gold)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+            }}
+          >
+            <IconFlip size={26}/>
+          </button>
+        ) : (
           <button
             onClick={shoot}
             disabled={!isLive}
@@ -470,18 +505,20 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
           >
             <span className="cam-shutter-fill"/>
           </button>
+        )}
 
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={phase === 'capturing'}
-            aria-label={t('photo.gallery')}
-            className="cam-orbit-btn"
-            style={orbitBtn(phase === 'capturing')}
-          >
-            <IconGallery size={20}/>
-          </button>
-        </div>
-      )}
+        {/* Gallery — ALWAYS enabled (this is the escape hatch when
+            camera permission is broken). */}
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={phase === 'capturing'}
+          aria-label={t('photo.gallery')}
+          className="cam-orbit-btn"
+          style={orbitBtn(phase === 'capturing')}
+        >
+          <IconGallery size={20}/>
+        </button>
+      </div>
 
       <input
         ref={fileRef}
