@@ -52,6 +52,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
     on_resolved:true, on_expiry:true, on_bet_message:true,
   });
   const [membersOpen, setMembersOpen] = useState(false);
+  const [creditsOpen, setCreditsOpen] = useState(false);
   const myProfile = profiles[user];
 
   useEffect(()=>{
@@ -443,7 +444,8 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
           </div>
         ) : (
           (() => {
-            // Order: me first, then group members in join order, then any other profiles still in state
+            // Order: me first, then group members in join order, then any
+            // other profiles still in state.
             const ordered = (() => {
               const known = new Set();
               const out = [];
@@ -458,55 +460,117 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
               }
               return out;
             })();
+            // Mirror the collapsible used by the GROUP MEMBERS section
+            // above — avatar stack + count + chevron, content tucked under.
+            // Default collapsed so the page stays short on mobile (the user
+            // explicitly asked to stop having to scroll to reach the bottom).
             return (
-          <div style={{...S.card}}>
-            {ordered.map((k, i) => {
-              const p=profiles[k]; const amt=parseFloat(creditAmounts[k])||0;
-              const isMe = k === user;
-              return(
-                <div key={k} style={{marginBottom:i<ordered.length-1?14:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                    <div style={{fontSize:24}}>{p.avatar}</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:13,fontWeight:600}}>{p.name}{isMe ? ` · ${t('settings.you')}` : ''}</div>
-                      <div style={{fontSize:12,color:"var(--gold)",fontWeight:700}}>{t('settings.balance')} {Math.round(credits[k]||0)} ₡</div>
+              <div style={{
+                ...S.card, marginBottom: 12, padding: 0, overflow: 'hidden',
+              }}>
+                <button
+                  onClick={() => setCreditsOpen(o => !o)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '12px 14px',
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    color: 'var(--txt)', textAlign: 'left',
+                    fontFamily: "'Manrope',sans-serif",
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {ordered.slice(0, 3).map((id, i) => {
+                      const p = profiles[id];
+                      const color = COLORS[p?.colorKey] || '#5b8af0';
+                      return (
+                        <div key={id} style={{
+                          width: 26, height: 26, borderRadius: '50%',
+                          background: `${color}33`,
+                          border: '2px solid var(--card)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 13, overflow: 'hidden', flexShrink: 0,
+                          marginLeft: i === 0 ? 0 : -8,
+                          zIndex: 5 - i,
+                        }}>
+                          {p?.avatarUrl
+                            ? <img src={p.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                            : (p?.avatar || '😊')}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>
+                      {ordered.length === 1
+                        ? t('settings.members_count_one')
+                        : t('settings.members_count', { n: ordered.length })}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--dim)', marginTop: 2 }}>
+                      {creditsOpen ? t('settings.credits_hide') : t('settings.credits_show')}
                     </div>
                   </div>
-                  {creditErr[k]&&<div style={{fontSize:12,color:"var(--red)",marginBottom:6}}>{creditErr[k]}</div>}
-                  {(creditConfirm?.user===k?(
-                    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                      <div style={{fontSize:13,color:"var(--dim)",flex:1}}>
-                        {t('settings.credits_confirm_q',{amount:creditConfirm.amount,name:p.name})}
-                      </div>
-                      <Btn variant="red" sm onClick={()=>handleDeltaCredits(k,-creditConfirm.amount)}>{t('settings.credits_confirm')}</Btn>
-                      <Btn variant="ghost" sm onClick={()=>setCreditConfirm(null)}>{t('settings.credits_cancel')}</Btn>
-                    </div>
-                  ):(
-                    <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                      <Inp
-                        type="number"
-                        min={1}
-                        max={9999}
-                        value={creditAmounts[k]||''}
-                        onChange={e=>setCreditAmounts(a=>({...a,[k]:e.target.value}))}
-                        placeholder={t('settings.amount_ph')}
-                        style={{width:90,padding:"6px 10px",fontSize:13}}
-                      />
-                      <Btn variant="grn" sm onClick={()=>{
-                        if(!amt||amt<1)return;
-                        handleDeltaCredits(k, Math.floor(amt));
-                      }}>{t('settings.credits_add')}</Btn>
-                      <Btn variant="ghost" sm style={{color:"var(--red)",borderColor:"var(--red)22"}} onClick={()=>{
-                        if(!amt||amt<1)return;
-                        setCreditConfirm({user:k, amount:Math.floor(amt)});
-                        setCreditErr(e=>({...e,[k]:''}));
-                      }}>{t('settings.credits_sub')}</Btn>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
+                  <span style={{
+                    fontSize: 12, color: 'var(--dim)', flexShrink: 0,
+                    transform: creditsOpen ? 'rotate(180deg)' : 'rotate(0)',
+                    transition: 'transform .2s',
+                  }}>▾</span>
+                </button>
+
+                {creditsOpen && (
+                  <div style={{ borderTop: '1px solid var(--brd)', padding: 16 }}>
+                    {ordered.map((k, i) => {
+                      const p=profiles[k]; const amt=parseFloat(creditAmounts[k])||0;
+                      const isMe = k === user;
+                      return(
+                        <div key={k} style={{
+                          marginBottom: i < ordered.length - 1 ? 14 : 0,
+                          paddingBottom: i < ordered.length - 1 ? 14 : 0,
+                          borderBottom: i < ordered.length - 1 ? '1px solid var(--brd)33' : 'none',
+                        }}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                            <div style={{fontSize:24}}>{p.avatar}</div>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:13,fontWeight:600}}>{p.name}{isMe ? ` · ${t('settings.you')}` : ''}</div>
+                              <div style={{fontSize:12,color:"var(--gold)",fontWeight:700}}>{t('settings.balance')} {Math.round(credits[k]||0)} ₡</div>
+                            </div>
+                          </div>
+                          {creditErr[k]&&<div style={{fontSize:12,color:"var(--red)",marginBottom:6}}>{creditErr[k]}</div>}
+                          {(creditConfirm?.user===k?(
+                            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                              <div style={{fontSize:13,color:"var(--dim)",flex:1}}>
+                                {t('settings.credits_confirm_q',{amount:creditConfirm.amount,name:p.name})}
+                              </div>
+                              <Btn variant="red" sm onClick={()=>handleDeltaCredits(k,-creditConfirm.amount)}>{t('settings.credits_confirm')}</Btn>
+                              <Btn variant="ghost" sm onClick={()=>setCreditConfirm(null)}>{t('settings.credits_cancel')}</Btn>
+                            </div>
+                          ):(
+                            <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                              <Inp
+                                type="number"
+                                min={1}
+                                max={9999}
+                                value={creditAmounts[k]||''}
+                                onChange={e=>setCreditAmounts(a=>({...a,[k]:e.target.value}))}
+                                placeholder={t('settings.amount_ph')}
+                                style={{width:90,padding:"6px 10px",fontSize:13}}
+                              />
+                              <Btn variant="grn" sm onClick={()=>{
+                                if(!amt||amt<1)return;
+                                handleDeltaCredits(k, Math.floor(amt));
+                              }}>{t('settings.credits_add')}</Btn>
+                              <Btn variant="ghost" sm style={{color:"var(--red)",borderColor:"var(--red)22"}} onClick={()=>{
+                                if(!amt||amt<1)return;
+                                setCreditConfirm({user:k, amount:Math.floor(amt)});
+                                setCreditErr(e=>({...e,[k]:''}));
+                              }}>{t('settings.credits_sub')}</Btn>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })()
         )
