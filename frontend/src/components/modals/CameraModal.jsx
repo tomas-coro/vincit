@@ -256,20 +256,20 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
   };
 
   // ─── Styles ────────────────────────────────────────────────────────
-  // Lens sizing — `vmin` keeps the circle in bounds on landscape mobile
-  // too. Capped at 360px so on wide desktop it doesn't dominate the
-  // viewport; mobile portrait gets a comfortable 70vmin (~263px on
-  // iPhone SE 375×667, ~275px on iPhone 15 Pro). Smaller than before to
-  // leave more breathing room for the orbital controls below.
-  const LENS = 'min(70vmin, 360px)';
+  // Lens size is the minimum of (60% viewport width, 50% viewport height,
+  // 320px). This GUARANTEES the lens fits both axes regardless of phone
+  // size or orientation. On iPhone SE (375×667, safe-area ~80px), 50vh
+  // = 333 but capped at 320; 60vw = 225, so lens = 225px — plenty of
+  // room below for orbital controls + label.
+  const LENS = 'min(60vw, 50vh, 320px)';
   const isLive = phase === 'live';
 
   const orbitBtn = (disabled) => ({
-    width: 46, height: 46, borderRadius: '50%',
-    background: 'transparent',
-    border: `1px solid ${disabled ? 'var(--brd)' : 'var(--brd)'}`,
+    width: 50, height: 50, borderRadius: '50%',
+    background: 'rgba(255,255,255,.04)',
+    border: '1px solid var(--brd)',
     color: disabled ? 'var(--mut)' : 'var(--dim)',
-    opacity: disabled ? .35 : .85,
+    opacity: disabled ? .35 : 1,
     cursor: disabled ? 'not-allowed' : 'pointer',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
@@ -284,81 +284,87 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
       style={{
         position: 'fixed', inset: 0, zIndex: 9700,
         background: 'radial-gradient(circle at 50% 42%, rgba(43,34,71,.94) 0%, rgba(8,6,18,.97) 70%)',
-        // Lighter blur than before — 24px chokes some mid-range Androids
-        // and produced perceptible jank during the camera startup.
         backdropFilter: 'blur(14px) saturate(120%)',
         WebkitBackdropFilter: 'blur(14px) saturate(120%)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        // dvh = dynamic viewport, hugs the visible area on iOS even when
-        // the URL bar shows/hides. Falls back to vh on older browsers.
-        height: '100dvh',
-        maxHeight: '100dvh',
-        overflow: 'hidden',
-        padding: 'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
+        // Explicit grid layout: 3 rows (header / stage / dock) so the
+        // X is always anchored at the top and the controls are always
+        // anchored at the bottom — no flex-center surprises with iOS dvh
+        // jitter, no chance of any region falling off-screen.
+        display: 'grid',
+        gridTemplateRows: 'auto 1fr auto',
+        height: '100dvh', maxHeight: '100dvh', overflow: 'hidden',
+        paddingTop:    'env(safe-area-inset-top)',
+        paddingRight:  'env(safe-area-inset-right)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft:   'env(safe-area-inset-left)',
       }}
     >
       <style>{CSS}</style>
 
-      {/* Detached close — fixed top-right, never inside a card */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onClose?.(); }}
-        className="cam-close"
-        aria-label="Close"
+      {/* ─── Row 1: header strip with the X ────────────────────────── */}
+      <div
+        onClick={(e) => e.stopPropagation()}
         style={{
-          position: 'fixed',
-          top:   'calc(env(safe-area-inset-top) + 14px)',
-          right: 'calc(env(safe-area-inset-right) + 16px)',
-          width: 38, height: 38, borderRadius: '50%',
-          background: 'transparent', border: 'none',
-          color: 'var(--dim)', opacity: .65,
-          cursor: 'pointer',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
-          transition: 'color .18s ease, opacity .18s ease',
+          display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+          padding: '10px 14px', minHeight: 56,
         }}
       >
-        <IconClose/>
-      </button>
+        <button
+          onClick={onClose}
+          className="cam-close"
+          aria-label="Close"
+          style={{
+            width: 44, height: 44, borderRadius: '50%',
+            background: 'rgba(255,255,255,.06)', border: '1px solid var(--brd)',
+            color: 'var(--dim)', opacity: .85,
+            cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+            transition: 'color .18s ease, opacity .18s ease, border-color .18s ease',
+          }}
+        >
+          <IconClose size={20}/>
+        </button>
+      </div>
 
-      {/* Tap-anywhere to close — but the inner stage stops propagation so
-          the user can interact with controls without dismissing. */}
-      <div onClick={(e) => e.stopPropagation()} style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 'clamp(28px, 7vh, 56px)',
-        width: '100%',
-      }}>
+      {/* ─── Row 2: stage (lens or error panel), grows ─────────────── */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '8px 16px', minHeight: 0,
+        }}
+      >
         {phase === 'error' ? (
           // ─── Error state ─────────────────────────────────────────
           <div className="bIn" style={{
-            maxWidth: 360, textAlign: 'center',
-            padding: '8px 22px',
-            color: 'var(--txt)',
+            maxWidth: 340, textAlign: 'center', color: 'var(--txt)',
           }}>
-            <div style={{ color: 'var(--gold)', marginBottom: 16, display: 'inline-flex' }}>
-              <IconCameraOff size={56}/>
+            <div style={{ color: 'var(--gold)', marginBottom: 14, display: 'inline-flex' }}>
+              <IconCameraOff size={52}/>
             </div>
-            <div className="bc-meta" style={{ marginBottom: 10, color: 'var(--gold)' }}>
+            <div className="bc-meta" style={{ marginBottom: 8, color: 'var(--gold)' }}>
               — {t('photo.permission_title')}
             </div>
             <div style={{
               fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
-              fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 600,
+              fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 600,
               lineHeight: 1.2, letterSpacing: '-0.01em',
-              marginBottom: 14, color: 'var(--txt)',
+              marginBottom: 12, color: 'var(--txt)',
             }}>
               {error?.msg}
             </div>
             {error?.hint && (
               <div style={{
-                fontFamily: "'Manrope',sans-serif", fontSize: 13, lineHeight: 1.5,
-                color: 'var(--dim)', marginBottom: 22,
+                fontFamily: "'Manrope',sans-serif", fontSize: 12.5, lineHeight: 1.5,
+                color: 'var(--dim)', marginBottom: 18,
               }}>
                 {error.hint}
               </div>
             )}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={() => startCamera(facingMode)} style={{
-                padding: '11px 24px', borderRadius: 999,
+                padding: '11px 22px', borderRadius: 999,
                 background: 'transparent', border: '1px solid var(--gold)',
                 color: 'var(--gold)', cursor: 'pointer',
                 fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
@@ -366,7 +372,7 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
                 WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
               }}>{t('photo.retry')}</button>
               <button onClick={() => fileRef.current?.click()} style={{
-                padding: '11px 24px', borderRadius: 999,
+                padding: '11px 22px', borderRadius: 999,
                 background: 'transparent', border: '1px solid var(--brd)',
                 color: 'var(--dim)', cursor: 'pointer',
                 fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
@@ -376,113 +382,110 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
             </div>
           </div>
         ) : (
-          <>
-            {/* ─── Circular lens ────────────────────────────────── */}
-            <div style={{
-              position: 'relative',
-              width: LENS, height: LENS,
-              borderRadius: '50%', overflow: 'hidden',
-              background: '#0a0913',
-            }} className="cam-ring">
-              <video
-                ref={videoRef}
-                autoPlay playsInline muted
-                style={{
-                  width: '100%', height: '100%',
-                  objectFit: 'cover',
-                  display: isLive ? 'block' : 'none',
-                  // Mirror the live preview when using the front camera —
-                  // matches how mirrors / selfie apps render the user's POV.
-                  transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
-                }}
-              />
-              {!isLive && (
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--dim)',
-                }}>
-                  <div className="bc-meta" style={{
-                    fontSize: 10, letterSpacing: '.3em', opacity: .8,
-                  }}>{t('photo.starting')}</div>
-                </div>
-              )}
-              {/* Tiny "CAM" indicator — outside the visual hierarchy */}
-              {isLive && (
-                <div style={{
-                  position: 'absolute',
-                  top: 'clamp(14px, 4%, 22px)',
-                  left: '50%', transform: 'translateX(-50%)',
-                  fontFamily: "'Manrope',sans-serif",
-                  fontSize: 8, fontWeight: 700, letterSpacing: '.32em',
-                  color: 'rgba(255,255,255,.55)',
-                  pointerEvents: 'none', userSelect: 'none',
-                  textShadow: '0 1px 2px rgba(0,0,0,.5)',
-                }}>
-                  {facingMode === 'user' ? 'FRONT' : 'REAR'}
-                </div>
-              )}
-            </div>
-
-            {/* ─── Orbital controls ─────────────────────────────── */}
-            <div style={{
-              display: 'flex', alignItems: 'center',
-              gap: 'clamp(34px, 11vw, 72px)',
-            }}>
-              <button
-                onClick={flipCamera}
-                disabled={!isLive || !hasMultipleCams}
-                aria-label={t('photo.flip')}
-                className="cam-orbit-btn"
-                style={orbitBtn(!isLive || !hasMultipleCams)}
-              >
-                <IconFlip/>
-              </button>
-
-              {/* Shutter — ring that fills on press */}
-              <button
-                onClick={shoot}
-                disabled={!isLive}
-                aria-label={t('photo.shoot')}
-                className={`cam-shutter${phase === 'capturing' ? ' is-busy' : ''}`}
-                style={{
-                  position: 'relative',
-                  width: 86, height: 86, borderRadius: '50%',
-                  background: 'transparent',
-                  border: '3px solid var(--gold)',
-                  cursor: isLive ? 'pointer' : 'not-allowed',
-                  opacity: isLive ? 1 : .4,
-                  boxShadow: isLive
-                    ? '0 0 28px rgba(196,168,120,.45), inset 0 0 0 4px rgba(15,11,35,.85)'
-                    : 'inset 0 0 0 4px rgba(15,11,35,.85)',
-                  flexShrink: 0,
-                  WebkitTapHighlightColor: 'transparent',
-                  touchAction: 'manipulation',
-                }}
-              >
-                <span className="cam-shutter-fill"/>
-              </button>
-
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={phase === 'capturing'}
-                aria-label={t('photo.gallery')}
-                className="cam-orbit-btn"
-                style={orbitBtn(phase === 'capturing')}
-              >
-                <IconGallery/>
-              </button>
-            </div>
-          </>
+          // ─── Circular lens ─────────────────────────────────────────
+          <div style={{
+            position: 'relative',
+            width: LENS, height: LENS,
+            borderRadius: '50%', overflow: 'hidden',
+            background: '#0a0913',
+          }} className="cam-ring">
+            <video
+              ref={videoRef}
+              autoPlay playsInline muted
+              style={{
+                width: '100%', height: '100%',
+                objectFit: 'cover',
+                display: isLive ? 'block' : 'none',
+                transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
+              }}
+            />
+            {!isLive && (
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--dim)',
+              }}>
+                <div className="bc-meta" style={{
+                  fontSize: 10, letterSpacing: '.3em', opacity: .8,
+                }}>{t('photo.starting')}</div>
+              </div>
+            )}
+            {isLive && (
+              <div style={{
+                position: 'absolute',
+                top: 'clamp(10px, 4%, 18px)',
+                left: '50%', transform: 'translateX(-50%)',
+                fontFamily: "'Manrope',sans-serif",
+                fontSize: 8, fontWeight: 700, letterSpacing: '.32em',
+                color: 'rgba(255,255,255,.55)',
+                pointerEvents: 'none', userSelect: 'none',
+                textShadow: '0 1px 2px rgba(0,0,0,.5)',
+              }}>
+                {facingMode === 'user' ? 'FRONT' : 'REAR'}
+              </div>
+            )}
+          </div>
         )}
       </div>
+
+      {/* ─── Row 3: dock with shutter + flip + gallery ─────────────── */}
+      {phase !== 'error' && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 'clamp(28px, 9vw, 56px)',
+            padding: '14px 16px 22px',
+          }}
+        >
+          <button
+            onClick={flipCamera}
+            disabled={!isLive || !hasMultipleCams}
+            aria-label={t('photo.flip')}
+            className="cam-orbit-btn"
+            style={orbitBtn(!isLive || !hasMultipleCams)}
+          >
+            <IconFlip size={20}/>
+          </button>
+
+          <button
+            onClick={shoot}
+            disabled={!isLive}
+            aria-label={t('photo.shoot')}
+            className={`cam-shutter${phase === 'capturing' ? ' is-busy' : ''}`}
+            style={{
+              position: 'relative',
+              width: 82, height: 82, borderRadius: '50%',
+              background: 'transparent',
+              border: '3px solid var(--gold)',
+              cursor: isLive ? 'pointer' : 'not-allowed',
+              opacity: isLive ? 1 : .4,
+              boxShadow: isLive
+                ? '0 0 24px rgba(196,168,120,.45), inset 0 0 0 4px rgba(15,11,35,.85)'
+                : 'inset 0 0 0 4px rgba(15,11,35,.85)',
+              flexShrink: 0,
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+            }}
+          >
+            <span className="cam-shutter-fill"/>
+          </button>
+
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={phase === 'capturing'}
+            aria-label={t('photo.gallery')}
+            className="cam-orbit-btn"
+            style={orbitBtn(phase === 'capturing')}
+          >
+            <IconGallery size={20}/>
+          </button>
+        </div>
+      )}
 
       <input
         ref={fileRef}
         type="file" accept="image/*"
-        // iOS Safari respects `capture` only on inputs that don't have
-        // accept restricting them away from camera; we let the user pick
-        // either source from the system sheet.
         onChange={pickFile}
         style={{ display: 'none' }}
       />
