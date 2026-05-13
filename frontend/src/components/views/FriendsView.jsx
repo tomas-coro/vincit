@@ -165,6 +165,7 @@ export default function FriendsView({ groups, user, onSwitchToGroup, isDesktop }
   const toast   = useToast();
   const [tab, setTab]           = useState('friends'); // 'friends' | 'requests' | 'discover'
   const [friends,    setFriends]    = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);   // [{ id, trophyPoints, wins, h2hWon, h2hLost, h2hTotal, ... }]
   const [reqIncoming, setReqIncoming] = useState([]);
   const [reqOutgoing, setReqOutgoing] = useState([]);
   const [discover,   setDiscover]   = useState([]);
@@ -173,6 +174,7 @@ export default function FriendsView({ groups, user, onSwitchToGroup, isDesktop }
   const [query,      setQuery]      = useState('');
   const [inviting,   setInviting]   = useState(null);
   const [busyIds,    setBusyIds]    = useState(new Set());
+  const [openProfile, setOpenProfile] = useState(null);  // friend object whose profile is open
 
   const setBusy = (id, busy) => setBusyIds(prev => {
     const next = new Set(prev);
@@ -183,12 +185,14 @@ export default function FriendsView({ groups, user, onSwitchToGroup, isDesktop }
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const [f, r, d] = await Promise.all([
+      const [f, r, d, lb] = await Promise.all([
         api.getFriends(),
         api.getFriendRequests(),
         api.getFriendDiscover(),
+        api.getFriendsLeaderboard().catch(() => ({ rows: [] })),
       ]);
       setFriends(f);
+      setLeaderboard(lb.rows || []);
       setReqIncoming(r.incoming || []);
       setReqOutgoing(r.outgoing || []);
       setDiscover(d);
@@ -293,27 +297,93 @@ export default function FriendsView({ groups, user, onSwitchToGroup, isDesktop }
     );
   };
 
-  const Card = ({ p, children }) => (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12,
-      padding: '12px 14px', marginBottom: 10,
-      background: 'var(--card)', border: '1px solid var(--brd)',
-      borderRadius: 14,
-    }}>
+  // Quick lookup of leaderboard stats by user id, used to enrich friend rows.
+  const lbById = useMemo(() => {
+    const m = {};
+    for (const r of leaderboard) m[r.id] = r;
+    return m;
+  }, [leaderboard]);
+
+  // Card renders a friend row. When `lb` (leaderboard data) is present
+  // the row shows trophy points + h2h vs me + becomes tappable for the
+  // FriendProfileModal. Otherwise it's the plain card used by
+  // requests/discover tabs (no extra meta).
+  const Card = ({ p, children, lb, rank, onOpen }) => (
+    <div
+      onClick={onOpen ? () => onOpen(p) : undefined}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '12px 14px', marginBottom: 10,
+        background: 'var(--card)', border: '1px solid var(--brd)',
+        borderRadius: 14,
+        cursor: onOpen ? 'pointer' : 'default',
+        WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+        transition: 'border-color .15s ease, background .15s ease',
+      }}
+      onMouseEnter={onOpen ? (e) => { e.currentTarget.style.borderColor = 'var(--gold)55'; } : undefined}
+      onMouseLeave={onOpen ? (e) => { e.currentTarget.style.borderColor = 'var(--brd)'; } : undefined}
+    >
+      {/* Leaderboard rank badge — only shown when there's a ranked context */}
+      {rank != null && (
+        <div style={{
+          width: 26, height: 26, borderRadius: '50%',
+          background: rank === 1 ? 'var(--gold)22'
+                    : rank === 2 ? '#c0c4d022'
+                    : rank === 3 ? '#b8733322'
+                    : 'transparent',
+          border: `1px solid ${rank === 1 ? 'var(--gold)' : rank === 2 ? '#c0c4d0' : rank === 3 ? '#b87333' : 'var(--brd)'}55`,
+          color:  rank === 1 ? 'var(--gold)' : rank === 2 ? '#c0c4d0' : rank === 3 ? '#b87333' : 'var(--mut)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: "'Playfair Display',serif", fontSize: 13, fontWeight: 700,
+          flexShrink: 0,
+        }}>{rank}</div>
+      )}
       <Avatar p={p} size={48}/>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontFamily: "'Cormorant Garamond',serif", fontSize: 16, fontWeight: 700,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>{p.name}</div>
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.name}</span>
+          {lb?.trophyPoints > 0 && (
+            <span style={{
+              flexShrink: 0,
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              padding: '2px 8px', borderRadius: 999,
+              background: 'var(--gold)18', border: '1px solid var(--gold)44',
+              color: 'var(--gold)',
+              fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
+            }}>
+              <span style={{fontSize:11}}>🏆</span> {lb.trophyPoints}
+            </span>
+          )}
+        </div>
+        {/* h2h record vs me, if any bets played together */}
+        {lb?.h2hTotal > 0 && (
+          <div style={{
+            fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 600,
+            marginTop: 4, letterSpacing: '.04em',
+          }}>
+            <span style={{ color: 'var(--grn)' }}>{lb.h2hWon}W</span>
+            <span style={{ color: 'var(--mut)', margin: '0 4px' }}>·</span>
+            <span style={{ color: 'var(--red)' }}>{lb.h2hLost}L</span>
+            <span style={{ color: 'var(--mut)', marginLeft: 6, fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase' }}>
+              {t('friends.h2h_label')}
+            </span>
+          </div>
+        )}
         <SharedGroupsChips groups={p.shared_groups} onClick={onSwitchToGroup}/>
-        {p.last_interaction > 0 && (
+        {p.last_interaction > 0 && !lb && (
           <div style={{ fontSize: 10, color: 'var(--mut)', marginTop: 6, letterSpacing: 0.3 }}>
             ⏱ {timeAgo(p.last_interaction, t)}
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}
+      >
         {children}
       </div>
     </div>
@@ -414,8 +484,20 @@ export default function FriendsView({ groups, user, onSwitchToGroup, isDesktop }
               }}>{t('friends.empty_cta')}</button>
             </div>
           )}
-          {filtered.map(f => (
-            <Card key={f.id} p={f}>
+          {/* Sort filtered friends by leaderboard trophy points (desc),
+              keeping anyone missing from the leaderboard at the bottom. */}
+          {[...filtered].sort((a, b) => {
+            const pa = lbById[a.id]?.trophyPoints ?? 0;
+            const pb = lbById[b.id]?.trophyPoints ?? 0;
+            return pb - pa;
+          }).map((f, i) => (
+            <Card
+              key={f.id}
+              p={f}
+              lb={lbById[f.id]}
+              rank={filtered.length > 1 ? i + 1 : null}
+              onOpen={(p) => setOpenProfile(p)}
+            >
               {goldBtn(t('friends.invite_short'), () => setInviting(f), busyIds.has(f.id))}
               {goldBtn(t('friends.remove'),       () => handleRemoveFriend(f), busyIds.has(f.id), 'danger')}
             </Card>
@@ -502,6 +584,217 @@ export default function FriendsView({ groups, user, onSwitchToGroup, isDesktop }
           onClose={() => setInviting(null)}
         />
       )}
+
+      {openProfile && (
+        <FriendProfileModal
+          friend={openProfile}
+          onClose={() => setOpenProfile(null)}
+          onSwitchToGroup={onSwitchToGroup}
+          t={t}
+        />
+      )}
     </div>
   );
+}
+
+// ─── Friend profile modal ──────────────────────────────────────────────
+// Tap on a friend's row → this modal opens. Shows their trophy collection
+// (grouped by tier), joint stats vs me (h2h W:L, total stake moved, best
+// shared bet), and a "Crea bet con [nome]" CTA.
+function FriendProfileModal({ friend, onClose, onSwitchToGroup, t }) {
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true); setError(null);
+    api.getFriendProfile(friend.id)
+      .then(d => { if (!cancelled) { setData(d); setLoading(false); } })
+      .catch(e => { if (!cancelled) { setError(e?.message || 'error'); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, [friend.id]);
+
+  // Lock body scroll while open.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const TIER_COLOR = (level) =>
+      level >= 4 ? 'var(--gold)'
+    : level >= 2 ? '#c0c4d0'
+    : level >= 1 ? '#b87333'
+    : 'var(--mut)';
+
+  return createPortal((
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(8, 6, 18, 0.78)',
+        backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bIn"
+        style={{
+          width: '100%', maxWidth: 480,
+          maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto',
+          background: 'var(--surf)',
+          border: '1px solid var(--rule)', borderRadius: 14,
+          boxShadow: '0 30px 80px rgba(0,0,0,.55)',
+          padding: '24px 22px 22px',
+          paddingBottom: 'calc(22px + env(safe-area-inset-bottom))',
+        }}
+      >
+        {/* Header: avatar + name + close */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+          <Avatar p={friend} size={56}/>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="bc-meta" style={{ fontSize: 9 }}>— {t('friends.profile_label')}</div>
+            <div style={{
+              fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
+              fontSize: 24, fontWeight: 700, color: 'var(--txt)',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              marginTop: 2,
+            }}>{friend.name}</div>
+          </div>
+          <button onClick={onClose} aria-label="Close" style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'var(--dim)', fontSize: 22, padding: '4px 8px',
+            WebkitTapHighlightColor: 'transparent',
+          }}>✕</button>
+        </div>
+
+        {loading && (
+          <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--dim)', fontSize: 12 }}>
+            {t('friends.profile_loading')}
+          </div>
+        )}
+
+        {error && !loading && (
+          <div style={{
+            padding: 16, borderRadius: 10,
+            border: '1px solid var(--red)44', background: 'var(--red)10',
+            color: 'var(--red)', fontSize: 12, textAlign: 'center',
+          }}>{t('friends.profile_err')}</div>
+        )}
+
+        {data && !loading && (
+          <>
+            {/* Top row: trophy points + bets won */}
+            <div style={{
+              display: 'flex', gap: 12,
+              padding: '14px 0', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)',
+              marginBottom: 18,
+            }}>
+              {[
+                {l: t('friends.profile_trophies'), v: data.trophyPoints, c: 'var(--gold)'},
+                {l: t('friends.profile_wins'),     v: data.progress?.wins?.current ?? 0, c: 'var(--grn)'},
+              ].map((s, i) => (
+                <div key={s.l} style={{
+                  flex: 1, textAlign: 'center',
+                  borderLeft: i === 0 ? 'none' : '1px solid var(--rule)',
+                }}>
+                  <div className="bc-num" style={{ fontSize: 28, color: s.c, lineHeight: 1 }}>{s.v}</div>
+                  <div className="bc-meta" style={{ fontSize: 8, marginTop: 6 }}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Joint vs me */}
+            {data.vsMe.total > 0 && (
+              <div style={{ marginBottom: 18 }}>
+                <div className="bc-meta" style={{ marginBottom: 10 }}>— {t('friends.profile_vsme_title')}</div>
+                <div style={{
+                  display: 'flex', gap: 14, alignItems: 'baseline',
+                  padding: '12px 14px', borderRadius: 10,
+                  border: '1px solid var(--brd)', background: 'var(--card)',
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700,
+                    }}>
+                      <span style={{ color: 'var(--grn)' }}>{data.vsMe.iWon}</span>
+                      <span style={{ color: 'var(--mut)', margin: '0 6px', fontSize: 14 }}>–</span>
+                      <span style={{ color: 'var(--red)' }}>{data.vsMe.iLost}</span>
+                    </div>
+                    <div className="bc-meta" style={{ fontSize: 8, marginTop: 4 }}>{t('friends.profile_record')}</div>
+                  </div>
+                  <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                    <div className="bc-num" style={{ fontSize: 18, color: 'var(--gold)' }}>
+                      {data.vsMe.totalStake}<span style={{ fontSize: 10, marginLeft: 2 }}>₡</span>
+                    </div>
+                    <div className="bc-meta" style={{ fontSize: 8, marginTop: 4 }}>{t('friends.profile_total_stake')}</div>
+                  </div>
+                </div>
+                {data.vsMe.bestBet && (
+                  <div style={{
+                    marginTop: 10, padding: '10px 14px',
+                    borderLeft: '3px solid var(--gold)',
+                    background: 'var(--gold)08',
+                    fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
+                    fontSize: 14, color: 'var(--txt)',
+                  }}>
+                    {t('friends.profile_best_bet')}: “{data.vsMe.bestBet.title}”
+                    <span style={{ marginLeft: 8, color: 'var(--gold)', fontStyle: 'normal', fontWeight: 700 }}>
+                      +{data.vsMe.bestBet.potential_win - data.vsMe.bestBet.stake}₡
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Trophy collection — grouped by category */}
+            <div className="bc-meta" style={{ marginBottom: 10 }}>— {t('friends.profile_trophies_title')}</div>
+            {(() => {
+              const byId = {};
+              for (const u of data.unlocked) {
+                if (!byId[u.achievement_id] || byId[u.achievement_id] < u.level) {
+                  byId[u.achievement_id] = u.level;
+                }
+              }
+              const unlockedIds = Object.keys(byId);
+              if (unlockedIds.length === 0) {
+                return (
+                  <div style={{
+                    padding: '14px 0', fontSize: 12, color: 'var(--mut)',
+                    textAlign: 'center', fontStyle: 'italic',
+                  }}>{t('friends.profile_no_trophies')}</div>
+                );
+              }
+              return (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {data.catalog
+                    .filter(a => byId[a.id] != null)
+                    .map(a => {
+                      const lvl = byId[a.id];
+                      const color = TIER_COLOR(lvl);
+                      return (
+                        <div key={a.id} title={`${t('trophies.' + a.id)} · Lv ${lvl}`} style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '6px 10px', borderRadius: 999,
+                          border: `1px solid ${color}55`,
+                          background: `${color}12`,
+                          fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
+                          color,
+                        }}>
+                          <span style={{ fontSize: 14 }}>{a.icon}</span>
+                          <span>Lv {lvl}</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              );
+            })()}
+          </>
+        )}
+      </div>
+    </div>
+  ), document.body);
 }

@@ -70,6 +70,8 @@ export const sendFriendRequest  = (userId)       => req('POST',   '/friends/requ
 export const respondFriendReq   = (userId, accept) => req('POST', '/friends/respond', { userId, accept });
 export const cancelFriendReq    = (userId)       => req('POST',   '/friends/cancel', { userId });
 export const removeFriend       = (userId)       => req('DELETE', `/friends/${userId}`);
+export const getFriendsLeaderboard = ()          => req('GET',    '/friends/leaderboard');
+export const getFriendProfile   = (userId)       => req('GET',    `/friends/${userId}/profile`);
 
 // Bets
 export const createBet      = (data)         => req('POST',   '/bets', data);

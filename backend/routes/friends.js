@@ -2,6 +2,7 @@
 const express = require('express');
 const db      = require('../db.js');
 const { sendPushToUser, isPrefEnabled } = require('./push.js');
+const { computeProgressFor, listForUser, CATALOG } = require('../achievements.js');
 
 // Helper: friendship rows are stored in canonical (a < b) order. Given two
 // user ids return them sorted so we can target the single canonical row.
@@ -253,6 +254,163 @@ function makeRouter(broadcastUpdate) {
       await db.query('DELETE FROM friendships WHERE user_id_a=$1 AND user_id_b=$2', [a, b]);
       res.json({ ok: true });
     } catch (e) { console.error('[friends:remove]', e); res.status(500).json({ error: 'server_error' }); }
+  });
+
+  // GET /api/friends/leaderboard — list of my friends ranked by trophy
+  // points (sum of unlocked levels). Returns enough info to render the
+  // FriendsView leaderboard without N round-trips to /profile/:id.
+  router.get('/leaderboard', async (req, res) => {
+    try {
+      const me = req.userId;
+      const friends = await listFriends(me);
+      if (!friends.length) return res.json({ rows: [] });
+
+      // Single query: per-friend trophy-points + bets-won counts.
+      const ids = friends.map(f => f.id);
+      const { rows: trophyAgg } = await db.query(
+        `SELECT user_id, COALESCE(SUM(level), 0)::int AS points
+         FROM achievements
+         WHERE user_id = ANY($1)
+         GROUP BY user_id`,
+        [ids]
+      );
+      const trophyById = Object.fromEntries(trophyAgg.map(r => [r.user_id, r.points]));
+
+      const { rows: winsAgg } = await db.query(
+        `SELECT creator AS uid, COUNT(*)::int AS wins
+         FROM bets
+         WHERE creator = ANY($1) AND status='won'
+         GROUP BY creator`,
+        [ids]
+      );
+      const winsById = Object.fromEntries(winsAgg.map(r => [r.uid, r.wins]));
+
+      // h2h record against me — wins/losses on bets where I'm one side
+      // and the friend is the other (creator+opponent, in either order).
+      const { rows: h2hRows } = await db.query(
+        `SELECT
+           CASE WHEN creator = $1 THEN opponent ELSE creator END AS friend_id,
+           status,
+           creator = $1 AS i_created
+         FROM bets
+         WHERE status IN ('won','lost')
+           AND ((creator = $1 AND opponent = ANY($2))
+             OR (opponent = $1 AND creator = ANY($2)))`,
+        [me, ids]
+      );
+      const h2hById = {};
+      for (const r of h2hRows) {
+        const f = r.friend_id;
+        if (!h2hById[f]) h2hById[f] = { iWon: 0, iLost: 0, total: 0 };
+        h2hById[f].total++;
+        // creator wins == 'won'; we know who the creator is via i_created
+        const creatorWon = r.status === 'won';
+        const iWon = (r.i_created && creatorWon) || (!r.i_created && !creatorWon);
+        if (iWon) h2hById[f].iWon++; else h2hById[f].iLost++;
+      }
+
+      const rows = friends.map(f => ({
+        id:           f.id,
+        name:         f.name,
+        avatar:       f.avatar,
+        avatar_url:   f.avatar_url,
+        color_key:    f.color_key,
+        trophyPoints: trophyById[f.id] || 0,
+        wins:         winsById[f.id] || 0,
+        h2hWon:       h2hById[f.id]?.iWon  || 0,
+        h2hLost:      h2hById[f.id]?.iLost || 0,
+        h2hTotal:     h2hById[f.id]?.total || 0,
+      })).sort((a, b) => b.trophyPoints - a.trophyPoints || b.wins - a.wins);
+
+      res.json({ rows });
+    } catch (e) {
+      console.error('[friends:leaderboard]', e);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // GET /api/friends/:userId/profile — full public profile of a friend:
+  // their unlocked achievements, computed progress, vs-me h2h stats, and
+  // basic profile fields. Refuses if not actually friends (privacy).
+  router.get('/:userId/profile', async (req, res) => {
+    try {
+      const me = req.userId;
+      const them = req.params.userId;
+      if (!them || them === me) return res.status(400).json({ error: 'invalid_user' });
+      const [a, b] = canon(me, them);
+      const { rows: f } = await db.query(
+        'SELECT 1 FROM friendships WHERE user_id_a=$1 AND user_id_b=$2',
+        [a, b]
+      );
+      if (!f.length) return res.status(403).json({ error: 'not_friends' });
+
+      const { rows: userRows } = await db.query(
+        'SELECT id, name, avatar, avatar_url, color_key FROM users WHERE id=$1',
+        [them]
+      );
+      const profile = userRows[0];
+      if (!profile) return res.status(404).json({ error: 'not_found' });
+
+      const [unlocked, progress] = await Promise.all([
+        listForUser(them),
+        computeProgressFor(them),
+      ]);
+
+      // Joint stats vs me
+      const { rows: jointRows } = await db.query(
+        `SELECT
+           creator, opponent, status,
+           (creator = $1) AS i_created
+         FROM bets
+         WHERE status IN ('won','lost')
+           AND ((creator = $1 AND opponent = $2)
+             OR (creator = $2 AND opponent = $1))`,
+        [me, them]
+      );
+      let iWon = 0, iLost = 0;
+      for (const r of jointRows) {
+        const creatorWon = r.status === 'won';
+        if ((r.i_created && creatorWon) || (!r.i_created && !creatorWon)) iWon++;
+        else iLost++;
+      }
+
+      // Total stakes ever moved between us (sum of stake on shared bets)
+      const { rows: stakeRows } = await db.query(
+        `SELECT COALESCE(SUM(stake), 0)::int AS total
+         FROM bets
+         WHERE (creator = $1 AND opponent = $2) OR (creator = $2 AND opponent = $1)`,
+        [me, them]
+      );
+
+      // Best bet between us — highest single-win delta on either side
+      const { rows: bestRows } = await db.query(
+        `SELECT title, stake, potential_win, creator, status
+         FROM bets
+         WHERE status = 'won'
+           AND ((creator = $1 AND opponent = $2) OR (creator = $2 AND opponent = $1))
+         ORDER BY (potential_win - stake) DESC
+         LIMIT 1`,
+        [me, them]
+      );
+      const trophyPoints = unlocked.reduce((s, u) => s + (u.level || 0), 0);
+
+      res.json({
+        profile,
+        catalog: CATALOG,
+        unlocked,
+        progress,
+        trophyPoints,
+        vsMe: {
+          iWon, iLost,
+          total: iWon + iLost,
+          totalStake: stakeRows[0]?.total || 0,
+          bestBet: bestRows[0] || null,
+        },
+      });
+    } catch (e) {
+      console.error('[friends:profile]', e);
+      res.status(500).json({ error: 'server_error' });
+    }
   });
 
   return router;
