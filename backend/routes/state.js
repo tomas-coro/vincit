@@ -49,6 +49,18 @@ async function buildState(roomId, viewerId) {
   const { rows: betRows } = await db.query(
     'SELECT * FROM bets WHERE room_id=$1 ORDER BY created_at DESC', [roomId]
   );
+  // Comment counts per bet — cheap aggregated query so the BetCard can
+  // show "💬 N" without per-bet round-trips. Actual messages are still
+  // fetched on-demand when the user expands the thread.
+  const { rows: msgCountRows } = await db.query(
+    `SELECT bm.bet_id, COUNT(*)::int AS n
+     FROM bet_messages bm JOIN bets b ON b.id = bm.bet_id
+     WHERE b.room_id=$1
+     GROUP BY bm.bet_id`,
+    [roomId]
+  );
+  const messageCounts = {};
+  for (const r of msgCountRows) messageCounts[r.bet_id] = r.n;
   // Visibility filter:
   // - Vault (is_secret): only creator (the existing client-side handles this too)
   // - Surprise (is_surprise) while active/pending: only creator + opponent
@@ -93,6 +105,7 @@ async function buildState(roomId, viewerId) {
     pendingOutcome:   r.pending_outcome || null,
     pendingOutcomeBy: r.pending_outcome_by || null,
     pendingOutcomeAt: r.pending_outcome_at ?? null,
+    messageCount:     messageCounts[r.id] ?? 0,
   }));
 
   const { rows: catRows } = await db.query(

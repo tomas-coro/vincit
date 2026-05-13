@@ -36,14 +36,14 @@ router.post('/prefs', async (req, res) => {
     const user = req.userId;
     const {
       on_group_bet, on_challenged, on_targeted, on_resolved, on_expiry,
-      on_friend_request, on_friend_accept,
+      on_friend_request, on_friend_accept, on_bet_message,
     } = req.body;
     await db.query(`
-      INSERT INTO notification_prefs("user", on_group_bet, on_challenged, on_targeted, on_resolved, on_expiry, on_friend_request, on_friend_accept)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+      INSERT INTO notification_prefs("user", on_group_bet, on_challenged, on_targeted, on_resolved, on_expiry, on_friend_request, on_friend_accept, on_bet_message)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
       ON CONFLICT("user") DO UPDATE SET
         on_group_bet=$2, on_challenged=$3, on_targeted=$4, on_resolved=$5, on_expiry=$6,
-        on_friend_request=$7, on_friend_accept=$8
+        on_friend_request=$7, on_friend_accept=$8, on_bet_message=$9
     `, [user,
         on_group_bet      ?? true,
         on_challenged     ?? true,
@@ -52,6 +52,7 @@ router.post('/prefs', async (req, res) => {
         on_expiry         ?? true,
         on_friend_request ?? true,
         on_friend_accept  ?? true,
+        on_bet_message    ?? true,
     ]);
     res.json({ ok: true });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
@@ -70,6 +71,7 @@ router.get('/prefs/:user', async (req, res) => {
       on_expiry:         row.on_expiry         ?? true,
       on_friend_request: row.on_friend_request ?? true,
       on_friend_accept:  row.on_friend_accept  ?? true,
+      on_bet_message:    row.on_bet_message    ?? true,
     });
   } catch(e) { res.status(500).json({ error: 'Server error' }); }
 });

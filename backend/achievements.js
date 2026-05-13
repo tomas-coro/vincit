@@ -26,7 +26,7 @@ const CATALOG = [
   { id: 'night_owl',      icon: '🦉', category: 'mission',   levels: [3, 15, 40] },                // 3
   { id: 'early_bird',     icon: '🌅', category: 'mission',   levels: [3, 15, 40] },                // 3
   { id: 'marathon',       icon: '🏃', category: 'mission',   levels: [10, 20, 35] },               // 3
-  { id: 'commentator',    icon: '💬', category: 'mission',   levels: [5, 20, 50, 150] },           // 4
+  { id: 'commentator',    icon: '💬', category: 'mission',   levels: [5, 20, 50, 150, 400] },     // 5 — counts comments in the bet message thread
   { id: 'quick_resolve',  icon: '⏱️', category: 'mission',   levels: [3, 10, 25] },                // 3
   { id: 'comeback',       icon: '💪', category: 'mission',   levels: [3, 5, 8, 12] },              // 4
   { id: 'equilibrium',    icon: '☯',  category: 'mission',   levels: [10, 30, 80] },               // 3
@@ -38,8 +38,9 @@ const CATALOG = [
   { id: 'outsider_lost',  icon: '💔', category: 'shadow',    levels: [1, 3, 8] },                  // 3
 
   // ─── Social ────────────────────────────────────────────────────────
-  { id: 'flamed',         icon: '⭐', category: 'social',    levels: [3, 15, 40] },                // 3
-  { id: 'paparazzo',      icon: '📷', category: 'social',    levels: [3, 15, 40] },                // 3
+  { id: 'flamed',         icon: '⭐', category: 'social',    levels: [3, 15, 40, 100, 250] },     // 5
+  { id: 'paparazzo',      icon: '📷', category: 'social',    levels: [3, 15, 40, 100, 250] },     // 5
+  { id: 'reactor',        icon: '👋', category: 'social',    levels: [5, 25, 100, 250, 500] },    // 5 — reactions you've GIVEN (emoji + photo)
   { id: 'counter_winner', icon: '🥊', category: 'social',    levels: [3, 15, 40, 100] },           // 4
   { id: 'targeted',       icon: '🎯', category: 'social',    levels: [1, 5, 15, 40] },             // 4
   { id: 'multi_group',    icon: '🌐', category: 'social',    levels: [2, 4, 8] },                  // 3
@@ -194,7 +195,25 @@ async function computeProgressFor(userId) {
     return ra > 0 && ca > 0 && (ra - ca) <= 60 * 60 * 1000;
   }).length;
 
-  const commentsCount = resolved.filter(b => (b.comment || '').trim().length > 0).length;
+  // Commentator now counts messages the user has POSTED in the comment
+  // thread under any bet (the new bet_messages table). The old
+  // single-comment-on-resolve field is still respected for backward compat
+  // and added on top — old players don't lose progress.
+  const { rows: bmRows } = await db.query(
+    'SELECT COUNT(*)::int AS n FROM bet_messages WHERE author_id=$1',
+    [userId]
+  );
+  const threadMessagesCount = bmRows[0]?.n ?? 0;
+  const legacyResolveComments = resolved.filter(b => (b.comment || '').trim().length > 0).length;
+  const commentsCount = threadMessagesCount + legacyResolveComments;
+
+  // Reactor: total reactions GIVEN (emoji + photo) — independent count
+  // from photosSent (paparazzo) so both trophies progress together.
+  const { rows: rxGiven } = await db.query(
+    'SELECT COUNT(*)::int AS n FROM reactions WHERE bettor=$1',
+    [userId]
+  );
+  const reactionsGiven = rxGiven[0]?.n ?? 0;
 
   const { rows: targetRows } = await db.query(
     `SELECT COUNT(*)::int AS n FROM bets WHERE target_user=$1 AND status IN ('won','lost')`,
@@ -279,6 +298,7 @@ async function computeProgressFor(userId) {
     early_bird:     hourBuckets.morning,
     marathon:       bestDayCount,
     commentator:    commentsCount,
+    reactor:        reactionsGiven,
     quick_resolve:  quickResolveCount,
     comeback:       bestComeback,
     equilibrium:    Math.min(wins.length, losses.length),

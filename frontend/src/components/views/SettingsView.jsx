@@ -36,7 +36,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
   const [showTestResetConfirm, setShowTestResetConfirm] = useState(false);
   const [notifPrefs,setNotifPrefs]=useState({
     on_group_bet:true, on_challenged:true, on_targeted:true,
-    on_resolved:true, on_expiry:true,
+    on_resolved:true, on_expiry:true, on_bet_message:true,
   });
   const [membersOpen, setMembersOpen] = useState(false);
   const myProfile = profiles[user];
@@ -354,11 +354,12 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
       <SecLabel mt={16}>{t('settings.notif_title')}</SecLabel>
       <div style={{...S.card,marginBottom:12}}>
         {[
-          {key:'on_group_bet',  label:t('settings.notif_group_bet'),  desc:t('settings.notif_group_bet_desc')},
-          {key:'on_challenged', label:t('settings.notif_challenged'), desc:t('settings.notif_challenged_desc')},
-          {key:'on_targeted',   label:t('settings.notif_targeted'),   desc:t('settings.notif_targeted_desc')},
-          {key:'on_resolved',   label:t('settings.notif_resolved'),   desc:t('settings.notif_resolved_desc')},
-          {key:'on_expiry',     label:t('settings.notif_expiry'),     desc:t('settings.notif_expiry_desc')},
+          {key:'on_group_bet',   label:t('settings.notif_group_bet'),   desc:t('settings.notif_group_bet_desc')},
+          {key:'on_challenged',  label:t('settings.notif_challenged'),  desc:t('settings.notif_challenged_desc')},
+          {key:'on_targeted',    label:t('settings.notif_targeted'),    desc:t('settings.notif_targeted_desc')},
+          {key:'on_resolved',    label:t('settings.notif_resolved'),    desc:t('settings.notif_resolved_desc')},
+          {key:'on_expiry',      label:t('settings.notif_expiry'),      desc:t('settings.notif_expiry_desc')},
+          {key:'on_bet_message', label:t('settings.notif_bet_message'), desc:t('settings.notif_bet_message_desc')},
         ].map(({key,label,desc},i,arr)=>(
           <div key={key} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:i<arr.length-1?'1px solid var(--brd)':'none',gap:10}}>
             <div style={{flex:1,minWidth:0}}>

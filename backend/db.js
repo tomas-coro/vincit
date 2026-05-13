@@ -412,6 +412,29 @@ const pool = new Pool({
     CREATE INDEX IF NOT EXISTS idx_reactions_bet_id ON reactions(bet_id);
   `);
 
+  // Comment thread under each bet — Twitter-style replies. Anyone in the
+  // bet's room can post. Author can delete their own. Cascades on bet
+  // deletion.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS bet_messages (
+      id          TEXT PRIMARY KEY,
+      bet_id      TEXT NOT NULL REFERENCES bets(id) ON DELETE CASCADE,
+      author_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body        TEXT NOT NULL,
+      created_at  BIGINT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_bet_messages_bet ON bet_messages(bet_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_bet_messages_author ON bet_messages(author_id);
+  `);
+
+  // Push pref for new comments under bets the user has interacted with
+  // (created, opponent, target, counter-bet). Default true so people
+  // discover the feature.
+  await pool.query(`
+    ALTER TABLE notification_prefs
+      ADD COLUMN IF NOT EXISTS on_bet_message BOOLEAN DEFAULT true;
+  `);
+
   await pool.query(`
     INSERT INTO profiles ("user", name, avatar, color_key)
       VALUES ('tomas',  'Tomas',  '🃏', 'blue'),

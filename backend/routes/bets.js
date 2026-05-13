@@ -755,5 +755,134 @@ module.exports = function(broadcastUpdate) {
     } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
   });
 
+  // ─── Comment thread under a bet ────────────────────────────────────
+  // Anyone in the bet's room can read & post. Author can delete their own.
+  // On post, push a notification to every other participant who opted in.
+
+  // List all messages for a bet (chronological).
+  router.get('/:id/messages', async (req, res) => {
+    try {
+      const { rows: betRows } = await db.query(
+        'SELECT room_id FROM bets WHERE id=$1', [req.params.id]
+      );
+      const bet = betRows[0];
+      if (!bet) return res.status(404).json({ error: 'Not found' });
+      if (bet.room_id !== req.activeRoomId) return res.status(403).json({ error: 'Forbidden' });
+
+      const { rows } = await db.query(
+        `SELECT m.id, m.bet_id, m.author_id, m.body, m.created_at,
+                u.name AS author_name, u.avatar AS author_avatar, u.color_key AS author_color
+         FROM bet_messages m
+         JOIN users u ON u.id = m.author_id
+         WHERE m.bet_id=$1
+         ORDER BY m.created_at ASC`,
+        [req.params.id]
+      );
+      res.json({ messages: rows });
+    } catch (e) {
+      console.error('[bet_messages list]', e);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // Post a new message. body must be a non-empty trimmed string ≤ 500 chars.
+  router.post('/:id/messages', async (req, res) => {
+    try {
+      const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
+      if (!body) return res.status(400).json({ error: 'empty_body' });
+      if (body.length > 500) return res.status(400).json({ error: 'body_too_long' });
+
+      const { rows: betRows } = await db.query(
+        'SELECT id, room_id, creator, opponent, target_user, title FROM bets WHERE id=$1',
+        [req.params.id]
+      );
+      const bet = betRows[0];
+      if (!bet) return res.status(404).json({ error: 'Not found' });
+      if (bet.room_id !== req.activeRoomId) return res.status(403).json({ error: 'Forbidden' });
+
+      const id = `bm_${crypto.randomUUID()}`;
+      const createdAt = Date.now();
+
+      await db.query(
+        `INSERT INTO bet_messages(id, bet_id, author_id, body, created_at)
+         VALUES($1,$2,$3,$4,$5)`,
+        [id, req.params.id, req.userId, body, createdAt]
+      );
+
+      // Refresh the author's commentator trophy.
+      refreshAchievements(req.userId).catch(() => {});
+
+      // Notify other participants: creator, opponent, target_user, and
+      // every counter-bettor — except the author and dedup'd.
+      try {
+        const recipients = new Set();
+        if (bet.creator     && bet.creator     !== req.userId) recipients.add(bet.creator);
+        if (bet.opponent    && bet.opponent    !== req.userId) recipients.add(bet.opponent);
+        if (bet.target_user && bet.target_user !== req.userId) recipients.add(bet.target_user);
+        const { rows: cbs } = await db.query(
+          'SELECT DISTINCT bettor FROM counter_bets WHERE bet_id=$1',
+          [bet.id]
+        );
+        for (const r of cbs) if (r.bettor !== req.userId) recipients.add(r.bettor);
+
+        const { rows: authorRows } = await db.query(
+          'SELECT name FROM users WHERE id=$1', [req.userId]
+        );
+        const authorName = authorRows[0]?.name || 'Qualcuno';
+
+        for (const u of recipients) {
+          if (await isPrefEnabled(u, 'on_bet_message')) {
+            sendPushToUser(u, {
+              title: `💬 ${authorName} ha commentato`,
+              body:  body.length > 60 ? body.slice(0, 57) + '…' : body,
+              url:   '/',
+            });
+          }
+        }
+      } catch (e) { console.error('[bet_messages notify]', e); }
+
+      broadcastUpdate(req.activeRoomId);
+
+      // Return the freshly-created row joined with the author info so the
+      // client can append it optimistically without a re-fetch.
+      const { rows: created } = await db.query(
+        `SELECT m.id, m.bet_id, m.author_id, m.body, m.created_at,
+                u.name AS author_name, u.avatar AS author_avatar, u.color_key AS author_color
+         FROM bet_messages m
+         JOIN users u ON u.id = m.author_id
+         WHERE m.id=$1`,
+        [id]
+      );
+      res.json({ message: created[0] });
+    } catch (e) {
+      console.error('[bet_messages post]', e);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // Delete a message — only the original author can. Cascade is automatic
+  // on bet delete via the FK, so no need to handle that here.
+  router.delete('/:id/messages/:msgId', async (req, res) => {
+    try {
+      const { rows: msgRows } = await db.query(
+        `SELECT m.id, m.author_id, b.room_id
+         FROM bet_messages m JOIN bets b ON b.id = m.bet_id
+         WHERE m.id=$1 AND m.bet_id=$2`,
+        [req.params.msgId, req.params.id]
+      );
+      const msg = msgRows[0];
+      if (!msg) return res.status(404).json({ error: 'Not found' });
+      if (msg.room_id !== req.activeRoomId) return res.status(403).json({ error: 'Forbidden' });
+      if (msg.author_id !== req.userId) return res.status(403).json({ error: 'Not the author' });
+
+      await db.query('DELETE FROM bet_messages WHERE id=$1', [req.params.msgId]);
+      broadcastUpdate(req.activeRoomId);
+      res.json({ ok: true });
+    } catch (e) {
+      console.error('[bet_messages delete]', e);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
   return router;
 };

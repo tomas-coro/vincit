@@ -3,6 +3,7 @@ import { Btn, Bdg, Avatar, fmtQ, fmtD, tLeft, isSoon, qNo, COLORS, DEF_CAT_IDS a
 import { useLang } from '../i18n.js';
 import CameraModal from './modals/CameraModal.jsx';
 import SubsetEditModal from './modals/SubsetEditModal.jsx';
+import CommentThread from './CommentThread.jsx';
 
 const S = {
   card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
@@ -440,6 +441,17 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             <div style={{fontSize:9,color:'var(--mut)',textAlign:'center',marginTop:6,letterSpacing:1}}>
               ← {t('bet_card.swipe_resolve')} →
             </div>
+          )}
+
+          {/* Comment thread — Twitter-style replies. Anyone in the room
+              can read/post; hidden on vault bets (private). */}
+          {!bet.isSecret && user && (
+            <CommentThread
+              betId={bet.id}
+              user={user}
+              profiles={profiles}
+              initialCount={bet.messageCount ?? 0}
+            />
           )}
 
           {/* Actions row: mobile only */}
