@@ -321,12 +321,11 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     if (isMagicTitle(title)) {
       setSlotInstance(n => n + 1);
       setJackpotPhase('spinning');
-      // Idempotent: server returns alreadyUnlocked:true on repeats. We
-      // chain onEggUnlock so the trophy poller fires immediately and the
-      // popup overlay shows even if the trophy was already in the
-      // collection from a previous session.
+      // Server returns { ok, alreadyUnlocked }. Only fire the popup on a
+      // genuine first-time unlock — repeat 777 titles still trigger the
+      // slot animation but don't re-pop the trophy banner.
       api.unlockSecretAchievement('egg_jackpot')
-        .then(() => onEggUnlock?.('egg_jackpot'))
+        .then(r => { if (!r?.alreadyUnlocked) onEggUnlock?.('egg_jackpot'); })
         .catch(e => console.error('[egg_jackpot] unlock failed', e));
       // Phase transition timers — kept in a ref so user-skip can clear them.
       jackpotTimersRef.current.push(setTimeout(() => setJackpotPhase('celebrating'), 3700));

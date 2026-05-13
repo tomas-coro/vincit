@@ -259,8 +259,8 @@ const TRANSLATIONS = {
       half_marathon:'Mezza maratona',   half_marathon_desc:'Vinto una bet con stake ≥ 200 ₡',
       // Secret easter-egg trophies — placeholder label shown when other
       // secrets are still locked; full label revealed only on unlock.
-      egg_dice:'Tutti i lati del dado', egg_dice_desc:'Hai tirato il dado e visto tutte e sei le facce',
-      egg_coin:'Testa o croce',         egg_coin_desc:'Hai lanciato la prima moneta dal simbolo crediti',
+      egg_dice:'Tira il dado',          egg_dice_desc:'Hai lanciato il dado per la prima volta',
+      egg_coin:'Testa o croce',         egg_coin_desc:'Hai lanciato la moneta per la prima volta',
       egg_jackpot:'Jackpot',            egg_jackpot_desc:'Hai creato una bet col titolo magico',
       secret_locked:'???',              secret_locked_desc:'Trofeo segreto · ancora da scoprire',
       secret_category:'Segreti',
@@ -687,8 +687,8 @@ const TRANSLATIONS = {
       social_butterfly:'Butterfly',      social_butterfly_desc:'5 different people counter-bet your bets',
       loaded:'Vault stuffed',            loaded_desc:'Balance ≥ 1000 ₡ at a single moment',
       half_marathon:'Half marathon',     half_marathon_desc:'Won a bet with stake ≥ 200 ₡',
-      egg_dice:'All six faces',          egg_dice_desc:"You rolled the die and saw all six numbers",
-      egg_coin:'Heads or tails',         egg_coin_desc:'You flipped the first coin from the credits symbol',
+      egg_dice:'Roll the die',           egg_dice_desc:'You rolled the die for the first time',
+      egg_coin:'Heads or tails',         egg_coin_desc:'You flipped the coin for the first time',
       egg_jackpot:'Jackpot',             egg_jackpot_desc:'You created a bet with the magic title',
       secret_locked:'???',               secret_locked_desc:'Secret trophy · still to discover',
       secret_category:'Secrets',

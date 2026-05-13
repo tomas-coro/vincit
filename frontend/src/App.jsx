@@ -207,8 +207,11 @@ function DieRollOverlay({ open, onClose, onEggUnlock }) {
       // unlock fired on a previous device (and is therefore already in
       // the DB but not yet in this client's baseline).
       try { localStorage.setItem(DIE_LS_KEY, '1'); } catch {}
+      // Gate the popup on the server response: alreadyUnlocked=true means
+      // the trophy was earned previously, so suppress the banner. The
+      // server is the single source of truth — local LS keys aren't.
       api.unlockSecretAchievement('egg_dice')
-        .then(() => onEggUnlockRef.current?.('egg_dice'))
+        .then(r => { if (!r?.alreadyUnlocked) onEggUnlockRef.current?.('egg_dice'); })
         .catch(e => console.error('[egg_dice] unlock failed', e));
     }, 1300);
     const tClose = setTimeout(() => onCloseRef.current?.(), 4500);
@@ -276,8 +279,9 @@ function CoinFlipOverlay({ open, onClose, onEggUnlock }) {
     // the trophy was never actually recorded server-side (DB reset,
     // network hiccup, etc).
     try { localStorage.setItem(COIN_LS_KEY, '1'); } catch {}
+    // Gate the popup on server response — see egg_dice comment above.
     api.unlockSecretAchievement('egg_coin')
-      .then(() => onEggUnlockRef.current?.('egg_coin'))
+      .then(r => { if (!r?.alreadyUnlocked) onEggUnlockRef.current?.('egg_coin'); })
       .catch(e => console.error('[egg_coin] unlock failed', e));
     const t2 = setTimeout(() => onCloseRef.current?.(), 5000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
