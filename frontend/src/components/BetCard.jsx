@@ -61,16 +61,16 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
     return () => clearInterval(id);
   }, [isOwner, done, createdAtMs]);
 
-  // Owner cancel rules:
-  //   - Pending (waiting for opponent): always cancellable — no one else
-  //     has committed credits yet, so cancel-anytime is safe.
+  // Owner cancel/edit rules:
+  //   - Pending (waiting for opponent): always allowed — no one else
+  //     has committed credits yet, so changes/cancel are safe.
   //   - Active (already accepted): 60s window. Past that, moderator only.
-  //   Moderators (co-admin with moderate_bets, group owner) can always cancel.
+  //   Moderators (co-admin with moderate_bets, group owner) can always.
   const msLeft       = Math.max(0, createdAtMs + CANCEL_MS - nowTs);
   const withinWindow = msLeft > 0;
-  const ownerCanCancel = isOwner && (isPending || withinWindow);
-  const canCancel    = !done && !!onDelete && (ownerCanCancel || canModerate);
-  const canEditBet   = !done && !!onEdit   && ((isOwner && withinWindow) || canModerate);
+  const ownerCanMutate = isOwner && (isPending || withinWindow);
+  const canCancel    = !done && !!onDelete && (ownerCanMutate || canModerate);
+  const canEditBet   = !done && !!onEdit   && (ownerCanMutate || canModerate);
   const secsLeft     = Math.ceil(msLeft / 1000);
   const mm           = Math.floor(secsLeft / 60);
   const ss           = secsLeft % 60;
@@ -127,14 +127,16 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
     };
   }, [isDesktop, isOwner, done, isPending, hasProposal, isDisputed, onResolve, bet]);
 
-  const actions=isOwner&&!done&&!isPending&&(
+  // Owner-side action row. Includes resolve/reveal (active bets only)
+  // plus edit + cancel (allowed on pending too, per ownerCanMutate above).
+  const actions=isOwner&&!done&&(
     <div style={{display:"flex",gap:8,...(isDesktop?{flexDirection:"column",alignItems:"stretch",flexShrink:0,justifyContent:"center"}:{})}}>
-      {bet.isSecret
+      {!isPending && (bet.isSecret
         ?<Btn variant="gold" sm style={isDesktop?{}:{flex:1}} onClick={()=>onReveal(bet)}>{t('bet_card.reveal')}</Btn>
         :(!hasProposal&&!isDisputed)
           ?<Btn variant="grn" sm style={isDesktop?{}:{flex:1}} onClick={()=>onResolve(bet)}>{hasOpponent?t('bet_card.propose_resolve'):t('bet_card.declare')}</Btn>
           :null
-      }
+      )}
       <button onClick={()=>onFlame(bet.id)} style={{...S.btn,padding:"7px 10px",background:"transparent",border:"1px solid var(--brd)",color:bet.flamed?"#f97316":"var(--dim)",fontSize:12}}>{bet.flamed?"🔥":"🤍"}</button>
       {canEditBet&&(
         <button onClick={()=>onEdit(bet)} style={{...S.btn,padding:"7px 10px",background:"transparent",border:"1px solid var(--gold)44",color:"var(--gold)",fontSize:11}}>✏️ {t('bet_card.edit_btn')}{!isOwner && canModerate ? ' 🛡' : ''}</button>
@@ -142,13 +144,13 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
       {canCancel&&(
         <button onClick={()=>{if(window.confirm(t('bet_card.cancel_confirm')))onDelete(bet);}} style={{
           ...S.btn,padding:"7px 10px",background:"transparent",
-          border:`1px solid ${isUrgent && isOwner && withinWindow ? 'var(--red)' : 'var(--red)44'}`,
-          color: isUrgent && isOwner && withinWindow ? 'var(--red)' : 'var(--red)',
+          border:`1px solid ${isUrgent && isOwner && withinWindow && !isPending ? 'var(--red)' : 'var(--red)44'}`,
+          color: isUrgent && isOwner && withinWindow && !isPending ? 'var(--red)' : 'var(--red)',
           fontSize:11,
           fontVariantNumeric: 'tabular-nums',
         }}>
           ✕ {t('bet_card.cancel_btn')}
-          {isOwner && withinWindow && (
+          {isOwner && withinWindow && !isPending && (
             <span style={{
               marginLeft:5,
               fontWeight:700,
