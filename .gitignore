@@ -11,5 +11,10 @@ frontend/.env
 *.db-shm
 *.db-wal
 Screenshot*.png
+Screenshot*.jpg
+Screenshot*.jpeg
+WhatsApp*.jpg
+WhatsApp*.jpeg
+WhatsApp*.png
 *.tmp
 
