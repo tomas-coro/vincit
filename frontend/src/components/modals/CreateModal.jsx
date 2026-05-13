@@ -3,6 +3,7 @@ import { Btn, Inp, Toggle, SecLabel, Q_PRE, qToP, pToQ, fmtQ, clamp, DEF_CAT_IDS
 import { useLang } from '../../i18n.js';
 import { useToast } from '../../Toast.jsx';
 import * as api from '../../api.js';
+import CreateModalCoachmarks from './CreateModalCoachmarks.jsx';
 
 // Editorial re-skin: labels become tracked uppercase micro-meta, inputs lose
 // their box for underline-only, "btn" chips become tracked-pill outlines,
@@ -18,23 +19,6 @@ const S = {
 const qNo = qY=>parseFloat((parseFloat(qY)/(parseFloat(qY)-1)).toFixed(2));
 
 const Bdg = ({c,bg,children}) => <span style={{...S.bdg,background:bg,color:c}}>{children}</span>;
-
-// Inline novice hint — italic Cormorant in a muted tone with a hairline
-// gold rule on the left, so it reads as an editorial aside rather than a
-// boxed tooltip. Used under STAKE / WIN / OPPONENT blocks for users who
-// aren't familiar with the world of betting. Easy to scan past once
-// you've learned the basics.
-const Hint = ({children, color='var(--mut)'}) => (
-  <div style={{
-    fontSize: 12, color,
-    fontFamily: "'Cormorant Garamond', serif",
-    fontStyle: 'italic',
-    lineHeight: 1.45,
-    marginTop: 10,
-    paddingLeft: 12,
-    borderLeft: '2px solid var(--gold)55',
-  }}>{children}</div>
-);
 
 function useBreakpoint(minWidth = 768) {
   const [matches, setMatches] = useState(() =>
@@ -190,7 +174,12 @@ function SlotReel({ symbols, cellW, itemH, fontPx, reelLen, durationMs }) {
   );
 }
 
-export default function CreateModal({user,profiles,groupMembers,maxC,cats,settings={},onCreate,onClose,onEggUnlock}){
+export default function CreateModal({user,profiles,groupMembers,maxC,cats,settings={},onCreate,onClose,onEggUnlock,noviceMode=false}){
+  // Coachmark-sequence state. Auto-opens when the modal is launched from
+  // the onboarding tour (noviceMode prop). Always re-openable from the
+  // "?" button in the header for users who skipped it or forgot.
+  const [coachOpen, setCoachOpen] = useState(noviceMode);
+  const scrollAreaRef = useRef(null);
   const { t } = useLang();
   const toast = useToast();
   const isDesktop = useBreakpoint(768);
@@ -429,7 +418,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   // = bold + colored underline. The description sits as italic Cormorant
   // pull-quote below the row, updating live with selection.
   const TypeBlock = (
-    <div style={{ marginBottom: 24 }}>
+    <div data-coach="type" style={{ marginBottom: 24 }}>
       <label style={S.lbl}>{t('create.type_label')}</label>
       <div style={{ display:'flex', flexWrap:'wrap', gap:'clamp(14px, 4vw, 28px)', borderBottom:'1px solid var(--rule)', paddingBottom:8, marginBottom:14 }}>
         {TYPE_OPTIONS.map(o => {
@@ -477,32 +466,10 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     </div>
   );
 
-  // Top intro — one-line plain-language explainer for users who land in
-  // the modal without knowing what a "bet" actually is. Lives above the
-  // first interactive block so it sets context before any decision.
-  const IntroBlock = (
-    <div style={{
-      marginBottom: 20,
-      padding: '14px 16px',
-      background: 'var(--gold)0d',
-      border: '1px solid var(--gold)33',
-      borderRadius: 8,
-    }}>
-      <div style={{
-        fontFamily: "'Cormorant Garamond', serif",
-        fontStyle: 'italic',
-        fontSize: 15,
-        lineHeight: 1.45,
-        color: 'var(--txt)',
-      }}>{t('create.hint_intro')}</div>
-    </div>
-  );
-
   const OpponentBlock = needsOpponent && others.length > 0 && (
-    <div style={{ marginBottom: 24 }}>
+    <div data-coach="opponent" style={{ marginBottom: 24 }}>
       <label style={S.lbl}>{t('create.opponent_label')}</label>
-      <Hint>{t('create.hint_opponent')}</Hint>
-      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop: 10 }}>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
         {others.map(m => {
           const active = opponentId === m.id;
           return (
@@ -637,7 +604,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   // Auto-grows with content. Quote marks render around in absolute so
   // they don't interfere with the caret.
   const TitleBlock = (
-    <div style={{position:'relative', margin:'4px 0 32px', paddingLeft: isDesktop ? 18 : 14}}>
+    <div data-coach="title" style={{position:'relative', margin:'4px 0 32px', paddingLeft: isDesktop ? 18 : 14}}>
       <span aria-hidden style={{
         position:'absolute', top:-4, left:-2,
         fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
@@ -682,16 +649,13 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   const actualRatio = stake > 0 ? potWin / stake : 1;
   const netGain = potWin - stake;
   const WinBlock = (
-    <div style={{marginBottom:24}}>
+    <div data-coach="win" style={{marginBottom:24}}>
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:14}}>
         <label style={{...S.lbl, marginBottom:0}}>{t('create.win_label')}</label>
         <span className="bc-meta" style={{fontSize:8}}>
           {netGain >= 0 ? '+' : ''}{netGain}<span style={{fontSize:10, marginLeft:2}}>₡</span>
           <span style={{marginLeft:6, opacity:.6}}>{t('create.net')}</span>
         </span>
-      </div>
-      <div style={{marginBottom:14}}>
-        <Hint color="var(--grn)">{t('create.hint_win')}</Hint>
       </div>
 
       {/* Hero win number */}
@@ -736,13 +700,10 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   // Stake — same editorial language as Quota: hero numeral, underline-pill
   // presets, summary line as hairline-separated columns (no card box).
   const StakeBlock = (
-    <div style={{marginBottom:24}}>
+    <div data-coach="stake" style={{marginBottom:24}}>
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:14}}>
         <label style={{...S.lbl, marginBottom:0}}>{t('create.stake_label')}</label>
         <span className="bc-meta" style={{fontSize:8}}>{t('create.stake_max')} <span style={{fontFamily:"'Playfair Display',serif", fontSize:14, letterSpacing:'-0.02em', color:'var(--gold)', marginLeft:3}}>{Math.round(maxStake)}₡</span></span>
-      </div>
-      <div style={{marginBottom:14}}>
-        <Hint color="var(--gold)">{t('create.hint_stake')}</Hint>
       </div>
 
       {/* Hero stake number */}
@@ -947,12 +908,24 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
               <div className="bc-meta" style={{marginBottom:8}}>— Nuovo bet</div>
               <div style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:"italic",fontSize:30,fontWeight:600,lineHeight:1,color:"var(--txt)"}}>{t('create.title')}</div>
             </div>
-            <button onClick={onClose} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--dim)",fontSize:18,padding:4}}>✕</button>
+            <div style={{display:'flex', alignItems:'center', gap:6}}>
+              {/* Always-available coachmark trigger — for users who skipped
+                  the tutorial or forgot how something works. */}
+              <button onClick={() => setCoachOpen(true)} title={t('coach.help_tooltip')}
+                style={{
+                  width: 30, height: 30, borderRadius: '50%',
+                  background: 'transparent', border: '1px solid var(--gold)66',
+                  cursor: 'pointer', color: 'var(--gold)',
+                  fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: 0, lineHeight: 1,
+                }}>?</button>
+              <button onClick={onClose} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--dim)",fontSize:18,padding:4}}>✕</button>
+            </div>
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 360px",flex:1,minHeight:0}}>
-            <div style={{padding:"22px 24px",overflowY:"auto"}}>
-              {IntroBlock}
+            <div ref={scrollAreaRef} style={{padding:"22px 24px",overflowY:"auto"}}>
               {TemplatesBlock}
               {TypeBlock}
               {OpponentBlock}
@@ -998,9 +971,11 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
             {SaveAsTemplateBtn}
             <div style={{display:'flex',gap:10}}>
               <Btn variant="ghost" onClick={onClose}>{t('reveal.cancel')}</Btn>
-              <Btn variant="gold" onClick={submit} style={{padding:"12px 24px",fontSize:14}}>
-                {isSecret?t('create.submit_secret'):t('create.submit_shared')}
-              </Btn>
+              <span data-coach="submit">
+                <Btn variant="gold" onClick={submit} style={{padding:"12px 24px",fontSize:14}}>
+                  {isSecret?t('create.submit_secret'):t('create.submit_shared')}
+                </Btn>
+              </span>
             </div>
           </div>
 
@@ -1013,6 +988,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
           )}
         </div>
       </div>
+      <CreateModalCoachmarks open={coachOpen} onClose={() => setCoachOpen(false)}/>
     </>);
   }
 
@@ -1026,10 +1002,22 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
             <div className="bc-meta" style={{marginBottom:8}}>— Nuovo bet</div>
             <div style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:"italic",fontSize:28,fontWeight:600,lineHeight:1,color:"var(--txt)"}}>{t('create.title')}</div>
           </div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--dim)",fontSize:18,padding:4}}>✕</button>
+          <div style={{display:'flex', alignItems:'center', gap:6}}>
+            {/* Coachmark trigger — same as desktop */}
+            <button onClick={() => setCoachOpen(true)} title={t('coach.help_tooltip')}
+              style={{
+                width: 30, height: 30, borderRadius: '50%',
+                background: 'transparent', border: '1px solid var(--gold)66',
+                cursor: 'pointer', color: 'var(--gold)',
+                fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: 0, lineHeight: 1,
+                WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+              }}>?</button>
+            <button onClick={onClose} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--dim)",fontSize:18,padding:4}}>✕</button>
+          </div>
         </div>
 
-        {IntroBlock}
         {TemplatesBlock}
         {TypeBlock}
         {OpponentBlock}
@@ -1042,7 +1030,9 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         {PegnoBlock}
         {ExpiryBlock}
 
-        <Btn variant="gold" full onClick={submit}>{isSecret?t('create.submit_secret'):t('create.submit_shared')}</Btn>
+        <span data-coach="submit" style={{display:'block'}}>
+          <Btn variant="gold" full onClick={submit}>{isSecret?t('create.submit_secret'):t('create.submit_shared')}</Btn>
+        </span>
         <div style={{textAlign:'center'}}>{SaveAsTemplateBtn}</div>
 
         {showSaveDialog && (
@@ -1054,6 +1044,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         )}
       </div>
     </div>
+    <CreateModalCoachmarks open={coachOpen} onClose={() => setCoachOpen(false)}/>
   </>);
 }
 

@@ -1247,7 +1247,12 @@ export default function App() {
         // opening the modal (handled in the OnboardingTour onOpenCreate
         // callback below). Skips if the user finished the tour normally.
         if (tourPaused && !tourDone) setTourPaused(false);
-      }} onEggUnlock={onEggFired} />}
+      }} onEggUnlock={onEggFired}
+        // noviceMode auto-opens the coachmark sequence inside CreateModal.
+        // True when the modal was launched from the onboarding tour demo CTA,
+        // so first-timers get the walkthrough without having to click "?".
+        noviceMode={tourPaused && !tourDone}
+      />}
       {revealBet      && <RevealModal bet={revealBet} cats={cats} onResolve={handleResolve} onClose={() => setRevealBet(null)} />}
       {resolveBet     && <ResolveModal bet={resolveBet} cats={cats} profiles={profiles} onResolve={handleResolve} onClose={() => setResolveBet(null)} />}
       {counterTarget  && <CounterModal bet={counterTarget} user={user} profiles={profiles} credits={credits} cats={cats} onPlace={handleCounter} onClose={() => setCounterTarget(null)} />}
