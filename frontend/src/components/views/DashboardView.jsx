@@ -363,6 +363,94 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
     setStreakTapCount(next);
     streakTapTimerRef.current = setTimeout(() => setStreakTapCount(0), 1800);
   };
+
+  // Shared streak-pill renderer — used by BOTH desktop spine and mobile
+  // spine so the two surfaces stay in lockstep. `size` switches between
+  // "lg" (desktop) and "md" (mobile) for the typography + W/L badge size.
+  const renderStreakPill = (size = 'md') => {
+    if (fireLevel < 1) return null;
+    const isWin = fireKind === 'win';
+    const isHot = isWin && fireLevel >= 5;
+    const accent = isWin ? (isHot ? 'var(--red)' : 'var(--gold)') : 'var(--blu)';
+    const big = size === 'lg';
+    return (
+      <div
+        onClick={handleStreakTap}
+        style={{
+          position:'relative',
+          display:'flex', flexDirection:'column', alignItems:'center',
+          gap: big ? 6 : 4,
+          padding: big ? '14px 18px 14px 18px' : '10px 14px 12px 14px',
+          background: `${accent}1f`,
+          border: `1px solid ${accent}55`,
+          borderRadius: big ? 20 : 18,
+          minWidth: big ? 168 : 132,
+          cursor:'pointer', userSelect:'none',
+          WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
+          transition:'box-shadow .2s, transform .2s',
+          boxShadow: streakTapCount > 0 ? `0 0 0 2px ${accent}66` : 'none',
+        }}>
+        {/* Emoji — pulses on each tap */}
+        <span key={streakPulseKey} style={{
+          fontSize: big ? 36 : 28, lineHeight: 1,
+          display:'inline-block',
+          animation: streakPulseKey > 0 ? 'bcStreakTap .35s cubic-bezier(.3,1.6,.5,1) both' : 'none',
+        }}>
+          {isWin ? '🔥' : '❄️'}
+        </span>
+        {/* Number — editorial */}
+        <span className="bc-num" style={{
+          fontSize: big ? 38 : 28, color: accent, lineHeight: 1,
+        }}>{fireLevel}</span>
+        {/* Label — tracked uppercase */}
+        <span style={{
+          fontFamily:"'Manrope',sans-serif",
+          fontSize: big ? 9 : 8, letterSpacing:'.22em', fontWeight: 700,
+          color:'var(--dim)', textTransform:'uppercase',
+        }}>{t('dashboard_extra.streak_short')}</span>
+        {/* W/L "form guide" — bigger badges with letter inside, fills the
+            empty horizontal space below the label. Newest on the right with
+            a glow halo; older ones gradually fade their alpha. */}
+        {lastFive.length > 0 && (
+          <span style={{
+            display:'flex', gap: big ? 5 : 4, marginTop: big ? 8 : 6,
+          }}>
+            {lastFive.map((s, i) => {
+              const won = s === 'won';
+              const badgeBg = won ? 'var(--grn)' : 'var(--red)';
+              const isLatest = i === lastFive.length - 1;
+              const fade = lastFive.length === 1 ? 1
+                : 0.55 + (i / (lastFive.length - 1)) * 0.45;
+              const dim = big ? 28 : 22;
+              return (
+                <span key={i} style={{
+                  width: dim, height: dim, borderRadius: 6,
+                  background: badgeBg,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontFamily:"'Manrope',sans-serif",
+                  fontSize: big ? 13 : 11, fontWeight: 800,
+                  color:'#fff', letterSpacing: 0,
+                  opacity: fade,
+                  transform: isLatest ? 'scale(1.08)' : 'scale(1)',
+                  boxShadow: isLatest ? `0 0 10px ${badgeBg}cc, 0 2px 6px ${badgeBg}66` : 'none',
+                  border: `1px solid ${badgeBg}`,
+                }}>{t(won ? 'dashboard_extra.trail_won' : 'dashboard_extra.trail_lost')}</span>
+              );
+            })}
+          </span>
+        )}
+        {/* Tap counter — small "n/3" badge top-right while tapping */}
+        {streakTapCount > 0 && (
+          <span style={{
+            position:'absolute', top: 6, right: 8,
+            fontSize: 9, color: accent, fontWeight: 800,
+            fontFamily:"'Manrope',sans-serif",
+            letterSpacing:'.1em',
+          }}>{streakTapCount}/3</span>
+        )}
+      </div>
+    );
+  };
   // Broken-grid hero — name escapes its grid cell, credit balance floats
   // diagonally below to the right with a deliberate stagger, KPI strip below
   // skews each cell vertically so it never reads as a clean grid.
@@ -407,49 +495,7 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
             alignItems:'flex-end', textAlign:'right',
             pointerEvents:'auto',
           }}>
-            {fireLevel > 0 && (
-              <div
-                onClick={handleStreakTap}
-                style={{
-                  position:'relative',
-                  display:'flex', alignItems:'baseline', gap: 8,
-                  cursor:'pointer', userSelect:'none',
-                  WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
-                  padding:'4px 8px', margin:'-4px -8px', borderRadius:10,
-                  boxShadow: streakTapCount > 0
-                    ? `0 0 0 2px ${fireKind === 'win' ? 'var(--gold)' : 'var(--blu)'}66`
-                    : 'none',
-                  transition:'box-shadow .2s',
-                }}>
-                <span key={streakPulseKey} style={{
-                  fontSize: 28, lineHeight: 1,
-                  display: 'inline-block',
-                  animation: streakPulseKey > 0 ? 'bcStreakTap .35s cubic-bezier(.3,1.6,.5,1) both' : 'none',
-                }}>
-                  {fireKind === 'win' ? '🔥' : '❄️'}
-                </span>
-                <div>
-                  <div className="bc-num" style={{
-                    fontSize: 'clamp(28px, 3.4vw, 44px)',
-                    color: fireKind === 'win'
-                      ? (fireLevel >= 5 ? 'var(--red)' : 'var(--gold)')
-                      : 'var(--blu)',
-                    lineHeight: 1,
-                  }}>{fireLevel}</div>
-                  <div className="bc-meta" style={{marginTop: 4, fontSize: 7}}>
-                    {fireKind === 'win' ? t('dashboard.streak') : 'STREAK NEG.'}
-                  </div>
-                </div>
-                {streakTapCount > 0 && (
-                  <span style={{
-                    position:'absolute', top: -2, right: -2,
-                    fontSize: 8, fontWeight: 800,
-                    fontFamily:"'Manrope',sans-serif", letterSpacing:'.1em',
-                    color: fireKind === 'win' ? 'var(--gold)' : 'var(--blu)',
-                  }}>{streakTapCount}/3</span>
-                )}
-              </div>
-            )}
+            {renderStreakPill('lg')}
 
             {todayCount > 0 && (
               <div>
@@ -503,78 +549,7 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
             marginBottom: 6,
             opacity: .95,
           }}>
-            {fireLevel > 0 && (() => {
-              const isWin = fireKind === 'win';
-              const isHot = isWin && fireLevel >= 5;
-              const accent = isWin ? (isHot ? 'var(--red)' : 'var(--gold)') : 'var(--blu)';
-              return (
-                <div
-                  onClick={handleStreakTap}
-                  style={{
-                    position:'relative',
-                    display:'flex', flexDirection:'column', alignItems:'center',
-                    gap: 4, padding:'10px 14px 10px 14px',
-                    background: `${accent}1f`,
-                    border: `1px solid ${accent}55`,
-                    borderRadius: 18, minWidth: 96,
-                    cursor: 'pointer', userSelect: 'none',
-                    WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
-                    transition: 'transform .2s, box-shadow .2s',
-                    boxShadow: streakTapCount > 0 ? `0 0 0 2px ${accent}66` : 'none',
-                  }}>
-                  {/* Emoji — pulses on each tap. The key forces React to
-                      restart the animation by re-mounting. */}
-                  <span key={streakPulseKey} style={{
-                    fontSize: 26, lineHeight: 1,
-                    display: 'inline-block',
-                    animation: streakPulseKey > 0 ? 'bcStreakTap .35s cubic-bezier(.3,1.6,.5,1) both' : 'none',
-                  }}>
-                    {isWin ? '🔥' : '❄️'}
-                  </span>
-                  {/* Number — big editorial */}
-                  <span style={{
-                    fontFamily:"'Playfair Display',serif",
-                    fontSize: 26, fontWeight: 700, letterSpacing:'-0.02em',
-                    color: accent, lineHeight: 1,
-                  }}>{fireLevel}</span>
-                  {/* Label — tiny tracked */}
-                  <span style={{
-                    fontFamily:"'Manrope',sans-serif",
-                    fontSize: 8, letterSpacing: '.18em', fontWeight: 700,
-                    color: 'var(--dim)', textTransform: 'uppercase',
-                  }}>{t('dashboard_extra.streak_short')}</span>
-                  {/* W/L trail — last 5, oldest left → newest right */}
-                  {lastFive.length > 0 && (
-                    <span style={{
-                      display:'flex', gap: 4, marginTop: 4,
-                    }}>
-                      {lastFive.map((s, i) => (
-                        <span key={i} style={{
-                          width: 9, height: 9, borderRadius: '50%',
-                          background: s === 'won' ? 'var(--grn)' : 'var(--red)',
-                          // Faintest opacity for older, full opacity for newest
-                          opacity: 0.4 + (i / Math.max(1, lastFive.length - 1)) * 0.6,
-                          // Newest one slightly bigger for emphasis
-                          transform: i === lastFive.length - 1 ? 'scale(1.15)' : 'scale(1)',
-                          boxShadow: i === lastFive.length - 1
-                            ? `0 0 6px ${s === 'won' ? 'var(--grn)' : 'var(--red)'}88`
-                            : 'none',
-                        }}/>
-                      ))}
-                    </span>
-                  )}
-                  {/* Tap counter hint — only visible while tapping (1 or 2/3) */}
-                  {streakTapCount > 0 && (
-                    <span style={{
-                      position:'absolute', top: 4, right: 8,
-                      fontSize: 8, color: accent, fontWeight: 800,
-                      fontFamily:"'Manrope',sans-serif",
-                      letterSpacing: '.1em',
-                    }}>{streakTapCount}/3</span>
-                  )}
-                </div>
-              );
-            })()}
+            {renderStreakPill('md')}
 
             {todayCount > 0 && (
               <div style={{

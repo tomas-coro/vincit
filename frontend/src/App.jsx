@@ -362,7 +362,7 @@ const EGG_TROPHY_META = {
   egg_coin:    { icon: '🪙' },
   egg_jackpot: { icon: '🎰' },
   egg_ice:     { icon: '❄️' },
-  egg_phoenix: { icon: '🦅' },
+  egg_phoenix: { icon: '🔥' },
 };
 
 const lsGet  = (k, fallback) => { try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : fallback; } catch { return fallback; } };

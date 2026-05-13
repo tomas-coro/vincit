@@ -303,7 +303,7 @@ const TRANSLATIONS = {
       egg_coin:'Testa o croce',         egg_coin_desc:'Hai lanciato la moneta per la prima volta',
       egg_jackpot:'Jackpot',            egg_jackpot_desc:'Hai creato una bet col titolo magico',
       egg_ice:'Nice',                   egg_ice_desc:'Hai sciolto il gelo della loss streak',
-      egg_phoenix:'Fenice',             egg_phoenix_desc:'Sei rinato dalle ceneri della tua streak',
+      egg_phoenix:'Inferno',            egg_phoenix_desc:'Hai dato fuoco alla tua streak vincente',
       secret_locked:'???',              secret_locked_desc:'Trofeo segreto · ancora da scoprire',
       secret_category:'Segreti',
       egg_first_tip:'✨ Questi easter egg si attivano con 3 click sull\'emoji',
@@ -311,6 +311,8 @@ const TRANSLATIONS = {
     dashboard_extra: {
       streak_short:'GIORNI',
       trail_label:'ULTIME 5',
+      trail_won:'V',
+      trail_lost:'P',
     },
     templates: {
       title_settings:'I miei template', title_picker:'Template salvati',
@@ -801,7 +803,7 @@ const TRANSLATIONS = {
       egg_coin:'Heads or tails',         egg_coin_desc:'You flipped the coin for the first time',
       egg_jackpot:'Jackpot',             egg_jackpot_desc:'You created a bet with the magic title',
       egg_ice:'Nice',                    egg_ice_desc:'You melted the frost of your loss streak',
-      egg_phoenix:'Phoenix',             egg_phoenix_desc:'Reborn from the ashes of your streak',
+      egg_phoenix:'Inferno',             egg_phoenix_desc:'You set your winning streak ablaze',
       secret_locked:'???',               secret_locked_desc:'Secret trophy · still to discover',
       secret_category:'Secrets',
       egg_first_tip:'✨ These easter eggs trigger with 3 taps on the emoji',
@@ -809,6 +811,8 @@ const TRANSLATIONS = {
     dashboard_extra: {
       streak_short:'DAY STREAK',
       trail_label:'LAST 5',
+      trail_won:'W',
+      trail_lost:'L',
     },
     templates: {
       title_settings:'My templates', title_picker:'Saved templates',
