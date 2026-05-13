@@ -81,7 +81,10 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const theirCounter=(bet.counterBets||[]).find(cb=>cb.bettor!==user);
   const sideColor=done?(bet.status==="won"?"var(--grn)":"var(--red)"):(bet.isSecret?"var(--gold)":cat.color);
   const betReactions=(reactions||[]).filter(r=>r.bet_id===bet.id);
-  const emojiReactions=betReactions.filter(r=>r.emoji && !r.image_url);
+  // Emoji and photo are independent now — a row can have both. Render the
+  // emoji in the chip row regardless of whether the same user also has a
+  // photo attached; the photo will appear in its own tile row below.
+  const emojiReactions=betReactions.filter(r=>r.emoji);
   const photoReactions=betReactions.filter(r=>r.image_url);
   const myReaction=betReactions.find(r=>r.bettor===user);
   const EMOJIS=['🔥','😂','👀','💀','⚡'];

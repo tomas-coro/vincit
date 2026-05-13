@@ -440,6 +440,12 @@ export default function App() {
   const toast = useToast();
   const [splashDone, setSplashDone] = useState(false);
   const [tourDone, setTourDone] = useState(() => !!localStorage.getItem('bc_onboarding_done'));
+  // Tour position is lifted up here so a side-trip to the CreateModal (the
+  // "Aprilo ora" CTA on page 4) doesn't reset the user's progress. The
+  // parent advances the step + sets `tourPaused` while the modal is open,
+  // then un-pauses on close — the tour reappears at the next page.
+  const [tourStep, setTourStep] = useState(0);
+  const [tourPaused, setTourPaused] = useState(false);
 
   // Auth state
   const [token,       setToken]       = useState(() => localStorage.getItem('bc_token'));
@@ -700,6 +706,10 @@ export default function App() {
     try {
       await api.createBet({ ...data, id: `b${Date.now()}`, createdAt: Date.now() });
       setShowCreate(false);
+      // Same resume-from-paused-tour path as the onClose wrapper, so creating
+      // a real bet during the tutorial demo still lands the user back on the
+      // next tour page instead of dropping them out cold.
+      if (tourPaused && !tourDone) setTourPaused(false);
       refresh();
       toast.success(t('app.ok_created'));
     } catch (e) { console.error(e); toast.error(t('app.error_create')); }
@@ -802,8 +812,10 @@ export default function App() {
   const handleReaction = async (betId, emoji) => {
     try {
       const existing = reactions.find(r => r.bet_id === betId && r.bettor === user);
+      // Toggle-off uses the new column-scoped DELETE so a user with a photo
+      // doesn't lose it just because they un-set their emoji.
       if (existing && existing.emoji === emoji) {
-        await api.removeReaction(betId, user);
+        await api.removeReactionEmoji(betId);
       } else {
         await api.addReaction(betId, emoji);
       }
@@ -1228,7 +1240,14 @@ export default function App() {
       )}
 
       {/* Modals */}
-      {showCreate     && <CreateModal user={user} profiles={profiles} groupMembers={groupMembers} maxC={credits[user]??0} cats={cats} settings={settings} onCreate={handleCreate} onClose={() => setShowCreate(false)} onEggUnlock={onEggFired} />}
+      {showCreate     && <CreateModal user={user} profiles={profiles} groupMembers={groupMembers} maxC={credits[user]??0} cats={cats} settings={settings} onCreate={handleCreate} onClose={() => {
+        setShowCreate(false);
+        // If the tour was paused so the user could try the modal as a demo,
+        // resume it: come back at the page the parent pre-advanced to before
+        // opening the modal (handled in the OnboardingTour onOpenCreate
+        // callback below). Skips if the user finished the tour normally.
+        if (tourPaused && !tourDone) setTourPaused(false);
+      }} onEggUnlock={onEggFired} />}
       {revealBet      && <RevealModal bet={revealBet} cats={cats} onResolve={handleResolve} onClose={() => setRevealBet(null)} />}
       {resolveBet     && <ResolveModal bet={resolveBet} cats={cats} profiles={profiles} onResolve={handleResolve} onClose={() => setResolveBet(null)} />}
       {counterTarget  && <CounterModal bet={counterTarget} user={user} profiles={profiles} credits={credits} cats={cats} onPlace={handleCounter} onClose={() => setCounterTarget(null)} />}
@@ -1286,14 +1305,21 @@ export default function App() {
       {/* Trophy unlock animation — small banner top-center, ~3s per unlock */}
       <TrophyUnlockOverlay queue={trophyQueue} onDone={consumeTrophy} />
 
-      {/* Onboarding — editorial fullscreen tour, shown once per device on
-          first sign-in. Component manages its own pages and the "open create
-          demo" CTA hands off to setShowCreate so the user can play with the
-          real CreateModal before continuing on their own. */}
-      {!tourDone && !!profiles[user] && (
+      {/* Onboarding — editorial fullscreen tour. Step is controlled here
+          so opening the CreateModal demo (page 4 "Aprilo ora") doesn't lose
+          progress: we pre-advance to the next page, hide the tour while
+          the modal is open, then unhide on modal close. */}
+      {!tourDone && !!profiles[user] && !tourPaused && (
         <OnboardingTour
+          step={tourStep}
+          onStepChange={setTourStep}
           onDone={() => { localStorage.setItem('bc_onboarding_done', '1'); setTourDone(true); }}
-          onOpenCreate={() => setShowCreate(true)}
+          onOpenCreate={() => {
+            // Move to the next page BEFORE pausing so the resume lands there.
+            setTourStep(s => s + 1);
+            setTourPaused(true);
+            setShowCreate(true);
+          }}
         />
       )}
 

@@ -234,6 +234,7 @@ const TRANSLATIONS = {
 
       page_kicker_welcome:'Benvenuto',
       page_kicker_groups:'Il gruppo',
+      page_kicker_bets:'Cos\'è una bet',
       page_kicker_create:'Le bet',
       page_kicker_play:'Vinci o perdi',
       page_kicker_ready:'Pronto',
@@ -244,6 +245,10 @@ const TRANSLATIONS = {
       groups_title:'Ogni gruppo è una bolla a sé.',
       groups_body:'Coppia, gli amici delle medie, la famiglia, il club fantacalcio: ogni gruppo ha le sue regole, i suoi crediti, le sue bet. Cambi gruppo dalla chip in alto, e i numeri si aggiornano subito.',
       groups_hint:'Suggerimento: Cmd/Ctrl+K per la ricerca rapida tra i gruppi',
+
+      bets_title:'Una bet è una scommessa tra amici.',
+      bets_body:'Uno propone qualcosa che può succedere o no — "stasera Marco arriva in ritardo", "Inter vince il derby", "domani piove". Si decide la posta in crediti virtuali (₡) e la quota (×2, ×3…). Chi indovina si porta a casa i crediti dell\'altro. Niente soldi veri: solo bragging rights e classifica.',
+      bets_hint:'Esempio: posta 10₡ a quota 2× → se vinci ne incassi 20',
 
       create_title:'Quattro modi per scommettere.',
       create_body:'Aperta a tutto il gruppo, mirata contro qualcuno, sorpresa (lo scoprono solo dopo), o segreta nel tuo Vault. Il pulsante "+" in fondo alla schermata è il punto di partenza.',
@@ -763,6 +768,7 @@ const TRANSLATIONS = {
 
       page_kicker_welcome:'Welcome',
       page_kicker_groups:'The group',
+      page_kicker_bets:'What\'s a bet',
       page_kicker_create:'The bets',
       page_kicker_play:'Win or lose',
       page_kicker_ready:'Ready',
@@ -773,6 +779,10 @@ const TRANSLATIONS = {
       groups_title:'Each group is its own little world.',
       groups_body:'Your partner, your high-school crew, your family, your fantasy-football club: every group has its own rules, credits, bets. Switch group from the chip up top and the numbers update instantly.',
       groups_hint:'Pro tip: Cmd/Ctrl+K for the quick group search',
+
+      bets_title:'A bet is a friendly wager.',
+      bets_body:'Someone calls something that might happen — "Marco will be late tonight", "Inter wins the derby", "it rains tomorrow". You set a stake in virtual credits (₡) and the odds (×2, ×3…). Whoever calls it right takes the other\'s credits. No real money: just bragging rights and the leaderboard.',
+      bets_hint:'Example: stake 10₡ at 2× odds → win returns 20',
 
       create_title:'Four ways to place a bet.',
       create_body:'Open to the whole group, targeted at one member, a surprise (they find out only after), or sealed inside your Vault. The "+" button at the bottom is where it starts.',

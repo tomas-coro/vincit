@@ -31,14 +31,25 @@ const CSS = `
 const PAGES = [
   { id: 'welcome', kicker: 'page_kicker_welcome', emoji: '🃏',  cta: 'next' },
   { id: 'groups',  kicker: 'page_kicker_groups',  emoji: '👥',  cta: 'next' },
-  { id: 'create',  kicker: 'page_kicker_create',  emoji: '🎯',  cta: 'demo' }, // opens CreateModal
+  { id: 'bets',    kicker: 'page_kicker_bets',    emoji: '🎲',  cta: 'next' }, // explains the concept of a bet
+  { id: 'create',  kicker: 'page_kicker_create',  emoji: '🎯',  cta: 'demo' }, // opens CreateModal as a hands-on demo
   { id: 'play',    kicker: 'page_kicker_play',    emoji: '⚡',  cta: 'next' },
   { id: 'ready',   kicker: 'page_kicker_ready',   emoji: '✨',  cta: 'done' },
 ];
 
-export default function OnboardingTour({ onDone, onOpenCreate }) {
+// `step` and `onStepChange` make the tour controlled by the parent so its
+// position survives a side-trip into the CreateModal demo (the parent
+// briefly hides the tour, then resumes it at the next page when the modal
+// closes). They're optional: omit both for uncontrolled / standalone use.
+export default function OnboardingTour({ step, onStepChange, onDone, onOpenCreate }) {
   const { t } = useLang();
-  const [idx, setIdx] = useState(0);
+  const [internalIdx, setInternalIdx] = useState(0);
+  const idx = typeof step === 'number' ? step : internalIdx;
+  const setIdx = (next) => {
+    const value = typeof next === 'function' ? next(idx) : next;
+    if (onStepChange) onStepChange(value);
+    else setInternalIdx(value);
+  };
   const [exiting, setExiting] = useState(false);
 
   // ESC anywhere = skip the whole tour

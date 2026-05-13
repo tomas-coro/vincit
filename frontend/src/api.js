@@ -91,9 +91,13 @@ export const editAllowed    = (id, ids)      => req('PATCH',  `/bets/${id}/allow
 export const resetAll       = ()             => req('POST',   '/bets/reset');
 export const resetAllTest   = ()             => req('POST',   '/bets/test-reset');
 export const commentBet     = (id, comment)  => req('PATCH',  `/bets/${id}/comment`, { comment });
-export const addReaction      = (id, emoji)   => req('POST',   `/bets/${id}/reaction`,       { emoji });
-export const addReactionPhoto = (id, dataUrl) => req('POST',   `/bets/${id}/reaction/photo`, { dataUrl });
-export const removeReaction   = (id, bettor)  => req('DELETE', `/bets/${id}/reaction/${bettor}`);
+export const addReaction         = (id, emoji)   => req('POST',   `/bets/${id}/reaction`,         { emoji });
+export const addReactionPhoto    = (id, dataUrl) => req('POST',   `/bets/${id}/reaction/photo`,   { dataUrl });
+// Toggle-off helpers — clear only the column the user touched. The legacy
+// `removeReaction` is kept for older clients but the UI now uses these.
+export const removeReactionEmoji = (id)          => req('DELETE', `/bets/${id}/reaction/emoji`);
+export const removeReactionPhoto = (id)          => req('DELETE', `/bets/${id}/reaction/photo`);
+export const removeReaction      = (id, bettor)  => req('DELETE', `/bets/${id}/reaction/${bettor}`);
 
 export const getNotifPrefs  = (user)        => req('GET',  `/push/prefs/${user}`);
 export const saveNotifPrefs = (prefs)       => req('POST', '/push/prefs', prefs);
