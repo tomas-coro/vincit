@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSync } from './useSync.js';
 import * as api from './api.js';
 
-import { DARK, LIGHT, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx';
+import { DARK, LIGHT, AMBER, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx';
 import { useLang } from './i18n.js';
 import WinOverlay from './components/WinOverlay.jsx';
 import SplashScreen from './components/SplashScreen.jsx';
@@ -217,25 +217,24 @@ function DieRollOverlay({ open, onClose, onEggUnlock }) {
       setFace(finalValue);
       setPhase('settled');
       // Idempotent unlock — server returns alreadyUnlocked:true on repeats.
-      // We always call onEggUnlock so the trophy poll re-runs even if the
-      // unlock fired on a previous device (and is therefore already in
-      // the DB but not yet in this client's baseline).
-      // Always fire the API (idempotent server-side). The popup banner is
-      // gated locally so the user sees it the first time they trigger the
-      // egg on THIS device — even if the trophy is already in their
-      // collection from a previous device/test. The server's
-      // alreadyUnlocked field doesn't match the user's mental model of
-      // "first time I rolled it".
+      // The popup banner is gated locally so the user sees it the first
+      // time per device — even if the trophy is already in their
+      // collection from earlier testing. Earlier versions used
+      // `bc_egg_dice_popped` but set it BEFORE the API/queue push, so any
+      // failure burnt the popup permanently. v2 sets it only AFTER the
+      // synthetic queue push actually runs.
       let popThisRoll = false;
       try {
-        if (!localStorage.getItem('bc_egg_dice_popped')) {
-          localStorage.setItem('bc_egg_dice_popped', '1');
-          popThisRoll = true;
-        }
+        if (!localStorage.getItem('bc_egg_dice_popped_v2')) popThisRoll = true;
         localStorage.setItem(DIE_LS_KEY, '1');
       } catch {}
       api.unlockSecretAchievement('egg_dice')
-        .then(() => { if (popThisRoll) onEggUnlockRef.current?.('egg_dice'); })
+        .then(() => {
+          if (popThisRoll) {
+            onEggUnlockRef.current?.('egg_dice');
+            try { localStorage.setItem('bc_egg_dice_popped_v2', '1'); } catch {}
+          }
+        })
         .catch(e => console.error('[egg_dice] unlock failed', e));
     }, 1300);
     const tClose = setTimeout(() => onCloseRef.current?.(), 4500);
@@ -302,17 +301,20 @@ function CoinFlipOverlay({ open, onClose, onEggUnlock }) {
     // gate caused the trophy to never unlock if the LS key was set but
     // the trophy was never actually recorded server-side (DB reset,
     // network hiccup, etc).
-    // See DieRollOverlay for the rationale on per-device LS gating.
+    // See DieRollOverlay for the rationale on per-device LS gating —
+    // v2 keys set LS only AFTER the queue push fires.
     let popThisFlip = false;
     try {
-      if (!localStorage.getItem('bc_egg_coin_popped')) {
-        localStorage.setItem('bc_egg_coin_popped', '1');
-        popThisFlip = true;
-      }
+      if (!localStorage.getItem('bc_egg_coin_popped_v2')) popThisFlip = true;
       localStorage.setItem(COIN_LS_KEY, '1');
     } catch {}
     api.unlockSecretAchievement('egg_coin')
-      .then(() => { if (popThisFlip) onEggUnlockRef.current?.('egg_coin'); })
+      .then(() => {
+        if (popThisFlip) {
+          onEggUnlockRef.current?.('egg_coin');
+          try { localStorage.setItem('bc_egg_coin_popped_v2', '1'); } catch {}
+        }
+      })
       .catch(e => console.error('[egg_coin] unlock failed', e));
     const t2 = setTimeout(() => onCloseRef.current?.(), 5000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
@@ -400,8 +402,22 @@ function useBreakpoint(minWidth) {
 })();
 
 export default function App() {
-  const [isDark, setIsDark] = useState(true);
-  const C = isDark ? DARK : LIGHT;
+  // Theme: persisted to localStorage so it survives page refresh / app
+  // restart. Values: 'dark' (default), 'light', 'amber'. The legacy isDark
+  // boolean is derived from theme for backward compat with existing props.
+  const [theme, setTheme] = useState(() => {
+    try {
+      const v = localStorage.getItem('bc_theme');
+      if (v === 'light' || v === 'dark' || v === 'amber') return v;
+    } catch {}
+    return 'dark';
+  });
+  useEffect(() => {
+    try { localStorage.setItem('bc_theme', theme); } catch {}
+  }, [theme]);
+  const isDark = theme === 'dark';
+  const setIsDark = (v) => setTheme(v ? 'dark' : 'light');
+  const C = theme === 'light' ? LIGHT : theme === 'amber' ? AMBER : DARK;
   const isDesktop = useBreakpoint(768);
   const { t } = useLang();
 
@@ -1127,7 +1143,7 @@ export default function App() {
             {view === 'trophies'  && <TrophiesView bets={bets} isDesktop={isDesktop} />}
             {view === 'friends'   && <FriendsView groups={groups} user={user} onSwitchToGroup={switchGroup} isDesktop={isDesktop} />}
             {view === 'admin' && authUser?.is_admin && <AdminView isDesktop={isDesktop} />}
-            {view === 'settings'  && <SettingsView user={user} profiles={profiles} groupMembers={groupMembers} isDark={isDark} setIsDark={setIsDark} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onTestReset={handleTestReset} onLogout={handleLogout} onOpenProfileEdit={() => setShowProfileEdit(true)} isAdmin={isAdmin} can={can} />}
+            {view === 'settings'  && <SettingsView user={user} profiles={profiles} groupMembers={groupMembers} isDark={isDark} setIsDark={setIsDark} theme={theme} setTheme={setTheme} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onTestReset={handleTestReset} onLogout={handleLogout} onOpenProfileEdit={() => setShowProfileEdit(true)} isAdmin={isAdmin} can={can} />}
           </>);
         })()}
       </div>

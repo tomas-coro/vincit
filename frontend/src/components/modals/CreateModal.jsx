@@ -338,18 +338,19 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
       setSlotInstance(n => n + 1);
       setJackpotPhase('spinning');
       // Pop the trophy banner only on the first 777 ever on this device.
-      // Server-side unlock fires every time (idempotent) but the banner
-      // is gated locally so the user mentally maps "first time" to "I see
-      // the popup" rather than to opaque server state.
+      // v2 LS key: set AFTER queue push fires (avoids "burnt" gates from
+      // API failures that previously suppressed the popup forever).
       let popThisJackpot = false;
       try {
-        if (!localStorage.getItem('bc_egg_jackpot_popped')) {
-          localStorage.setItem('bc_egg_jackpot_popped', '1');
-          popThisJackpot = true;
-        }
+        if (!localStorage.getItem('bc_egg_jackpot_popped_v2')) popThisJackpot = true;
       } catch {}
       api.unlockSecretAchievement('egg_jackpot')
-        .then(() => { if (popThisJackpot) onEggUnlock?.('egg_jackpot'); })
+        .then(() => {
+          if (popThisJackpot) {
+            onEggUnlock?.('egg_jackpot');
+            try { localStorage.setItem('bc_egg_jackpot_popped_v2', '1'); } catch {}
+          }
+        })
         .catch(e => console.error('[egg_jackpot] unlock failed', e));
       // Phase transition timers — kept in a ref so user-skip can clear them.
       jackpotTimersRef.current.push(setTimeout(() => setJackpotPhase('celebrating'), 3700));

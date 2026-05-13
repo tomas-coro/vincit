@@ -441,18 +441,18 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
         (fireLevel > 0 || todayCount > 0 || latestBet) && (
           <div style={{
             display:'flex', flexWrap:'wrap', justifyContent:'flex-end',
-            alignItems:'center', gap: 8,
+            alignItems:'center', gap: 10,
             paddingRight: 2,
             // Clear the giant name (which has marginBottom: -16 to overlap
             // with the credit balance below). Push the spine into safe space.
-            marginTop: 36,
-            marginBottom: 4,
-            opacity: .92,
+            marginTop: 40,
+            marginBottom: 6,
+            opacity: .95,
           }}>
             {fireLevel > 0 && (
               <div style={{
-                display:'flex', alignItems:'center', gap: 4,
-                padding:'3px 9px 3px 6px',
+                display:'flex', alignItems:'center', gap: 6,
+                padding:'6px 14px 6px 10px',
                 background: fireKind === 'win'
                   ? (fireLevel >= 5 ? 'var(--red)22' : 'var(--gold)22')
                   : 'var(--blu)22',
@@ -461,52 +461,57 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
                   : 'var(--blu)44'}`,
                 borderRadius: 999,
               }}>
-                <span style={{fontSize: 12, lineHeight: 1}}>
+                <span style={{fontSize: 18, lineHeight: 1}}>
                   {fireKind === 'win' ? '🔥' : '❄️'}
                 </span>
                 <span style={{
                   fontFamily:"'Playfair Display',serif",
-                  fontSize: 13, fontWeight: 700, letterSpacing:'-0.01em',
+                  fontSize: 20, fontWeight: 700, letterSpacing:'-0.01em',
                   color: fireKind === 'win'
                     ? (fireLevel >= 5 ? 'var(--red)' : 'var(--gold)')
                     : 'var(--blu)',
+                  lineHeight: 1,
                 }}>{fireLevel}</span>
               </div>
             )}
 
             {todayCount > 0 && (
               <div style={{
-                display:'flex', alignItems:'baseline', gap: 4,
-                padding:'3px 9px',
+                display:'flex', alignItems:'baseline', gap: 6,
+                padding:'6px 14px',
                 background: 'var(--mut)22',
                 border: '1px solid var(--brd)',
                 borderRadius: 999,
               }}>
                 <span style={{
                   fontFamily:"'Playfair Display',serif",
-                  fontSize: 13, fontWeight: 700,
+                  fontSize: 20, fontWeight: 700,
                   color: 'var(--txt)', lineHeight: 1,
                 }}>{todayCount}</span>
-                <span className="bc-meta" style={{fontSize: 7}}>OGGI</span>
+                <span className="bc-meta" style={{fontSize: 10}}>OGGI</span>
               </div>
             )}
 
             {latestBet && (
               <div style={{
-                display:'flex', alignItems:'center', gap: 5,
-                padding:'3px 10px',
+                display:'flex', alignItems:'center', gap: 8,
+                padding:'6px 14px',
                 background: 'var(--gold)11',
                 border: '1px solid var(--gold)33',
                 borderRadius: 999,
-                maxWidth: 'min(60vw, 200px)',
+                maxWidth: 'min(70vw, 260px)',
                 overflow:'hidden',
               }}>
-                <span style={{fontSize: 8, color:'var(--gold)', opacity:.7, letterSpacing: 1}}>LIVE</span>
+                <span style={{
+                  fontSize: 9, color:'var(--gold)', opacity:.75,
+                  letterSpacing: 1.4, fontWeight: 700,
+                }}>LIVE</span>
                 <span style={{
                   fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
-                  fontSize: 12, fontWeight: 500,
+                  fontSize: 16, fontWeight: 500,
                   color: 'var(--gold)',
                   whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                  lineHeight: 1.1,
                 }}>"{latestBet.title}"</span>
               </div>
             )}

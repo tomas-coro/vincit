@@ -64,7 +64,20 @@
       "Bash(git config *)",
       "Bash(gh --version)",
       "Bash(git init *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/App.jsx frontend/src/components/modals/CreateModal.jsx frontend/src/components/views/DashboardView.jsx frontend/src/components/DieFace.jsx)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple commit -m ' *)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple push origin main)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/App.jsx frontend/src/components/modals/CreateModal.jsx)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/App.jsx frontend/src/components/Coin.jsx frontend/src/components/modals/ResolveModal.jsx)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/App.jsx frontend/src/components/modals/CreateModal.jsx frontend/src/i18n.js)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/components/modals/CameraModal.jsx frontend/src/components/modals/PhotoCaptureModal.jsx frontend/src/components/BetCard.jsx frontend/src/i18n.js)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/App.jsx frontend/src/components/modals/CreateModal.jsx frontend/src/components/views/DashboardView.jsx frontend/src/components/modals/CameraModal.jsx frontend/index.html)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/components/modals/CameraModal.jsx)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/components/modals/ResolveModal.jsx frontend/src/i18n.js)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/components/modals/CameraModal.jsx frontend/src/i18n.js)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/components/modals/ResolveModal.jsx frontend/src/App.jsx)",
+      "Bash(git -C /c/Users/TomasCoro/desktop/betcouple add frontend/src/components/modals/CreateModal.jsx frontend/src/components/BetCard.jsx frontend/src/i18n.js)"
     ]
   }
 }

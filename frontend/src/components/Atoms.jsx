@@ -3,9 +3,11 @@ import React from 'react';
 
 // Palette "Lavanda & Ottone" — viola lavanda dominante, ottone spazzolato come accento.
 // In light mode bg = farina d'avena (beige sporco), niente bianco puro.
+// Amber è una terza variante "cantina/whisky" — burgundy/cuoio scuro dominante, oro spazzolato come accento.
 // `rule` = ultra-soft hairline color (replaces the gray-ish borders), `soft` = barely-visible tint for grouping.
 export const DARK  = {bg:"#1a1530",surf:"#221c40",card:"#2b2247",brd:"#3a3260",rule:"rgba(183,148,244,0.16)",soft:"rgba(183,148,244,0.05)",gold:"#c4a878",goldL:"#d6bf94",glow:"rgba(196,168,120,0.18)",grn:"#3dd494",red:"#e26666",blu:"#7aa2ff",pur:"#b794f4",txt:"#ebe5ff",dim:"#9089b8",mut:"#403868",inp:"#1d1838"};
 export const LIGHT = {bg:"#ede8d8",surf:"#f5f0e0",card:"#faf5e5",brd:"#c4bca0",rule:"rgba(91,63,196,0.18)",soft:"rgba(91,63,196,0.05)",gold:"#7a5e30",goldL:"#946f33",glow:"rgba(122,94,48,0.16)",grn:"#1f9560",red:"#b73a4a",blu:"#3556bb",pur:"#5b3fc4",txt:"#2a2545",dim:"#5f5878",mut:"#bcb39a",inp:"#f0eadc"};
+export const AMBER = {bg:"#1f1108",surf:"#2c1810",card:"#3a2118",brd:"#5a3424",rule:"rgba(212,160,98,0.18)",soft:"rgba(212,160,98,0.06)",gold:"#e8b86a",goldL:"#f3cb8a",glow:"rgba(232,184,106,0.24)",grn:"#a8c46c",red:"#ff7a52",blu:"#8fb3d8",pur:"#d49c70",txt:"#f5e6cf",dim:"#c0a181",mut:"#6e4a35",inp:"#23130a"};
 
 export const rootVars = C => ({
   "--bg":C.bg,"--surf":C.surf,"--card":C.card,"--brd":C.brd,

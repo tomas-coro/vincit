@@ -28,7 +28,7 @@ const S = {
   raised: {background:"var(--card)",border:"1px solid var(--rule)",borderRadius:14,padding:16},
 };
 
-export default function SettingsView({user,profiles,groupMembers,isDark,setIsDark,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onTestReset,onLogout,onOpenProfileEdit,isAdmin=false,can}){
+export default function SettingsView({user,profiles,groupMembers,isDark,setIsDark,theme,setTheme,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onTestReset,onLogout,onOpenProfileEdit,isAdmin=false,can}){
   const { t, lang, setLang } = useLang();
   // Backward-compat: if `can` is missing, fall back to isAdmin gating
   const allow = perm => typeof can === 'function' ? can(perm) : !!isAdmin;
@@ -295,11 +295,47 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
         )}
       </div>
 
-      {/* THEME */}
+      {/* THEME — three-way selector: dark / light / amber. Persists to LS. */}
       <SecLabel>{t('settings.theme')}</SecLabel>
-      <div style={{...S.card,marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div><div style={{fontSize:14,fontWeight:600}}>{isDark?t('settings.theme_dark'):t('settings.theme_light')}</div><div style={{fontSize:12,color:"var(--dim)"}}>{t('settings.theme_desc')}</div></div>
-        <Toggle on={isDark} onToggle={()=>setIsDark(!isDark)}/>
+      <div style={{...S.card,marginBottom:12}}>
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:14,fontWeight:600}}>
+            {theme === 'amber' ? t('settings.theme_amber') : (isDark ? t('settings.theme_dark') : t('settings.theme_light'))}
+          </div>
+          <div style={{fontSize:12,color:"var(--dim)"}}>{t('settings.theme_desc')}</div>
+        </div>
+        <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+          {[
+            {id:'dark',  label:t('settings.theme_dark'),  preview:['#1a1530','#c4a878']},
+            {id:'light', label:t('settings.theme_light'), preview:['#ede8d8','#7a5e30']},
+            {id:'amber', label:t('settings.theme_amber'), preview:['#1f1108','#e8b86a']},
+          ].map(opt => {
+            const active = (theme || (isDark ? 'dark' : 'light')) === opt.id;
+            return (
+              <button key={opt.id} type="button"
+                onClick={() => setTheme ? setTheme(opt.id) : setIsDark(opt.id === 'dark')}
+                style={{
+                  display:'flex', alignItems:'center', gap:8,
+                  padding:'8px 14px', borderRadius:999,
+                  border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
+                  background: active ? 'var(--gold)18' : 'transparent',
+                  color: active ? 'var(--gold)' : 'var(--dim)',
+                  fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
+                  letterSpacing:'.04em', cursor:'pointer',
+                  transition:'all .18s',
+                  WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
+                }}>
+                <span style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${opt.preview[0]} 50%, ${opt.preview[1]} 50%)`,
+                  border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
+                  flexShrink: 0,
+                }}/>
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* CUSTOM CATS */}
