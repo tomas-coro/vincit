@@ -27,11 +27,12 @@ const CSS = `
 `;
 
 // Static page definitions — kept in module scope so the component reads as
-// declarative content + chrome. Each page maps to an i18n group.
+// declarative content + chrome. Each page maps to an i18n group. The
+// "what is a bet" explanation lives INSIDE the CreateModal now (as inline
+// hints), not as a separate tour card.
 const PAGES = [
   { id: 'welcome', kicker: 'page_kicker_welcome', emoji: '🃏',  cta: 'next' },
   { id: 'groups',  kicker: 'page_kicker_groups',  emoji: '👥',  cta: 'next' },
-  { id: 'bets',    kicker: 'page_kicker_bets',    emoji: '🎲',  cta: 'next' }, // explains the concept of a bet
   { id: 'create',  kicker: 'page_kicker_create',  emoji: '🎯',  cta: 'demo' }, // opens CreateModal as a hands-on demo
   { id: 'play',    kicker: 'page_kicker_play',    emoji: '⚡',  cta: 'next' },
   { id: 'ready',   kicker: 'page_kicker_ready',   emoji: '✨',  cta: 'done' },
@@ -73,13 +74,13 @@ export default function OnboardingTour({ step, onStepChange, onDone, onOpenCreat
   };
   const prev = () => setIdx(i => Math.max(0, i - 1));
 
-  // "Demo" CTA on the create page: close the tour cleanly so the CreateModal
-  // gets centered focus, then trigger the App-level callback. Don't auto-
-  // resume — the user can re-run the tour from settings if they want.
+  // "Demo" CTA on the create page: fire the App-level callback so the
+  // parent can pause the tour, open the CreateModal, and resume on close.
+  // We do NOT call onDone here — that used to permanently end the tour
+  // before the parent's pause-and-resume logic ever ran.
   const triggerDemo = () => {
     setExiting(true);
     setTimeout(() => {
-      onDone?.();
       onOpenCreate?.();
     }, 280);
   };

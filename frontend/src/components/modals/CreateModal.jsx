@@ -19,6 +19,23 @@ const qNo = qY=>parseFloat((parseFloat(qY)/(parseFloat(qY)-1)).toFixed(2));
 
 const Bdg = ({c,bg,children}) => <span style={{...S.bdg,background:bg,color:c}}>{children}</span>;
 
+// Inline novice hint — italic Cormorant in a muted tone with a hairline
+// gold rule on the left, so it reads as an editorial aside rather than a
+// boxed tooltip. Used under STAKE / WIN / OPPONENT blocks for users who
+// aren't familiar with the world of betting. Easy to scan past once
+// you've learned the basics.
+const Hint = ({children, color='var(--mut)'}) => (
+  <div style={{
+    fontSize: 12, color,
+    fontFamily: "'Cormorant Garamond', serif",
+    fontStyle: 'italic',
+    lineHeight: 1.45,
+    marginTop: 10,
+    paddingLeft: 12,
+    borderLeft: '2px solid var(--gold)55',
+  }}>{children}</div>
+);
+
 function useBreakpoint(minWidth = 768) {
   const [matches, setMatches] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia(`(min-width: ${minWidth}px)`).matches
@@ -460,10 +477,32 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     </div>
   );
 
+  // Top intro — one-line plain-language explainer for users who land in
+  // the modal without knowing what a "bet" actually is. Lives above the
+  // first interactive block so it sets context before any decision.
+  const IntroBlock = (
+    <div style={{
+      marginBottom: 20,
+      padding: '14px 16px',
+      background: 'var(--gold)0d',
+      border: '1px solid var(--gold)33',
+      borderRadius: 8,
+    }}>
+      <div style={{
+        fontFamily: "'Cormorant Garamond', serif",
+        fontStyle: 'italic',
+        fontSize: 15,
+        lineHeight: 1.45,
+        color: 'var(--txt)',
+      }}>{t('create.hint_intro')}</div>
+    </div>
+  );
+
   const OpponentBlock = needsOpponent && others.length > 0 && (
     <div style={{ marginBottom: 24 }}>
       <label style={S.lbl}>{t('create.opponent_label')}</label>
-      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+      <Hint>{t('create.hint_opponent')}</Hint>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop: 10 }}>
         {others.map(m => {
           const active = opponentId === m.id;
           return (
@@ -651,6 +690,9 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
           <span style={{marginLeft:6, opacity:.6}}>{t('create.net')}</span>
         </span>
       </div>
+      <div style={{marginBottom:14}}>
+        <Hint color="var(--grn)">{t('create.hint_win')}</Hint>
+      </div>
 
       {/* Hero win number */}
       <div className="bc-num" style={{
@@ -698,6 +740,9 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:14}}>
         <label style={{...S.lbl, marginBottom:0}}>{t('create.stake_label')}</label>
         <span className="bc-meta" style={{fontSize:8}}>{t('create.stake_max')} <span style={{fontFamily:"'Playfair Display',serif", fontSize:14, letterSpacing:'-0.02em', color:'var(--gold)', marginLeft:3}}>{Math.round(maxStake)}₡</span></span>
+      </div>
+      <div style={{marginBottom:14}}>
+        <Hint color="var(--gold)">{t('create.hint_stake')}</Hint>
       </div>
 
       {/* Hero stake number */}
@@ -907,6 +952,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 360px",flex:1,minHeight:0}}>
             <div style={{padding:"22px 24px",overflowY:"auto"}}>
+              {IntroBlock}
               {TemplatesBlock}
               {TypeBlock}
               {OpponentBlock}
@@ -983,6 +1029,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
           <button onClick={onClose} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--dim)",fontSize:18,padding:4}}>✕</button>
         </div>
 
+        {IntroBlock}
         {TemplatesBlock}
         {TypeBlock}
         {OpponentBlock}

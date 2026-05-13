@@ -13,6 +13,12 @@ const TRANSLATIONS = {
     nav:     { dashboard:'Home', bets:'Bets', vault:'Vault', stats:'Stats', trophies:'Trofei', friends:'Amici', settings:'Config' },
     bets_hub:{ tab_open:'Aperte', tab_vault:'Vault' },
     create: {
+      // Plain-language hints for users who land in the modal without
+      // knowing how a bet works — shown inline below the relevant fields.
+      hint_intro:'Una bet è un patto: dichiari cosa pensi succederà nel gruppo, fissi una posta in crediti virtuali (₡) e quanto vorresti vincere. Se hai ragione incassi, altrimenti la posta sparisce.',
+      hint_stake:'La posta — i crediti che blocchi adesso. Se perdi, spariscono dal tuo saldo.',
+      hint_win:'Quanto ti torna in tasca se vinci (la posta è già inclusa).',
+      hint_opponent:'Chi scommette contro di te. Se vinci tu, perde lui — e viceversa.',
       title:'Nuova Bet 🎲', secret_on_label:'🔒 Bet Segreta (Vault)', secret_off_label:'👁 Bet Condivisa',
       secret_on_desc:'Solo tu la vedi · Timestamp garantisce onestà', secret_off_desc:'Visibile a entrambi',
       counter_title:'⚡ Abilita Sfida Diretta', counter_desc:'può scommettere SÌ o NO',
@@ -548,6 +554,12 @@ const TRANSLATIONS = {
     nav:     { dashboard:'Home', bets:'Bets', vault:'Vault', stats:'Stats', trophies:'Trophies', friends:'Friends', settings:'Settings' },
     bets_hub:{ tab_open:'Open', tab_vault:'Vault' },
     create: {
+      // Plain-language hints for users unfamiliar with betting — shown
+      // inline beside the relevant fields.
+      hint_intro:"A bet is a pact: you call what you think will happen in the group, set a stake in virtual credits (₡) and how much you'd like to win. If you call it right you cash in, otherwise the stake disappears.",
+      hint_stake:"The stake — credits you lock now. If you lose, they disappear from your balance.",
+      hint_win:"How much comes back to you if you win (the stake is included).",
+      hint_opponent:"Who's betting against you. If you win, they lose — and vice versa.",
       title:'New Bet 🎲', secret_on_label:'🔒 Secret Bet (Vault)', secret_off_label:'👁 Shared Bet',
       secret_on_desc:'Only you can see it · Timestamp proves honesty', secret_off_desc:'Visible to both of you',
       counter_title:'⚡ Enable Direct Challenge', counter_desc:'can bet YES or NO',
