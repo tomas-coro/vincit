@@ -1,42 +1,54 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import { useSync } from './useSync.js';
 import * as api from './api.js';
 
 import { DARK, LIGHT, AMBER, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx';
 import { useLang } from './i18n.js';
-import WinOverlay from './components/WinOverlay.jsx';
 import SplashScreen from './components/SplashScreen.jsx';
-import IceEggOverlay from './components/IceEggOverlay.jsx';
-import PhoenixEggOverlay from './components/PhoenixEggOverlay.jsx';
-import OnboardingTour from './components/OnboardingTour.jsx';
-import TrophyUnlockOverlay from './components/TrophyUnlockOverlay.jsx';
-import DieFace from './components/DieFace.jsx';
-import Coin3D from './components/Coin.jsx';
 import { SkeletonDashboard, SkeletonList } from './components/Skeleton.jsx';
 import { useToast } from './Toast.jsx';
+// Eager: shown immediately or required during auth gate / first paint.
 import AuthView from './components/views/AuthView.jsx';
-import ResetPasswordView from './components/views/ResetPasswordView.jsx';
 import PairingView from './components/views/PairingView.jsx';
 import DashboardView from './components/views/DashboardView.jsx';
-import BetsHubView from './components/views/BetsHubView.jsx';
-import StatsView from './components/views/StatsView.jsx';
-import TrophiesView from './components/views/TrophiesView.jsx';
-import FriendsView  from './components/views/FriendsView.jsx';
-import AdminView    from './components/views/AdminView.jsx';
-import SettingsView from './components/views/SettingsView.jsx';
-import CreateModal from './components/modals/CreateModal.jsx';
-import CreateGroupModal from './components/modals/CreateGroupModal.jsx';
-import GroupInfoModal from './components/modals/GroupInfoModal.jsx';
-import RevealModal from './components/modals/RevealModal.jsx';
-import { ResolveModal, OvertimeModal } from './components/modals/ResolveModal.jsx';
-import CounterModal from './components/modals/CounterModal.jsx';
-import PinModal from './components/modals/PinModal.jsx';
-import CommentModal from './components/modals/CommentModal.jsx';
-import EditModal from './components/modals/EditModal.jsx';
-import AcceptModal from './components/modals/AcceptModal.jsx';
-import ProfileEditModal from './components/modals/ProfileEditModal.jsx';
 import GroupPicker from './components/GroupPicker.jsx';
 import { applyFreshResetIfNeeded } from './freshReset.js';
+
+// Lazy: views the user navigates to after first paint. Each becomes its
+// own Vite chunk that downloads only on first visit.
+const BetsHubView   = lazy(() => import('./components/views/BetsHubView.jsx'));
+const StatsView     = lazy(() => import('./components/views/StatsView.jsx'));
+const TrophiesView  = lazy(() => import('./components/views/TrophiesView.jsx'));
+const FriendsView   = lazy(() => import('./components/views/FriendsView.jsx'));
+const AdminView     = lazy(() => import('./components/views/AdminView.jsx'));
+const SettingsView  = lazy(() => import('./components/views/SettingsView.jsx'));
+const ResetPasswordView = lazy(() => import('./components/views/ResetPasswordView.jsx'));
+
+// Lazy: modals — they're conditionally rendered ({showCreate && <Modal/>})
+// so the chunk is only fetched the first time the user opens that modal.
+const CreateModal       = lazy(() => import('./components/modals/CreateModal.jsx'));
+const CreateGroupModal  = lazy(() => import('./components/modals/CreateGroupModal.jsx'));
+const GroupInfoModal    = lazy(() => import('./components/modals/GroupInfoModal.jsx'));
+const RevealModal       = lazy(() => import('./components/modals/RevealModal.jsx'));
+// ResolveModal exports two components — split the named exports into
+// individual lazy chunks via the .then(m => ({ default })) trick.
+const ResolveModal      = lazy(() => import('./components/modals/ResolveModal.jsx').then(m => ({ default: m.ResolveModal })));
+const OvertimeModal     = lazy(() => import('./components/modals/ResolveModal.jsx').then(m => ({ default: m.OvertimeModal })));
+const CounterModal      = lazy(() => import('./components/modals/CounterModal.jsx'));
+const PinModal          = lazy(() => import('./components/modals/PinModal.jsx'));
+const CommentModal      = lazy(() => import('./components/modals/CommentModal.jsx'));
+const EditModal         = lazy(() => import('./components/modals/EditModal.jsx'));
+const AcceptModal       = lazy(() => import('./components/modals/AcceptModal.jsx'));
+const ProfileEditModal  = lazy(() => import('./components/modals/ProfileEditModal.jsx'));
+
+// Lazy: overlays + tour — rare/optional UI surfaces.
+const WinOverlay         = lazy(() => import('./components/WinOverlay.jsx'));
+const IceEggOverlay      = lazy(() => import('./components/IceEggOverlay.jsx'));
+const PhoenixEggOverlay  = lazy(() => import('./components/PhoenixEggOverlay.jsx'));
+const OnboardingTour     = lazy(() => import('./components/OnboardingTour.jsx'));
+const TrophyUnlockOverlay= lazy(() => import('./components/TrophyUnlockOverlay.jsx'));
+const DieFace            = lazy(() => import('./components/DieFace.jsx'));
+const Coin3D             = lazy(() => import('./components/Coin.jsx'));
 
 function urlB64ToUint8(b64) {
   const pad = '='.repeat((4 - b64.length % 4) % 4);
@@ -1126,13 +1138,15 @@ export default function App() {
       <div className="bc" style={rootVars(C)}>
         <style>{CSS_BASE}</style>
         {resetParam
-          ? <ResetPasswordView token={resetParam} onDone={() => {
-              const url = new URL(window.location.href);
-              url.searchParams.delete('reset');
-              window.history.replaceState({}, '', url.toString());
-              // Force re-render by toggling a no-op state — easiest: reload.
-              window.location.reload();
-            }}/>
+          ? <Suspense fallback={<SkeletonList count={2} />}>
+              <ResetPasswordView token={resetParam} onDone={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('reset');
+                window.history.replaceState({}, '', url.toString());
+                // Force re-render by toggling a no-op state — easiest: reload.
+                window.location.reload();
+              }}/>
+            </Suspense>
           : <AuthView onAuth={handleAuth} />}
       </div>
     );
@@ -1391,7 +1405,15 @@ export default function App() {
             if (view === 'stats' || view === 'trophies') return <SkeletonList count={3} />;
             return null;
           }
-          return (<>
+          // Single Suspense boundary around every view. Dashboard is
+          // eager so the fallback only shows the first time the user
+          // navigates to one of the lazy views; subsequent visits hit
+          // the cached chunk and render immediately.
+          const ViewFallback =
+            view === 'bets'                              ? <SkeletonList count={4} withGoldStripe={betsTab==='vault'} />
+            : (view === 'stats' || view === 'trophies') ? <SkeletonList count={3} />
+            :                                              <SkeletonList count={3} />;
+          return (<Suspense fallback={ViewFallback}><>
             {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onGoToBets={goToAllBets} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={onEggFired} onOpenDie={() => setDieRollOpen(true)} onOpenIceEgg={() => setIceEggOpen(true)} onOpenPhoenixEgg={() => setPhoenixEggOpen(true)} />}
             {view === 'bets'      && <BetsHubView
                 tab={betsTab} setTab={setBetsTab}
@@ -1409,7 +1431,7 @@ export default function App() {
             {view === 'friends'   && <FriendsView groups={groups} user={user} myBets={bets} myCredits={credits[user] ?? 0} onSwitchToGroup={switchGroup} isDesktop={isDesktop} />}
             {view === 'admin' && authUser?.is_admin && <AdminView isDesktop={isDesktop} meId={authUser?.id} />}
             {view === 'settings'  && <SettingsView user={user} profiles={profiles} groupMembers={groupMembers} isDark={isDark} setIsDark={setIsDark} theme={theme} setTheme={setTheme} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onTestReset={handleTestReset} onLogout={handleLogout} onOpenProfileEdit={() => setShowProfileEdit(true)} isAdmin={isAdmin} can={can} />}
-          </>);
+          </></Suspense>);
         })()}
       </div>
 
@@ -1491,7 +1513,10 @@ export default function App() {
       <PwaInstallBanner t={t}
         visible={!!(user && groups.length > 0 && !showCreate && !showGroupModal && (tourDone || tourPaused))} />
 
-      {/* Modals */}
+      {/* Modals + overlays — wrapped in a Suspense so the lazy chunks
+          can load on demand. fallback=null because a hidden modal
+          should stay hidden during its first fetch (no flash of UI). */}
+      <Suspense fallback={null}>
       {showCreate     && <CreateModal user={user} profiles={profiles} groupMembers={groupMembers} maxC={credits[user]??0} cats={cats} settings={settings} onCreate={handleCreate} onClose={() => {
         setShowCreate(false);
         // If the tour was paused so the user could try the modal as a demo,
@@ -1616,6 +1641,7 @@ export default function App() {
           }}
         />
       )}
+      </Suspense>
     </div>
   );
 }
