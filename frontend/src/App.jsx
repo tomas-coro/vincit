@@ -832,6 +832,12 @@ export default function App() {
   // the old single-state model.
   const [winAnimQueue, setWinAnimQueue]   = useState([]);
   const [commentBetQueue, setCommentBetQueue] = useState([]);
+  // Bets currently inside the "undo" toast window after declare/confirm
+  // — we hide the declare button on these BetCards so the user can't
+  // hit "Dichiara esito" twice while the previous result is still
+  // pending commit. Cleared on undo or when the toast times out and
+  // performResolve runs.
+  const [pendingResolveIds, setPendingResolveIds] = useState(() => new Set());
   const winAnim = winAnimQueue[0] ?? null;
   const commentBetModal = commentBetQueue[0] ?? null;
   // Bets whose resolution we've already celebrated for this user, so
@@ -1152,16 +1158,35 @@ export default function App() {
     api.resolveBet(bet.id, outcome).catch(e => console.error(e));
   };
 
+  const clearPendingResolve = (id) => {
+    setPendingResolveIds(prev => {
+      if (!prev.has(id)) return prev;
+      const n = new Set(prev); n.delete(id); return n;
+    });
+  };
+
   const deferResolve = (bet, outcome, asConfirmer) => {
     setRevealBet(null); setResolveBet(null); setOvertimeBet(null);
+    // Lock the declare button on this bet's card for the duration of
+    // the undo toast — otherwise the user can re-tap "Dichiara esito"
+    // before the result commits and end up declaring twice.
+    setPendingResolveIds(prev => {
+      const n = new Set(prev); n.add(bet.id); return n;
+    });
     const messageKey = outcome === 'won' ? 'app.resolve_pending_won' : 'app.resolve_pending_lost';
     toast.action({
       message: t(messageKey, { title: bet.title || '' }),
       variant: outcome === 'won' ? 'success' : 'info',
       duration: 5000,
       actionLabel: t('app.undo'),
-      onAction: () => { toast.info(t('app.resolve_undone')); },
-      onTimeout: () => performResolve(bet, outcome, asConfirmer),
+      onAction: () => {
+        toast.info(t('app.resolve_undone'));
+        clearPendingResolve(bet.id);
+      },
+      onTimeout: () => {
+        clearPendingResolve(bet.id);
+        performResolve(bet, outcome, asConfirmer);
+      },
     });
   };
 
@@ -1587,7 +1612,7 @@ export default function App() {
             : (view === 'stats' || view === 'trophies') ? <SkeletonList count={3} />
             :                                              <SkeletonList count={3} />;
           return (<Suspense fallback={ViewFallback}><>
-            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onGoToBets={goToAllBets} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={onEggFired} onOpenDie={() => setDieRollOpen(true)} onOpenIceEgg={() => setIceEggOpen(true)} onOpenPhoenixEgg={() => setPhoenixEggOpen(true)} />}
+            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onGoToBets={goToAllBets} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={onEggFired} onOpenDie={() => setDieRollOpen(true)} onOpenIceEgg={() => setIceEggOpen(true)} onOpenPhoenixEgg={() => setPhoenixEggOpen(true)} pendingResolveIds={pendingResolveIds} />}
             {view === 'bets'      && <BetsHubView
                 tab={betsTab} setTab={setBetsTab}
                 user={user} profiles={profiles} bets={bets} cats={cats} isDesktop={isDesktop}
@@ -1598,6 +1623,7 @@ export default function App() {
                 onReveal={b => setRevealBet(b)} vaultUnlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin}
                 onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)}
                 onOpenCreate={() => setShowCreate(true)}
+                pendingResolveIds={pendingResolveIds}
               />}
             {view === 'stats'     && <StatsView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} isDesktop={isDesktop} onOpenCreate={() => setShowCreate(true)} />}
             {view === 'trophies'  && <TrophiesView bets={bets} isDesktop={isDesktop} />}

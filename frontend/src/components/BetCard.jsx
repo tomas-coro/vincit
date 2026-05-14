@@ -17,7 +17,7 @@ const qToP = q=>Math.round(100/parseFloat(q));
 const SWIPE_THRESHOLD = 80;
 const VERT_ABORT      = 40;
 
-export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,onReactionPhoto,reactions,onDelete,onEdit,isDesktop,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime}){
+export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCounter,onFlame,onReaction,onReactionPhoto,reactions,onDelete,onEdit,isDesktop,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime,pendingResolve=false}){
   const { t, lang } = useLang();
   const canModerate = typeof can === 'function' && can('moderate_bets');
   const [photoCaptureOpen, setPhotoCaptureOpen] = useState(false);
@@ -98,7 +98,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const setDelta = (v) => { deltaRef.current = v; setDeltaX(v); };
 
   useEffect(() => {
-    if (isDesktop || !isOwner || done || isPending || hasProposal || isDisputed || !onResolve) return;
+    if (isDesktop || !isOwner || done || isPending || hasProposal || isDisputed || !onResolve || pendingResolve) return;
     const el = cardRef.current;
     if (!el) return;
 
@@ -129,7 +129,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
       el.removeEventListener('touchmove',  onMove);
       el.removeEventListener('touchend',   onEnd);
     };
-  }, [isDesktop, isOwner, done, isPending, hasProposal, isDisputed, onResolve, bet]);
+  }, [isDesktop, isOwner, done, isPending, hasProposal, isDisputed, onResolve, bet, pendingResolve]);
 
   // Owner-side action row. Includes resolve/reveal (active bets only)
   // plus edit + cancel (allowed on pending too, per ownerCanMutate above).
@@ -138,7 +138,9 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
       {!isPending && (bet.isSecret
         ?<Btn variant="gold" sm style={isDesktop?{}:{flex:1}} onClick={()=>onReveal(bet)}>{t('bet_card.reveal')}</Btn>
         :(!hasProposal&&!isDisputed)
-          ?<Btn variant="grn" sm style={isDesktop?{}:{flex:1}} onClick={()=>onResolve(bet)}>{hasOpponent?t('bet_card.propose_resolve'):t('bet_card.declare')}</Btn>
+          ? pendingResolve
+            ? <Btn variant="ghost" sm disabled style={{...(isDesktop?{}:{flex:1}), opacity:.55, cursor:'default'}}>⏳ {t('bet_card.declare_pending') ?? 'In invio…'}</Btn>
+            : <Btn variant="grn" sm style={isDesktop?{}:{flex:1}} onClick={()=>onResolve(bet)}>{hasOpponent?t('bet_card.propose_resolve'):t('bet_card.declare')}</Btn>
           :null
       )}
       <button onClick={()=>onFlame(bet.id)} style={{...S.btn,padding:"7px 10px",background:"transparent",border:"1px solid var(--brd)",color:bet.flamed?"#f97316":"var(--dim)",fontSize:12}}>{bet.flamed?"🔥":"🤍"}</button>
@@ -458,11 +460,12 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                     })}
                   </div>
                   <div style={{display:'flex',gap:8}}>
-                    <Btn variant="grn" sm style={{flex:1}} onClick={()=>onConfirmOutcome?.(bet,bet.pendingOutcome)}>
-                      {t('bet_card.proposed_confirm',{label: bet.pendingOutcome==='won'?t('bet_card.yes_short'):t('bet_card.no_short')})}
+                    <Btn variant="grn" sm disabled={pendingResolve} style={{flex:1,...(pendingResolve?{opacity:.55,cursor:'default'}:{})}} onClick={()=>!pendingResolve&&onConfirmOutcome?.(bet,bet.pendingOutcome)}>
+                      {pendingResolve ? '⏳' : t('bet_card.proposed_confirm',{label: bet.pendingOutcome==='won'?t('bet_card.yes_short'):t('bet_card.no_short')})}
                     </Btn>
-                    <button onClick={()=>onConfirmOutcome?.(bet,bet.pendingOutcome==='won'?'lost':'won')}
-                      style={{...S.btn,flex:1,padding:'7px 10px',background:'transparent',border:'1px solid var(--red)44',color:'var(--red)',fontSize:12}}>
+                    <button disabled={pendingResolve}
+                      onClick={()=>!pendingResolve&&onConfirmOutcome?.(bet,bet.pendingOutcome==='won'?'lost':'won')}
+                      style={{...S.btn,flex:1,padding:'7px 10px',background:'transparent',border:'1px solid var(--red)44',color:'var(--red)',fontSize:12,opacity:pendingResolve?.55:1,cursor:pendingResolve?'default':'pointer'}}>
                       {t('bet_card.proposed_reject')}
                     </button>
                   </div>

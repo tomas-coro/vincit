@@ -17,6 +17,7 @@ export default function BetsHubView({
   onReveal, vaultUnlocked, onPinRequest, vaultPin,
   // Empty-state CTA (passed through to BetsView/VaultView)
   onOpenCreate,
+  pendingResolveIds,
   // BetsView reset signal: when the parent bumps `betsViewKey` we
   // remount BetsView so its `useState(initialStatus || 'active')`
   // re-applies the new initial. Used by the Dashboard "Vedi tutte"
@@ -101,6 +102,7 @@ export default function BetsHubView({
           onAccept={onAccept} onReject={onReject} can={can}
           onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}
           onOpenCreate={onOpenCreate}
+          pendingResolveIds={pendingResolveIds}
         />
       )}
     </div>

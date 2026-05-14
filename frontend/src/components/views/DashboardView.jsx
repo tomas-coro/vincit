@@ -51,7 +51,7 @@ const S = {
 // here intentionally stays still — the animation lives in the overlay so
 // the dashboard stays visually clean.
 
-export default function DashboardView({user,profiles,groupMembers,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onGoToVault,onGoToBets,onConfirmOutcome,onWithdrawResolve,onOvertime,onEggUnlock,onOpenDie,onOpenIceEgg,onOpenPhoenixEgg}){
+export default function DashboardView({user,profiles,groupMembers,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onGoToVault,onGoToBets,onConfirmOutcome,onWithdrawResolve,onOvertime,onEggUnlock,onOpenDie,onOpenIceEgg,onOpenPhoenixEgg,pendingResolveIds}){
   const { t, lang } = useLang();
   // Bet-detail modal payload. Set when the user taps a single V/P badge
   // in the form trail — opens BetListModal scoped to just that one bet
@@ -224,8 +224,8 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
   const activeBets=(myAct.length+thAct.length)>0&&(
     <>
       <SecLabel>{t('dashboard.active')}</SecLabel>
-      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} can={can} onDelete={onDelete} onEdit={onEdit} onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}/>)}
-      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} can={can} onDelete={onDelete} onEdit={onEdit} onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}/>)}
+      {myAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} can={can} onDelete={onDelete} onEdit={onEdit} onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime} pendingResolve={pendingResolveIds?.has(b.id)}/>)}
+      {thAct.map(b=><BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats} onFlame={onFlame} onCounter={onCounter} isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto} can={can} onDelete={onDelete} onEdit={onEdit} onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime} pendingResolve={pendingResolveIds?.has(b.id)}/>)}
     </>
   );
 

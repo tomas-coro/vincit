@@ -4,7 +4,7 @@ import BetCard from '../BetCard.jsx';
 import { DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
 import EmptyState from '../EmptyState.jsx';
 
-export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime,onOpenCreate,initialStatus,hideTitle=false}){
+export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime,onOpenCreate,initialStatus,hideTitle=false,pendingResolveIds}){
   const { t } = useLang();
   // `initialStatus` is honored only on mount — parent uses React `key` to
   // force a remount when it wants the filter to snap to a new default
@@ -166,7 +166,8 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
               onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} onDelete={onDelete} onEdit={onEdit}
               isDesktop={isDesktop} reactions={reactions} onReaction={onReaction} onReactionPhoto={onReactionPhoto}
               onAccept={onAccept} onReject={onReject} can={can}
-              onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}/>)}
+              onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}
+              pendingResolve={pendingResolveIds?.has(b.id)}/>)}
           </div>
       }
     </div>
