@@ -25,7 +25,7 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
   const q = query.trim().toLowerCase();
   const visible = bets
     .filter(b => !b.isSecret)
-    .filter(b => fStatus === 'all' || b.status === fStatus || (fStatus === 'active' && (b.status === 'pending' || b.status === 'disputed')))
+    .filter(b => fStatus === 'all' || b.status === fStatus || (fStatus === 'active' && (b.status === 'pending' || b.status === 'disputed' || b.status === 'expired')))
     .filter(b => fCat    === 'all' || b.category === fCat)
     .filter(b => fWho    === 'all' || (fWho === 'mine' ? b.creator === user : b.creator !== user))
     .filter(b => !q || (b.title || '').toLowerCase().includes(q));

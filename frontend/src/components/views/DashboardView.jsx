@@ -73,7 +73,7 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
   const other = otherIds[0] ?? null;
   const myWon=bets.filter(b=>b.creator===user&&b.status==="won");
   const myLost=bets.filter(b=>b.creator===user&&b.status==="lost");
-  const myAct=bets.filter(b=>b.creator===user&&!b.isSecret&&['active','expired'].includes(b.status));
+  const myAct=bets.filter(b=>b.creator===user&&!b.isSecret&&b.status==='active');
   const pendingBets=bets.filter(b=>b.status==='pending'&&(b.creator===user||b.opponent===user));
   const mySec=bets.filter(b=>b.creator===user&&b.isSecret&&b.status==="active");
   const thAct=bets.filter(b=>otherIds.includes(b.creator)&&!b.isSecret&&b.status==="active");
@@ -219,7 +219,15 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
           display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
           padding:'6px 0', borderTop:'1px solid var(--red)22',
         }}>
-          <div style={{fontSize:12,color:"var(--txt)",fontWeight:500,flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+          <div
+            onClick={() => setBetListData({ title: b.title, accentColor:'var(--red)', bets:[b] })}
+            style={{
+              fontSize:12, color:"var(--txt)", fontWeight:500,
+              flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+              cursor:'pointer', textDecoration:'underline', textDecorationColor:'var(--red)55',
+              WebkitTapHighlightColor:'transparent',
+            }}
+          >
             {b.title}
           </div>
           {onResolve && (
