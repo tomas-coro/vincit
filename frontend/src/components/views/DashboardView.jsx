@@ -51,7 +51,7 @@ const S = {
 // here intentionally stays still — the animation lives in the overlay so
 // the dashboard stays visually clean.
 
-export default function DashboardView({user,profiles,groupMembers,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onGoToVault,onGoToBets,onConfirmOutcome,onWithdrawResolve,onOvertime,onEggUnlock,onOpenDie,onOpenIceEgg,onOpenPhoenixEgg,pendingResolveIds}){
+export default function DashboardView({user,profiles,groupMembers,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onGoToVault,onGoToBets,onConfirmOutcome,onWithdrawResolve,onOvertime,onEggUnlock,onOpenDie,onOpenIceEgg,onOpenPhoenixEgg,pendingResolveIds,onNotifSeen}){
   const { t, lang } = useLang();
   // Bet-detail modal payload. Set when the user taps a single V/P badge
   // in the form trail — opens BetListModal scoped to just that one bet
@@ -77,7 +77,8 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
   const pendingBets=bets.filter(b=>b.status==='pending'&&(b.creator===user||b.opponent===user));
   const mySec=bets.filter(b=>b.creator===user&&b.isSecret&&b.status==="active");
   const thAct=bets.filter(b=>otherIds.includes(b.creator)&&!b.isSecret&&b.status==="active");
-  const newPart=bets.filter(b=>otherIds.includes(b.creator)&&!b.isSecret&&b.createdAt>(notifSince[user]||0)).length;
+  const newPartBets=bets.filter(b=>otherIds.includes(b.creator)&&!b.isSecret&&b.status==='active'&&b.createdAt>(notifSince[user]||0));
+  const newPart=newPartBets.length;
   const expiring=bets.filter(b=>b.creator===user&&b.status==="active"&&isSoon(b.expiresAt));
   const expiredBets=bets.filter(b=>b.creator===user&&b.status==="expired");
   const wr=(myWon.length+myLost.length)?Math.round(myWon.length/(myWon.length+myLost.length)*100):0;
@@ -766,14 +767,22 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
         </div>
       )}
 
-      {/* Partner notification */}
+      {/* Partner notification — click to see those bets, ✕ to dismiss */}
       {newPart>0&&(
-        <div style={{...S.card,marginBottom:12,background:`var(--gold)14`,border:"1px solid var(--gold)44",display:"flex",alignItems:"center",gap:10}}>
+        <div
+          onClick={() => { setBetListData({ title: `${profiles[other]?.name} — ${newPart===1?t('dashboard.notif_one'):t('dashboard.notif_many',{n:newPart})}`, accentColor:'var(--gold)', bets:newPartBets }); onNotifSeen?.(); }}
+          style={{...S.card,marginBottom:12,background:`var(--gold)14`,border:"1px solid var(--gold)44",display:"flex",alignItems:"center",gap:10,cursor:"pointer",position:"relative",WebkitTapHighlightColor:"transparent"}}
+        >
           <span style={{fontSize:22}}>{profiles[other]?.avatar}</span>
-          <div>
+          <div style={{flex:1,minWidth:0}}>
             <div style={{fontWeight:600,fontSize:13,color:"var(--gold)"}}>{profiles[other]?.name} {newPart===1?t('dashboard.notif_one'):t('dashboard.notif_many',{n:newPart})}</div>
-            <div style={{fontSize:11,color:"var(--dim)"}}>{t('dashboard.notif_sub')}</div>
+            <div style={{fontSize:11,color:"var(--dim)"}}>{t('dashboard.notif_sub')} · <span style={{color:'var(--gold)',fontWeight:600}}>Vedi →</span></div>
           </div>
+          <button
+            onClick={e=>{ e.stopPropagation(); onNotifSeen?.(); }}
+            aria-label="Chiudi"
+            style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--dim)",fontSize:16,padding:"4px 6px",flexShrink:0,lineHeight:1}}
+          >✕</button>
         </div>
       )}
 
