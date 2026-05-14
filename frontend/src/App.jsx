@@ -103,8 +103,14 @@ const CSS_BASE = `
 @keyframes confA{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(90px) rotate(720deg);opacity:0}}
 @keyframes confB{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1}100%{transform:translate(var(--ex),var(--ey)) rotate(var(--rot,720deg)) scale(.4);opacity:0}}
 @keyframes bcStreakTap{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-8deg)}100%{transform:scale(1) rotate(0deg)}}
-.bc *{box-sizing:border-box;margin:0;padding:0}
+.bc *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 .bc{font-family:'Manrope',sans-serif;transition:background .25s,color .25s}
+/* Kill every default focus/click outline app-wide — user reported the lavender
+   focus ring and the mobile tap-highlight both reading as a "blue box" they
+   never want to see. Anything that needs explicit keyboard focus styling
+   should opt-in locally. */
+.bc *:focus, .bc *:focus-visible, .bc *:focus-within{outline:none !important;box-shadow:none}
+.bc button, .bc input, .bc textarea, .bc select, .bc a{-webkit-tap-highlight-color:transparent;}
 
 /* ─── Editorial type scale ────────────────────────────────────────── */
 /* Hero italic display (60–96px depending on viewport).               */
@@ -182,15 +188,10 @@ const CSS_BASE = `
 }
 .bc h1,.bc h2{letter-spacing:-0.02em}
 
-/* Focus ring (keyboard nav) — uses lavender now; gold is reserved for accents. */
-.bc button:focus-visible,
-.bc input:focus-visible,
-.bc textarea:focus-visible,
-.bc select:focus-visible{
-  outline:2px solid var(--pur);
-  outline-offset:2px;
-  border-radius:8px;
-}
+/* Focus ring removed globally per user request — every click was producing a
+   lavender outline that read as a stray "blue box". The Kill-outline rule
+   above handles all states. Inputs/textareas still get a subtle border colour
+   change on hover (see media query below). */
 
 /* Hover lift on interactive surfaces — desktop pointer only */
 @media (hover:hover) and (pointer:fine){
