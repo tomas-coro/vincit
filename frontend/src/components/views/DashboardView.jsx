@@ -24,6 +24,7 @@ import { useLang, TRANSLATIONS } from '../../i18n.js';
 import BetCard from '../BetCard.jsx';
 import { StreakInline } from '../StreakBadge.jsx';
 import DieFace from '../DieFace.jsx';
+import BetListModal from '../modals/BetListModal.jsx';
 
 // Returns trailing consecutive {winStreak, lossStreak} for a given user, based on their bets.
 function currentStreaks(bets, userId) {
@@ -52,6 +53,9 @@ const S = {
 
 export default function DashboardView({user,profiles,groupMembers,credits,bets,cats,onCreate,onResolve,onReveal,onCounter,onFlame,notifSince,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onGoToVault,onConfirmOutcome,onWithdrawResolve,onOvertime,onEggUnlock,onOpenDie,onOpenIceEgg,onOpenPhoenixEgg}){
   const { t, lang } = useLang();
+  // "Apri lista bet" overlay — null when closed, 'won' / 'lost' when open.
+  // Triggered by tapping the V / P stat tiles in the score card.
+  const [betListOpen, setBetListOpen] = useState(null);
   // 3-tap activation state for the streak-emoji easter eggs (ice / phoenix).
   // Each tap pulses the emoji + resets a 1.8s timeout; the 3rd tap inside
   // that window opens the matching overlay. Counter resets after firing.
@@ -573,8 +577,8 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
           rack. */}
       {totalMy > 0 && (() => {
         const cells = [
-          {l:t('stats_view.won'),   v:myWon.length,  c:'var(--grn)'},
-          {l:t('stats_view.lost'),  v:myLost.length, c:'var(--red)'},
+          {l:t('stats_view.won'),   v:myWon.length,  c:'var(--grn)', onClick:() => setBetListOpen('won')},
+          {l:t('stats_view.lost'),  v:myLost.length, c:'var(--red)', onClick:() => setBetListOpen('lost')},
           {l:t('stats_view.win_rate'), v:`${wr}%`,   c: wr>=50 ? 'var(--grn)' : 'var(--red)'},
           {l:t('dashboard.total_bets'), v:totalMy + myAct.length + mySec.length, c:'var(--gold)'},
         ];
@@ -594,21 +598,42 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
             paddingTop:18, borderTop:'1px solid var(--rule)',
             alignItems:'flex-start',
           }}>
-            {cells.map((s, idx) => (
-              <div key={s.l} style={{
-                flex:1, minWidth:0,
-                paddingTop: yOffsets[idx],
-                paddingLeft: 6, paddingRight: 6,
-                display:'flex', flexDirection:'column',
-                alignItems: anchors[idx],
-                textAlign: aligns[idx],
-                transform: `translateX(${nudges[idx]}px)`,
-                borderLeft: idx === 0 ? 'none' : '1px solid var(--rule)',
-              }}>
-                <div className="bc-num" style={{fontSize: 'clamp(22px, 5vw, 34px)', color:s.c, lineHeight:1}}>{s.v}</div>
-                <div className="bc-meta" style={{marginTop:6, fontSize:8}}>{s.l}</div>
-              </div>
-            ))}
+            {cells.map((s, idx) => {
+              const clickable = !!s.onClick;
+              const Tag = clickable ? 'button' : 'div';
+              return (
+                <Tag key={s.l}
+                  {...(clickable ? {
+                    onClick: s.onClick,
+                    'aria-label': `${s.l} — apri lista`,
+                  } : {})}
+                  style={{
+                    flex:1, minWidth:0,
+                    paddingTop: yOffsets[idx],
+                    paddingLeft: 6, paddingRight: 6,
+                    display:'flex', flexDirection:'column',
+                    alignItems: anchors[idx],
+                    textAlign: aligns[idx],
+                    transform: `translateX(${nudges[idx]}px)`,
+                    borderLeft: idx === 0 ? 'none' : '1px solid var(--rule)',
+                    background: 'transparent', border: 'none',
+                    cursor: clickable ? 'pointer' : 'default',
+                    color: 'inherit', fontFamily: 'inherit',
+                    WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+                  }}>
+                  <div className="bc-num" style={{
+                    fontSize: 'clamp(22px, 5vw, 34px)', color:s.c, lineHeight:1,
+                    textDecoration: clickable ? 'underline' : 'none',
+                    textDecorationStyle: 'dotted', textDecorationThickness: '1px',
+                    textUnderlineOffset: '4px',
+                    textDecorationColor: clickable ? `${s.c}55` : 'transparent',
+                  }}>{s.v}</div>
+                  <div className="bc-meta" style={{marginTop:6, fontSize:8}}>
+                    {s.l}{clickable ? ' ▸' : ''}
+                  </div>
+                </Tag>
+              );
+            })}
           </div>
         );
       })()}
@@ -648,6 +673,17 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
       ):(
         <>{expiredAlert}{expiryAlert}{scoreCard}{vaultTeaser}{pendingSection}{activeBets}{emptyState}{recentResolved}</>
       )}
+
+      <BetListModal
+        open={!!betListOpen}
+        title={betListOpen === 'won' ? t('stats_view.won') : t('stats_view.lost')}
+        accentColor={betListOpen === 'won' ? 'var(--grn)' : 'var(--red)'}
+        bets={betListOpen === 'won' ? myWon : (betListOpen === 'lost' ? myLost : [])}
+        profiles={profiles}
+        userId={user}
+        emptyHint={t('dashboard.no_active_sub')}
+        onClose={() => setBetListOpen(null)}
+      />
     </div>
   );
 }
