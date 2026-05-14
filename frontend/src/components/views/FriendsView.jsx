@@ -799,6 +799,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
           myBets={myBets}
           myCredits={myCredits}
           myUserId={user}
+          myGroups={groups}
           onClose={() => setOpenProfile(null)}
           onSwitchToGroup={onSwitchToGroup}
           t={t}
@@ -812,7 +813,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
 // Tap on a friend's row → this modal opens. Shows their trophy collection
 // (grouped by tier), joint stats vs me (h2h W:L, total stake moved, best
 // shared bet), and a "Crea bet con [nome]" CTA.
-function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserId, onClose, onSwitchToGroup, t }) {
+function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserId, myGroups = [], onClose, onSwitchToGroup, t }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
@@ -1034,31 +1035,49 @@ function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserI
             })()}
 
             {/* Groups the friend is in — full list if confirmed friends,
-                only the shared subset for "visible because same group". */}
-            {Array.isArray(data.groups) && data.groups.length > 0 && (
-              <div style={{ marginBottom: 18 }}>
-                <div className="bc-meta" style={{ marginBottom: 10 }}>
-                  — {data.isFriend ? t('friends.profile_groups_all') : t('friends.profile_groups_shared')}
+                only the shared subset otherwise. Groups the *viewer* is
+                also in render as clickable pills (jump-to-group); groups
+                only the friend belongs to render as static pills so the
+                viewer can see context without triggering a navigation
+                into a room they can't actually enter. */}
+            {Array.isArray(data.groups) && data.groups.length > 0 && (() => {
+              const myIds = new Set(Array.isArray(myGroups) ? myGroups.map(g => g.id) : []);
+              return (
+                <div style={{ marginBottom: 18 }}>
+                  <div className="bc-meta" style={{ marginBottom: 10 }}>
+                    — {data.isFriend ? t('friends.profile_groups_all') : t('friends.profile_groups_shared')}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {data.groups.map(g => {
+                      const joinable = myIds.has(g.id);
+                      const Tag = joinable ? 'button' : 'div';
+                      return (
+                        <Tag key={g.id}
+                          {...(joinable ? {
+                            onClick: () => { onSwitchToGroup?.(g.id); onClose?.(); },
+                            'aria-label': `Vai a ${g.name}`,
+                          } : { 'aria-label': `${g.name} — non sei membro` })}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '6px 12px', borderRadius: 999,
+                            border: '1px solid var(--brd)',
+                            background: joinable ? 'var(--card)' : 'transparent',
+                            color: joinable ? 'var(--txt)' : 'var(--mut)',
+                            cursor: joinable ? 'pointer' : 'default',
+                            fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
+                            opacity: joinable ? 1 : 0.6,
+                            WebkitTapHighlightColor: 'transparent',
+                          }}>
+                          <span style={{ fontSize: 14 }}>{g.emoji}</span>
+                          <span>{g.name}</span>
+                          {!joinable && <span style={{ fontSize: 10, color: 'var(--mut)', marginLeft: 2 }}>· non membro</span>}
+                        </Tag>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {data.groups.map(g => (
-                    <button key={g.id}
-                      onClick={() => { onSwitchToGroup?.(g.id); onClose?.(); }}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '6px 12px', borderRadius: 999,
-                        border: '1px solid var(--brd)', background: 'var(--card)',
-                        color: 'var(--txt)', cursor: 'pointer',
-                        fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
-                        WebkitTapHighlightColor: 'transparent',
-                      }}>
-                      <span style={{ fontSize: 14 }}>{g.emoji}</span>
-                      <span>{g.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Joint vs me */}
             {data.vsMe.total > 0 && (
