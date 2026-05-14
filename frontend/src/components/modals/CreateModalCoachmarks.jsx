@@ -42,6 +42,7 @@ const CSS = `
   0%,100% { transform: translate(var(--arrow-tx, 0), var(--arrow-ty, 0)) }
   50%     { transform: translate(var(--arrow-tx, 0), calc(var(--arrow-ty, 0px) + var(--arrow-bounce, 6px))) }
 }
+@keyframes bcCoachCutoutIn { from { opacity: 0 } to { opacity: 1 } }
 `;
 
 const PAD = 10;          // spotlight padding around the target
@@ -61,9 +62,12 @@ export default function CreateModalCoachmarks({ open, onClose }) {
     if (open) { setStep(0); setExiting(false); }
   }, [open]);
 
-  // Track-target loop: re-measure the spotlight rect on step change AND
-  // on a low-frequency interval so we follow layout shifts inside the
-  // modal (input fields growing, etc.) without paying for ResizeObserver.
+  // Track-target loop: re-measure the spotlight rect on step change, on
+  // window resize, on any scroll (capture-phase catches nested scroll
+  // containers without a ref), and on the target's own size changes via
+  // ResizeObserver. The previous 250ms setInterval was the main source
+  // of mobile stutter — it forced a getBoundingClientRect + setState
+  // four times a second even when nothing changed.
   useLayoutEffect(() => {
     if (!open) { setRect(null); return; }
     const s = STEPS[step];
@@ -71,34 +75,49 @@ export default function CreateModalCoachmarks({ open, onClose }) {
 
     let cancelled = false;
     let didScroll = false;
+    let raf = 0;
 
     const measure = () => {
       if (cancelled) return;
-      const el = document.querySelector(`[data-coach="${s.target}"]`);
-      if (!el) { setRect(null); return; }
-      const r = el.getBoundingClientRect();
-      // Scroll into view if visibly clipped — and only do it once per step
-      // so we don't fight the user if they scrolled away on purpose.
-      if (!didScroll && (r.top < 80 || r.bottom > window.innerHeight - 220)) {
-        didScroll = true;
-        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        // Re-measure after the smooth scroll settles.
-        setTimeout(measure, 420);
-        return;
-      }
-      setRect({ x: r.left, y: r.top, w: r.width, h: r.height });
+      // Coalesce bursts (scroll/resize fire many events) into one rAF.
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (cancelled) return;
+        const el = document.querySelector(`[data-coach="${s.target}"]`);
+        if (!el) { setRect(null); return; }
+        const r = el.getBoundingClientRect();
+        // Scroll into view if visibly clipped — once per step, so we
+        // don't fight the user if they scrolled away on purpose.
+        if (!didScroll && (r.top < 80 || r.bottom > window.innerHeight - 220)) {
+          didScroll = true;
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          setTimeout(measure, 420);
+          return;
+        }
+        setRect({ x: r.left, y: r.top, w: r.width, h: r.height });
+      });
     };
 
     measure();
-    const id = setInterval(measure, 250); // catch DOM mutations
-    const onResize = () => measure();
-    window.addEventListener('resize', onResize);
+
+    const targetEl = document.querySelector(`[data-coach="${s.target}"]`);
+    let ro = null;
+    if (targetEl && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure);
+      ro.observe(targetEl);
+    }
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, { capture: true, passive: true });
+
     return () => {
       cancelled = true;
-      clearInterval(id);
-      window.removeEventListener('resize', onResize);
+      if (raf) cancelAnimationFrame(raf);
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, { capture: true });
     };
-  }, [open, step, measureTickRef.current]);
+  }, [open, step]);
 
   if (!open) return null;
 
@@ -173,16 +192,22 @@ export default function CreateModalCoachmarks({ open, onClose }) {
       {/* Backdrop + spotlight cutout. When `rect` is null (intro step) we
           just dim the entire screen; otherwise the spotlight is rendered
           as a div whose huge box-shadow paints everything *outside* it
-          dark, creating the cutout effect with zero SVG/canvas. */}
+          dark, creating the cutout effect with zero SVG/canvas.
+          The cutout SNAPS between steps instead of transitioning its
+          geometry — animating left/top/width/height while repainting a
+          9999px box-shadow is brutally expensive on mobile. A brief
+          opacity fade-in (via `key={step}`) keeps step transitions from
+          feeling abrupt without paying the perf cost. */}
       {rect ? (
-        <div style={{
+        <div key={step} style={{
           position: 'fixed',
           left: rect.x - PAD, top: rect.y - PAD,
           width: rect.w + PAD * 2, height: rect.h + PAD * 2,
           borderRadius: 12,
           boxShadow: '0 0 0 9999px rgba(10,8,22,.78), 0 0 0 2px var(--gold), 0 0 22px var(--glow)',
           pointerEvents: 'none',
-          transition: 'left .32s cubic-bezier(.4,.0,.2,1), top .32s cubic-bezier(.4,.0,.2,1), width .32s cubic-bezier(.4,.0,.2,1), height .32s cubic-bezier(.4,.0,.2,1)',
+          willChange: 'opacity',
+          animation: 'bcCoachCutoutIn .18s ease both',
         }}/>
       ) : (
         <div style={{
