@@ -213,7 +213,7 @@ const pool = new Pool({
       'first_pegno_set','first_join',
       'epic_night','perfect_run','outsider_streak',
       'social_butterfly','loaded','half_marathon',
-      'egg_dice','egg_coin','egg_jackpot'
+      'egg_dice','egg_coin','egg_jackpot','egg_ice','egg_phoenix','egg_master'
     )
   `);
 
