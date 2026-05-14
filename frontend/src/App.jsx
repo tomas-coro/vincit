@@ -414,6 +414,129 @@ function useBreakpoint(minWidth) {
   } catch {}
 })();
 
+// Loading overlay shown while the initial /api/me call is in flight. On
+// the free Render+Neon tier the server can be cold-paused, so we escalate
+// the message at 3s and again at 15s to set expectations honestly
+// instead of leaving the user staring at a lonely ₡ for 30s.
+function ColdStartLoader({ t }) {
+  const [level, setLevel] = React.useState(0); // 0 = silent, 1 = waking, 2 = patience
+  React.useEffect(() => {
+    const t1 = setTimeout(() => setLevel(1), 3000);
+    const t2 = setTimeout(() => setLevel(2), 15000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+  return (
+    <div style={{
+      position:'fixed', inset:0, display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', background:'var(--bg)',
+      padding:'40px 28px', textAlign:'center', gap:20,
+    }}>
+      <div style={{
+        fontFamily:"'Playfair Display',serif", fontSize:48, color:'var(--gold)',
+        animation: 'pGold 2.5s ease-in-out infinite',
+      }}>₡</div>
+      {level >= 1 && (
+        <div style={{
+          fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+          fontSize:22, fontWeight:600, color:'var(--txt)', maxWidth:420,
+          animation:'fIn .35s ease both',
+        }}>
+          {t('cold_start.waking')}
+        </div>
+      )}
+      {level >= 2 && (
+        <div style={{
+          fontSize:13, color:'var(--dim)', lineHeight:1.6, maxWidth:380,
+          animation:'fIn .35s ease both',
+        }}>
+          {t('cold_start.patience')}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// PWA install banner. Captures the deferred `beforeinstallprompt` event so
+// we can show a tasteful in-app prompt later rather than the browser's
+// silent install icon. Hides itself for 7 days after dismissal and forever
+// after a successful install. Listed visible only post-login so users have
+// seen *something* worth installing before we ask.
+function PwaInstallBanner({ t, visible }) {
+  const [deferred, setDeferred] = React.useState(null);
+  const [dismissed, setDismissed] = React.useState(false);
+
+  React.useEffect(() => {
+    const onBeforeInstall = (e) => {
+      e.preventDefault();
+      // Respect a recent dismissal: 7 days = 7*24*60*60*1000 ms.
+      try {
+        const ts = Number(localStorage.getItem('bc_pwa_dismissed_at') || 0);
+        if (ts && Date.now() - ts < 7 * 24 * 60 * 60 * 1000) return;
+        if (localStorage.getItem('bc_pwa_installed') === '1') return;
+      } catch {}
+      setDeferred(e);
+    };
+    const onInstalled = () => {
+      try { localStorage.setItem('bc_pwa_installed', '1'); } catch {}
+      setDeferred(null);
+    };
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  if (!deferred || dismissed || !visible) return null;
+
+  const accept = async () => {
+    try {
+      deferred.prompt();
+      await deferred.userChoice;
+    } catch {}
+    setDeferred(null);
+  };
+  const later = () => {
+    try { localStorage.setItem('bc_pwa_dismissed_at', String(Date.now())); } catch {}
+    setDismissed(true);
+  };
+
+  return (
+    <div style={{
+      position:'fixed', left:'50%', transform:'translateX(-50%)',
+      bottom: 'calc(96px + env(safe-area-inset-bottom))', // sits above mobile nav
+      width:'calc(100% - 24px)', maxWidth:420, zIndex:80,
+      background:'var(--surf)', border:'1px solid var(--gold)55',
+      borderRadius:14, padding:'14px 16px',
+      boxShadow:'0 18px 50px rgba(0,0,0,.45), 0 0 0 1px var(--gold)18',
+      animation:'sUp .3s ease both',
+    }}>
+      <div style={{
+        fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+        fontSize:18, fontWeight:600, color:'var(--txt)', marginBottom:4,
+      }}>{t('pwa.install_title')}</div>
+      <div style={{fontSize:12, color:'var(--dim)', lineHeight:1.5, marginBottom:12}}>
+        {t('pwa.install_body')}
+      </div>
+      <div style={{display:'flex', gap:8, justifyContent:'flex-end'}}>
+        <button onClick={later} style={{
+          padding:'8px 14px', borderRadius:999, background:'transparent',
+          border:'1px solid var(--brd)', color:'var(--dim)',
+          fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:700,
+          letterSpacing:'.08em', textTransform:'uppercase', cursor:'pointer',
+        }}>{t('pwa.install_later')}</button>
+        <button onClick={accept} style={{
+          padding:'8px 16px', borderRadius:999, border:'none',
+          background:'var(--gold)', color:'#1a1530',
+          fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:800,
+          letterSpacing:'.08em', textTransform:'uppercase', cursor:'pointer',
+        }}>{t('pwa.install_cta')}</button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   // Theme: persisted to localStorage so it survives page refresh / app
   // restart. Values: 'dark' (default), 'light', 'amber'. The legacy isDark
@@ -907,13 +1030,11 @@ export default function App() {
   // Splash screen (runs in parallel with auth check; stays until both done)
   if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
 
-  // Loading screen — auth still resolving after splash
-  if (authLoading) return (
-    <div style={{position:'fixed',inset:0,display:'flex',alignItems:'center',
-      justifyContent:'center',background:'var(--bg)'}}>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:'var(--gold)'}}>₡</div>
-    </div>
-  );
+  // Loading screen — auth still resolving after splash. Cold starts on the
+  // free Render+Neon tier can take ~30s, so we escalate the message at 3s
+  // ("waking the server") and again at 15s ("can take up to 30s") rather
+  // than leaving the user staring at a lonely ₡.
+  if (authLoading) return <ColdStartLoader t={t} />;
 
   // Auth gate.  Hijack the screen for ?reset=TOKEN so an emailed link works
   // even before the user is logged in.
@@ -1271,6 +1392,11 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* PWA install banner — only after login + a group exists (user has
+          context) AND no modal/tour is in the way. */}
+      <PwaInstallBanner t={t}
+        visible={!!(user && groups.length > 0 && !showCreate && !showGroupModal && (tourDone || tourPaused))} />
 
       {/* Modals */}
       {showCreate     && <CreateModal user={user} profiles={profiles} groupMembers={groupMembers} maxC={credits[user]??0} cats={cats} settings={settings} onCreate={handleCreate} onClose={() => {

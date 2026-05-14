@@ -314,6 +314,16 @@ const TRANSLATIONS = {
     stats_group: { title:'🏆 Classifica gruppo', balance:'Saldo', win_rate:'WR', wins:'V', losses:'P', best_win:'Migliore', net:'Net', no_data:'Nessuna bet risolta nel gruppo' },
     h2h: { title:'⚔️ Testa a testa', you:'Tu', net_me:'Bilancio per me', bets:'Bet', no_data:'Nessuna bet diretta tra voi',
       last5:'Ultime 5', streak_short:'di fila', biggest_win:'Vittoria più grossa', biggest_loss:'Sconfitta più dura', top_cat:'Categoria preferita' },
+    cold_start: {
+      waking:'Sveglio il server…',
+      patience:'Il piano gratuito mette in pausa server e DB dopo qualche minuto di inattività. Può richiedere fino a 30s al primo accesso.',
+    },
+    pwa: {
+      install_title:'Salva BetCouple sulla home',
+      install_body:'Apertura in un tap, niente browser. Funziona offline per la maggior parte delle schermate.',
+      install_cta:'Installa',
+      install_later:'Più tardi',
+    },
     trophies: {
       title:'🏆 Trofei', empty:'Nessun trofeo sbloccato', locked:'Bloccato', unlocked_at:'Sbloccato il',
       max_reached:'MASSIMO RAGGIUNTO', unlocked_header:'Trofeo sbloccato',
@@ -899,6 +909,16 @@ const TRANSLATIONS = {
     stats_group: { title:'🏆 Group leaderboard', balance:'Balance', win_rate:'WR', wins:'W', losses:'L', best_win:'Best', net:'Net', no_data:'No resolved bets in the group' },
     h2h: { title:'⚔️ Head to head', you:'You', net_me:'Net for me', bets:'Bets', no_data:'No direct bets between you',
       last5:'Last 5', streak_short:'in a row', biggest_win:'Biggest win', biggest_loss:'Biggest loss', top_cat:'Top category' },
+    cold_start: {
+      waking:'Waking the server…',
+      patience:'The free tier pauses the server and DB after a few minutes of inactivity. First load can take up to 30s.',
+    },
+    pwa: {
+      install_title:'Save BetCouple to your home screen',
+      install_body:'One-tap launch, no browser bar. Most screens work offline too.',
+      install_cta:'Install',
+      install_later:'Later',
+    },
     trophies: {
       title:'🏆 Trophies', empty:'No trophies unlocked yet', locked:'Locked', unlocked_at:'Unlocked on',
       max_reached:'MAX REACHED', unlocked_header:'Trophy unlocked',
