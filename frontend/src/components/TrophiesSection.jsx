@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SecLabel } from './Atoms.jsx';
 import { useLang } from '../i18n.js';
 import * as api from '../api.js';
@@ -81,6 +81,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
   const secretsUnlocked = list.some(a => a.secret && !a.hiddenUntilEarned && a.unlocked);
   const visibleList = list.filter(a => {
     if (a.hiddenUntilEarned) return a.unlocked;
+    if (a.final) return secretsUnlocked; // visible only once the first easter egg is found
     if (a.secret) return secretsUnlocked;
     return true;
   });
@@ -311,25 +312,32 @@ function TrophyDetailPopover({ a, t, fmtDate, onClose }) {
   const POPOVER_W = 260;
   const MARGIN = 12;
 
-  // Random stable position — initialised once per mount so each new trophy
-  // opens at a different spot. key={a.id} on the parent ensures remount per trophy.
+  // Stable random seed — generated once per mount. key={a.id} on the parent
+  // forces a remount (and new seed) whenever a different trophy is opened.
   const [randX] = useState(() => Math.random());
   const [randY] = useState(() => Math.random());
 
-  // Place the popover at a random position fully inside the viewport.
-  // Runs twice: once with estimated height (element hidden), then again
-  // after real height is measured — both produce a clamped position so
-  // the popover is always 100% visible without any scrolling.
-  useLayoutEffect(() => {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const measured = popoverRef.current?.offsetHeight;
-    const h = measured && measured > 0 ? measured : 210;
-
-    const left = MARGIN + randX * Math.max(0, vw - POPOVER_W - MARGIN * 2);
-    const top  = MARGIN + randY * Math.max(0, vh - h - MARGIN * 2);
-    setPos({ left, top, origin: '50% 50%' });
-  }, [randX, randY]);
+  // Run AFTER the browser has painted so offsetHeight is always the real
+  // measured value (not 0 or an estimate). Strategy: start from screen
+  // center, shift by a bounded random offset, then clamp hard to the
+  // viewport edges — guarantees 100% visibility on any screen size.
+  useEffect(() => {
+    if (!popoverRef.current) return;
+    const vw   = window.innerWidth;
+    const vh   = window.visualViewport?.height ?? window.innerHeight;
+    const h    = Math.min(popoverRef.current.offsetHeight || 260, vh - MARGIN * 2);
+    // Maximum swing from center that still keeps every edge inside MARGIN
+    const swing = Math.min(
+      Math.max(0, (vw - POPOVER_W) / 2 - MARGIN),
+      Math.max(0, (vh - h)         / 2 - MARGIN),
+      80
+    );
+    const cx   = (vw - POPOVER_W) / 2;
+    const cy   = (vh - h)         / 2;
+    const left = Math.max(MARGIN, Math.min(cx + (randX * 2 - 1) * swing, vw - POPOVER_W - MARGIN));
+    const top  = Math.max(MARGIN, Math.min(cy + (randY * 2 - 1) * swing, vh - h - MARGIN));
+    setPos({ left, top });
+  }, []); // randX/randY are mount-stable; runs once after first paint
 
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose?.(); };
@@ -385,13 +393,15 @@ function TrophyDetailPopover({ a, t, fmtDate, onClose }) {
           position:'fixed',
           left: pos ? pos.left : -9999, top: pos ? pos.top : -9999,
           width: POPOVER_W, zIndex: 290,
+          maxHeight: `calc(100dvh - ${MARGIN * 2}px)`,
+          overflowY: 'auto',
           background:'linear-gradient(160deg, var(--surf) 0%, var(--card) 100%)',
           border:'1px solid var(--rule)',
           borderTop:`3px solid ${accent}`,
           borderRadius:14,
           boxShadow:`0 18px 50px rgba(0,0,0,.55), 0 0 0 1px ${accent}22, 0 0 30px ${accent}1f`,
           padding:'14px 16px 12px',
-          transformOrigin: pos ? pos.origin : '50% 50%',
+          transformOrigin: '50% 50%',
           animation: pos ? 'tdpIn 240ms cubic-bezier(.18,.9,.32,1.18) both' : 'none',
           visibility: pos ? 'visible' : 'hidden',
         }}
