@@ -767,6 +767,12 @@ export default function App() {
     setBetsInitialStatus('all');
     setBetsViewKey(k => k + 1);
     setView('bets');
+    // Snap to the top of the new view. Done in rAF so the scroll fires
+    // after React commits the route swap (otherwise we scroll the old
+    // dashboard before the bets view has even mounted).
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    }
   };
   const [vaultUnlocked, setVaultUnlocked] = useState(false);
   // Convenience: dashboard teaser CTA → jump straight into the Vault tab

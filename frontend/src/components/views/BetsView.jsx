@@ -13,6 +13,12 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
   const [fCat,    setFCat]    = useState('all');
   const [fWho,    setFWho]    = useState('all');
   const [query,   setQuery]   = useState('');
+  // Collapses the category filter to the first ~6 items + a "+N più"
+  // expander once the user (or the group) has accumulated more cats
+  // than fit comfortably on one row. The active cat is always pinned
+  // visible so the current filter is never hidden in the overflow.
+  const [catsExpanded, setCatsExpanded] = useState(false);
+  const CATS_VISIBLE = 6;
 
   const q = query.trim().toLowerCase();
   const visible = bets
@@ -62,20 +68,48 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
         )}
       </div>
 
-      <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:8,marginBottom:14,
+      {/* Status + author filter row — single horizontal scroll lane */}
+      <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:8,marginBottom:8,
         scrollbarWidth:'none',WebkitOverflowScrolling:'touch'}}>
         {['all','active','won','lost','expired'].map(s =>
           <button key={s} style={pill(fStatus===s)} onClick={()=>setFStatus(s)}>{t('bets_view.f_'+s)}</button>
         )}{sep}
         {['all','mine','theirs'].map(w =>
           <button key={w} style={pill(fWho===w)} onClick={()=>setFWho(w)}>{t('bets_view.f_'+w)}</button>
-        )}{sep}
-        {[{id:'all',e:'',label:t('bets_view.f_cats')}, ...cats].map(c =>
-          <button key={c.id} style={pill(fCat===c.id)} onClick={()=>setFCat(c.id)}>
-            {c.e ? `${c.e} ${DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label}` : c.label}
-          </button>
         )}
       </div>
+
+      {/* Category row — wraps to multiple lines, collapses to first 6
+          when there are too many to read at a glance. */}
+      {(() => {
+        const allCats = [{id:'all',e:'',label:t('bets_view.f_cats')}, ...cats];
+        const overflow = Math.max(0, allCats.length - CATS_VISIBLE);
+        // Always show: the first CATS_VISIBLE + the currently-selected
+        // one (so the active filter never disappears behind the toggle).
+        const shouldShow = (c, idx) => catsExpanded || idx < CATS_VISIBLE || c.id === fCat;
+        return (
+          <div style={{display:'flex', gap:6, flexWrap:'wrap', paddingBottom:8, marginBottom:14, alignItems:'center'}}>
+            {allCats.map((c, idx) => shouldShow(c, idx) && (
+              <button key={c.id} style={pill(fCat===c.id)} onClick={()=>setFCat(c.id)}>
+                {c.e ? `${c.e} ${DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label}` : c.label}
+              </button>
+            ))}
+            {overflow > 0 && (
+              <button onClick={() => setCatsExpanded(e => !e)}
+                aria-expanded={catsExpanded}
+                style={{
+                  padding:'5px 12px', borderRadius:20, cursor:'pointer',
+                  background:'transparent', border:'1px dashed var(--brd)',
+                  color:'var(--dim)', fontFamily:"'Manrope',sans-serif",
+                  fontSize:11, fontWeight:600, whiteSpace:'nowrap',
+                  WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
+                }}>
+                {catsExpanded ? '− Comprimi' : `+${overflow} più`}
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {visible.length === 0
         ? (q
