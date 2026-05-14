@@ -26,7 +26,7 @@ const CATALOG = [
   { id: 'night_owl',      icon: '🦉', category: 'mission',   levels: [3, 15, 60] },                // 3 — time-of-day niche, >60 night-bets is obsessive
   { id: 'early_bird',     icon: '🌅', category: 'mission',   levels: [3, 15, 60] },                // 3 — same as night_owl mirrored
   { id: 'marathon',       icon: '🏃', category: 'mission',   levels: [5, 15, 30] },                // 3 — bets in a single day; 30 = "mega session", more = fantasy
-  { id: 'commentator',    icon: '💬', category: 'mission',   levels: [5, 20, 50, 150, 400] },     // 5 — counts comments in the bet message thread
+  { id: 'commentator',    icon: '💬', category: 'mission',   levels: [10, 50, 150, 500, 1500] },  // 5 — comments in the bet message thread; thresholds higher than win-style trophies because a single bet can easily collect a dozen messages
   { id: 'quick_resolve',  icon: '⏱️', category: 'mission',   levels: [3, 15, 50, 120] },           // 4 — resolved <1h; 4 tiers cover the realistic range
   { id: 'comeback',       icon: '💪', category: 'mission',   levels: [3, 5, 10] },                 // 3 — rare-moment trophy by nature
   { id: 'equilibrium',    icon: '☯',  category: 'mission',   levels: [10, 40, 120] },              // 3 — min(W,L); 120/120 already exceptional, 500 was unreachable

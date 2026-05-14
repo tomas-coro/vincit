@@ -65,8 +65,10 @@ export default function BetListModal({
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(8, 6, 18, 0.78)',
         backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        padding: 0,
+        // Centered overlay — matches the rest of the app's modal language.
+        // Bottom-sheet was the original v1; the user wants a unified look.
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
       }}
     >
       <div
@@ -79,8 +81,8 @@ export default function BetListModal({
           background: 'var(--surf)',
           border: '1px solid var(--rule)',
           borderTop: `4px solid ${accentColor || 'var(--gold)'}`,
-          borderRadius: '14px 14px 0 0',
-          boxShadow: '0 -20px 60px rgba(0,0,0,.55)',
+          borderRadius: 14,
+          boxShadow: '0 30px 80px rgba(0,0,0,.55)',
         }}
       >
         {/* Header */}

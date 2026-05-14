@@ -144,6 +144,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
               <li>🔔 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_push_label')}</b> — {t('settings.intro_push_body')}</li>
               <li>🌗 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_theme_label')}</b> — {t('settings.intro_theme_body')}</li>
               <li>👥 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_groups_label')}</b> — {t('settings.intro_groups_body')}</li>
+              <li>🏷 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_cats_label')}</b> — {t('settings.intro_cats_body')}</li>
               <li>🔒 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_vault_label')}</b> — {t('settings.intro_vault_body')}</li>
             </ul>
             <button onClick={dismissIntro} style={{
