@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useLang } from '../../i18n.js';
 import { cropImageToSquare } from '../../imageUtils.js';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 /**
  * Square crop UI with pan + zoom.
@@ -24,6 +25,7 @@ import useEscClose from '../../hooks/useEscClose.js';
  */
 export default function PhotoCropModal({ img, dataUrl, size = 512, quality = 0.85, onConfirm, onCancel }) {
   useEscClose(onCancel);
+  useBodyScrollLock();
   const { t } = useLang();
   const viewportRef = useRef(null);
   const [V, setV] = useState(280);

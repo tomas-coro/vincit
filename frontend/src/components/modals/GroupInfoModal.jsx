@@ -3,6 +3,7 @@ import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
 import { useToast } from '../../Toast.jsx';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 const EMOJI_OPTIONS = ['🎲','🔥','❤️','🏆','⚡','🎯','👥','🎪','🃏','🌙',
                        '🎉','🎮','🍻','⚽','🎵','💪','🤝','🎭','🎨','🌟'];
@@ -15,6 +16,7 @@ const PERM_ICONS = {
 
 export default function GroupInfoModal({ group, userId, onClose, onLeft, onDeleted, onRenamed, isAdmin=false, can }) {
   useEscClose(onClose);
+  useBodyScrollLock();
   const { t } = useLang();
   const toast = useToast();
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { COLORS } from './Atoms.jsx';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 // Small popover triggered by tapping the user avatar in the header.
 // Two actions: open the profile editor, or log out. Logout is two-step:
@@ -10,6 +11,7 @@ import { COLORS } from './Atoms.jsx';
 // Layout: centered modal with backdrop, same shell pattern as the trophy
 // detail / invitees-peek modals. Works identically on desktop and mobile.
 export default function ProfileAvatarMenu({ profile, t, onEdit, onLogout, onClose }) {
+  useBodyScrollLock();
   const [armed, setArmed] = useState(false);
   const color = COLORS[profile?.colorKey] || '#5b8af0';
   const name = profile?.name || '';

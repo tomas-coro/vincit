@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Btn } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 export default function CommentModal({ bet, onSave, onSkip }) {
   useEscClose(onSkip);
+  useBodyScrollLock();
   const { t } = useLang();
   const [comment, setComment] = useState('');
   const isWin = bet.status === 'won';

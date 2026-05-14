@@ -7,9 +7,11 @@ import { readImageFile, cropImageToSquare } from '../../imageUtils.js';
 import PhotoCropModal from './PhotoCropModal.jsx';
 import * as api from '../../api.js';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 export default function ProfileEditModal({ profile, onClose, onSaved }) {
   useEscClose(onClose);
+  useBodyScrollLock();
   const { t } = useLang();
   const toast = useToast();
 

@@ -30,6 +30,15 @@ const S = {
 
 export default function SettingsView({user,profiles,groupMembers,isDark,setIsDark,theme,setTheme,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onTestReset,onLogout,onOpenProfileEdit,isAdmin=false,can}){
   const { t, lang, setLang } = useLang();
+  // Two-step logout: first tap arms the button ("Conferma uscita" in red),
+  // second tap actually fires onLogout. Auto-resets after 4s so a forgotten
+  // arm doesn't leave a stale tap-to-log-out trap if the user wandered off.
+  const [logoutArmed, setLogoutArmed] = useState(false);
+  useEffect(() => {
+    if (!logoutArmed) return;
+    const t = setTimeout(() => setLogoutArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [logoutArmed]);
   // First-visit intro tip — points at the 4 main areas of the page so
   // users don't have to scroll-hunt for things like push toggles or
   // theme switcher. One-time, dismissible, persisted in LS.
@@ -133,8 +142,20 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
           <div className="bc-hero" style={{fontSize:isDesktop?54:38}}>{t('settings.title')}</div>
         </div>
         {onLogout && (
-          <button onClick={onLogout} style={{...S.btn,background:'transparent',color:'var(--dim)',padding:'8px 16px',textTransform:'uppercase'}}>
-            {t('settings.logout')}
+          <button
+            onClick={() => {
+              if (!logoutArmed) { setLogoutArmed(true); return; }
+              onLogout();
+            }}
+            style={{
+              ...S.btn,
+              background: logoutArmed ? 'var(--red)18' : 'transparent',
+              color: logoutArmed ? 'var(--red)' : 'var(--dim)',
+              border: logoutArmed ? '1px solid var(--red)55' : 'none',
+              padding:'8px 16px', textTransform:'uppercase',
+            }}
+          >
+            {logoutArmed ? `⚠ ${t('settings.profile_menu_logout_confirm')}` : t('settings.logout')}
           </button>
         )}
       </div>

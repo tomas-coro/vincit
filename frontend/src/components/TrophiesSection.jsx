@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { SecLabel } from './Atoms.jsx';
 import { useLang } from '../i18n.js';
 import * as api from '../api.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 const CAT_ORDER = ['unique', 'positive', 'challenge', 'mission', 'shadow', 'social', 'secret'];
 
@@ -269,6 +270,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
 // tile (the popover's mousedown-outside handler fires before the new
 // tile's click, so switching trophies feels instant).
 function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
+  useBodyScrollLock();
   const masked = !!a.secret && !a.unlocked;
   const labelName = masked ? t('trophies.secret_locked')      : t('trophies.'+a.id);
   const labelDesc = masked ? t('trophies.secret_locked_desc') : t('trophies.'+a.id+'_desc');

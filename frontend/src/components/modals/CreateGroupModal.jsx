@@ -3,6 +3,7 @@ import { Btn, Inp } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 const S = {
   overlay: { position:'fixed', inset:0, background:'rgba(15,11,35,.78)', backdropFilter:'blur(6px)', WebkitBackdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:100, padding:24 },
@@ -14,6 +15,7 @@ const EMOJIS = ['🎲','⚡','🎯','🔥','💜','🌙','🏆','🎮','🍕','�
 
 export default function CreateGroupModal({ onCreated, onClose }) {
   useEscClose(onClose);
+  useBodyScrollLock();
   const { t } = useLang();
   const [tab,      setTab]      = useState('create');
   const [name,     setName]     = useState('');

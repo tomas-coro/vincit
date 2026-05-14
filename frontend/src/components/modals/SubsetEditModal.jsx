@@ -4,9 +4,11 @@ import { Btn, COLORS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 export default function SubsetEditModal({ bet, groupMembers, onSaved, onClose }) {
   useEscClose(onClose);
+  useBodyScrollLock();
   const { t } = useLang();
   const locked = useMemo(() => {
     const s = new Set([bet.creator]);

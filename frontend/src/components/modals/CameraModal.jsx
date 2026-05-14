@@ -4,6 +4,7 @@ import { useLang } from '../../i18n.js';
 import { useToast } from '../../Toast.jsx';
 import { fileToSquareDataUrl } from '../../imageUtils.js';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 // ─── Platform detection ──────────────────────────────────────────────
 // Used to surface platform-specific permission hints when the OS-level
@@ -97,6 +98,7 @@ const CSS = `
 //  - error states get a custom panel (NOT the browser default)
 export default function CameraModal({ onCapture, onClose, size = 1080, quality = 0.85 }) {
   useEscClose(onClose);
+  useBodyScrollLock();
   const { t } = useLang();
   const toast = useToast();
   const videoRef  = useRef(null);

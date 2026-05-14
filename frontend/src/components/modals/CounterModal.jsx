@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Btn, Inp, Avatar, fmtQ, qNo, qToP, COLORS, DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 export default function CounterModal({bet,user,profiles,credits,cats,onPlace,onClose}){
   useEscClose(onClose);
+  useBodyScrollLock();
   const { t } = useLang();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const [side,setSide]=useState(null);

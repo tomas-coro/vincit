@@ -2,9 +2,11 @@ import React from 'react';
 import { useLang } from '../../i18n.js';
 import TrophiesSection from '../TrophiesSection.jsx';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 export default function TrophiesModal({ onClose, betsTick = 0 }) {
   useEscClose(onClose);
+  useBodyScrollLock();
   const { t } = useLang();
   return (
     <div onClick={onClose} style={{

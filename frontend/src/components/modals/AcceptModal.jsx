@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Btn, COLORS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import useEscClose from '../../hooks/useEscClose.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 /**
  * Modal shown when an opponent decides to accept a targeted bet.
@@ -11,6 +12,7 @@ import useEscClose from '../../hooks/useEscClose.js';
  */
 export default function AcceptModal({ bet, profiles, myCredits, onAccept, onClose }) {
   useEscClose(onClose);
+  useBodyScrollLock();
   const { t } = useLang();
   const suggested = bet.stake;
   const maxStake  = Math.max(1, Math.floor(myCredits));

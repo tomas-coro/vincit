@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { fmtD, COLORS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 
 // Simple list-view modal used from Dashboard tiles (Vittorie / Sconfitte).
 // Lists the resolved bets in the chosen bucket — newest first — with
@@ -22,6 +23,7 @@ export default function BetListModal({
   emptyHint,        // string shown when bets is empty
   onClose,
 }) {
+  useBodyScrollLock(open);
   useEffect(() => {
     if (!open) return;
     const onKey = e => { if (e.key === 'Escape') onClose?.(); };
