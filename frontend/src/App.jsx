@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, lazy, Suspense } from 
 import { useSync } from './useSync.js';
 import * as api from './api.js';
 
-import { DARK, LIGHT, AMBER, SELVA, SAKURA, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx';
+import { DARK, LIGHT, AMBER, SELVA, SAKURA, PECE, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx';
 import { useLang } from './i18n.js';
 import SplashScreen from './components/SplashScreen.jsx';
 import { SkeletonDashboard, SkeletonList } from './components/Skeleton.jsx';
@@ -606,7 +606,7 @@ export default function App() {
   }, [theme]);
   const isDark = theme === 'dark';
   const setIsDark = (v) => setTheme(v ? 'dark' : 'light');
-  const C = theme === 'light' ? LIGHT : theme === 'amber' ? AMBER : theme === 'selva' ? SELVA : theme === 'sakura' ? SAKURA : DARK;
+  const C = theme === 'light' ? LIGHT : theme === 'amber' ? AMBER : theme === 'selva' ? SELVA : theme === 'sakura' ? SAKURA : theme === 'pece' ? PECE : DARK;
   const isDesktop = useBreakpoint(768);
   const { t } = useLang();
 

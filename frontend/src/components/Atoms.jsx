@@ -12,6 +12,8 @@ export const AMBER = {bg:"#1f1108",surf:"#2c1810",card:"#3a2118",brd:"#5a3424",r
 export const SELVA = {bg:"#0d1b10",surf:"#152416",card:"#1d2f1e",brd:"#2e4a30",rule:"rgba(122,184,122,0.14)",soft:"rgba(122,184,122,0.05)",gold:"#c8a040",goldL:"#dab858",glow:"rgba(200,160,64,0.22)",grn:"#5dcc7a",red:"#e05555",blu:"#6aa0e0",pur:"#8ab888",txt:"#d4efcc",dim:"#8ab490",mut:"#2e4a30",inp:"#101e12"};
 // "Sakura" — dark plum/mauve: rose surfaces, champagne accent, lilac highlights.
 export const SAKURA= {bg:"#1e1018",surf:"#2d1828",card:"#3d2038",brd:"#5a3050",rule:"rgba(224,160,192,0.16)",soft:"rgba(224,160,192,0.06)",gold:"#e8b0b0",goldL:"#f0c8c8",glow:"rgba(232,176,176,0.24)",grn:"#a0d888",red:"#ff7070",blu:"#90a8e8",pur:"#c078c0",txt:"#f0d8e8",dim:"#c090a8",mut:"#5a3050",inp:"#190e18"};
+// "Pece" — pitch-black editorial: no tint, near-absolute black, ivory accent, ultra-minimal glow.
+export const PECE  = {bg:"#0c0c0e",surf:"#141417",card:"#1c1c20",brd:"#2c2c32",rule:"rgba(240,238,232,0.08)",soft:"rgba(240,238,232,0.03)",gold:"#c8b896",goldL:"#ddd0b8",glow:"rgba(200,184,150,0.18)",grn:"#4ec87a",red:"#e05555",blu:"#7a9ae0",pur:"#a898c8",txt:"#f0eee8",dim:"#888882",mut:"#2c2c32",inp:"#0a0a0c"};
 
 export const rootVars = C => ({
   "--bg":C.bg,"--surf":C.surf,"--card":C.card,"--brd":C.brd,

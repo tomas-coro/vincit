@@ -224,7 +224,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
       <div style={{...S.card,marginBottom:12}}>
         <div style={{marginBottom:12}}>
           <div style={{fontSize:14,fontWeight:600}}>
-            {{dark:t('settings.theme_dark'),light:t('settings.theme_light'),amber:t('settings.theme_amber'),selva:t('settings.theme_selva'),sakura:t('settings.theme_sakura')}[theme] ?? t('settings.theme_dark')}
+            {{dark:t('settings.theme_dark'),light:t('settings.theme_light'),amber:t('settings.theme_amber'),selva:t('settings.theme_selva'),sakura:t('settings.theme_sakura'),pece:t('settings.theme_pece')}[theme] ?? t('settings.theme_dark')}
           </div>
           <div style={{fontSize:12,color:"var(--dim)"}}>{t('settings.theme_desc')}</div>
         </div>
@@ -235,6 +235,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
             {id:'amber',  label:t('settings.theme_amber'),  preview:['#1f1108','#e8b86a']},
             {id:'selva',  label:t('settings.theme_selva'),  preview:['#0d1b10','#c8a040']},
             {id:'sakura', label:t('settings.theme_sakura'), preview:['#1e1018','#e8b0b0']},
+            {id:'pece',   label:t('settings.theme_pece'),   preview:['#0c0c0e','#c8b896']},
           ].map(opt => {
             const active = (theme || (isDark ? 'dark' : 'light')) === opt.id;
             return (
