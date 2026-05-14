@@ -159,11 +159,14 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
               fontSize: 12, color: 'var(--dim)', lineHeight: 1.7,
               paddingLeft: 0, margin: 0, listStyle: 'none',
             }}>
-              <li>🔔 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_push_label')}</b> — {t('settings.intro_push_body')}</li>
+              <li>🌐 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_lang_label')}</b> — {t('settings.intro_lang_body')}</li>
               <li>🌗 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_theme_label')}</b> — {t('settings.intro_theme_body')}</li>
+              <li>👤 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_profile_label')}</b> — {t('settings.intro_profile_body')}</li>
+              <li>🔔 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_push_label')}</b> — {t('settings.intro_push_body')}</li>
+              <li>🔒 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_privacy_label')}</b> — {t('settings.intro_privacy_body')}</li>
               <li>👥 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_groups_label')}</b> — {t('settings.intro_groups_body')}</li>
               <li>🏷 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_cats_label')}</b> — {t('settings.intro_cats_body')}</li>
-              <li>🔒 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_vault_label')}</b> — {t('settings.intro_vault_body')}</li>
+              <li>🛡 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_vault_label')}</b> — {t('settings.intro_vault_body')}</li>
             </ul>
             <button onClick={dismissIntro} style={{
               marginTop: 12, padding: '6px 14px', borderRadius: 999,
@@ -182,58 +185,6 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
         </div>
       )}
 
-      {/* PRIVACY — 3 rows of segmented controls (trophies / stats / groups)
-          each can be Public / Friends / Private. Public means anyone
-          sharing a group can see; Private means even confirmed friends
-          can't. Updates fire on click; backend echoes back the canonical
-          state so we don't drift. */}
-      {privacy && (() => {
-        const SECTIONS = [
-          { key: 'trophies', label: t('settings.privacy_trophies'),  body: t('settings.privacy_trophies_desc') },
-          { key: 'stats',    label: t('settings.privacy_stats'),     body: t('settings.privacy_stats_desc') },
-          { key: 'groups',   label: t('settings.privacy_groups'),    body: t('settings.privacy_groups_desc') },
-        ];
-        const LEVELS = [
-          { value: 'public',  label: '🌍 ' + t('settings.privacy_public') },
-          { value: 'friends', label: '🤝 ' + t('settings.privacy_friends') },
-          { value: 'private', label: '🔒 ' + t('settings.privacy_private') },
-        ];
-        return (
-          <>
-            <SecLabel>{t('settings.privacy_title')}</SecLabel>
-            {SECTIONS.map(s => (
-              <div key={s.key} style={{ ...S.card, marginBottom: 4 }}>
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{s.label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--dim)', lineHeight: 1.4, marginTop: 3 }}>
-                    {s.body}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {LEVELS.map(lv => {
-                    const active = privacy[s.key] === lv.value;
-                    return (
-                      <button key={lv.value}
-                        onClick={() => !active && updatePrivacy(s.key, lv.value)}
-                        aria-pressed={active}
-                        style={{
-                          padding: '7px 14px', borderRadius: 999, cursor: active ? 'default' : 'pointer',
-                          border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
-                          background: active ? 'var(--gold)1a' : 'transparent',
-                          color: active ? 'var(--gold)' : 'var(--dim)',
-                          fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
-                          letterSpacing: '.04em',
-                          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
-                        }}>{lv.label}</button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </>
-        );
-      })()}
-
       {/* LANGUAGE */}
       <SecLabel>{t('settings.lang_label')}</SecLabel>
       <div style={{...S.card,marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -244,6 +195,49 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
         <div style={{display:"flex",gap:6}}>
           <Btn variant={lang==='it'?'gold':'ghost'} sm onClick={()=>setLang('it')}>🇮🇹 IT</Btn>
           <Btn variant={lang==='en'?'gold':'ghost'} sm onClick={()=>setLang('en')}>🇬🇧 EN</Btn>
+        </div>
+      </div>
+
+      {/* THEME — three-way selector: dark / light / amber. Persists to LS. */}
+      <SecLabel>{t('settings.theme')}</SecLabel>
+      <div style={{...S.card,marginBottom:12}}>
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:14,fontWeight:600}}>
+            {theme === 'amber' ? t('settings.theme_amber') : (isDark ? t('settings.theme_dark') : t('settings.theme_light'))}
+          </div>
+          <div style={{fontSize:12,color:"var(--dim)"}}>{t('settings.theme_desc')}</div>
+        </div>
+        <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+          {[
+            {id:'dark',  label:t('settings.theme_dark'),  preview:['#1a1530','#c4a878']},
+            {id:'light', label:t('settings.theme_light'), preview:['#ede8d8','#7a5e30']},
+            {id:'amber', label:t('settings.theme_amber'), preview:['#1f1108','#e8b86a']},
+          ].map(opt => {
+            const active = (theme || (isDark ? 'dark' : 'light')) === opt.id;
+            return (
+              <button key={opt.id} type="button"
+                onClick={() => setTheme ? setTheme(opt.id) : setIsDark(opt.id === 'dark')}
+                style={{
+                  display:'flex', alignItems:'center', gap:8,
+                  padding:'8px 14px', borderRadius:999,
+                  border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
+                  background: active ? 'var(--gold)18' : 'transparent',
+                  color: active ? 'var(--gold)' : 'var(--dim)',
+                  fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
+                  letterSpacing:'.04em', cursor:'pointer',
+                  transition:'all .18s',
+                  WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
+                }}>
+                <span style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${opt.preview[0]} 50%, ${opt.preview[1]} 50%)`,
+                  border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
+                  flexShrink: 0,
+                }}/>
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -290,6 +284,97 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
           </button>
         </div>
       )}
+
+      {/* PUSH STATUS — diagnostic + manual enable button */}
+      <PushStatusPanel user={user} S={S} t={t} toast={toast}/>
+
+      {/* NOTIFICATIONS */}
+      <SecLabel mt={16}>{t('settings.notif_title')}</SecLabel>
+      <div style={{...S.card,marginBottom:12}}>
+        {[
+          {key:'on_group_bet',   label:t('settings.notif_group_bet'),   desc:t('settings.notif_group_bet_desc')},
+          {key:'on_challenged',  label:t('settings.notif_challenged'),  desc:t('settings.notif_challenged_desc')},
+          {key:'on_targeted',    label:t('settings.notif_targeted'),    desc:t('settings.notif_targeted_desc')},
+          {key:'on_resolved',    label:t('settings.notif_resolved'),    desc:t('settings.notif_resolved_desc')},
+          {key:'on_expiry',      label:t('settings.notif_expiry'),      desc:t('settings.notif_expiry_desc')},
+          {key:'on_bet_message', label:t('settings.notif_bet_message'), desc:t('settings.notif_bet_message_desc')},
+        ].map(({key,label,desc},i,arr)=>(
+          <div key={key} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:i<arr.length-1?'1px solid var(--brd)':'none',gap:10}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:600}}>{label}</div>
+              <div style={{fontSize:11,color:'var(--dim)',marginTop:2}}>{desc}</div>
+            </div>
+            <button onClick={()=>{
+              const next={...notifPrefs,[key]:!notifPrefs[key]};
+              setNotifPrefs(next);
+              api.saveNotifPrefs(next).catch(console.error);
+            }} style={{width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',position:'relative',background:notifPrefs[key]?'var(--gold)':'var(--brd)',transition:'background .2s',flexShrink:0}}>
+              <div style={{position:'absolute',top:3,width:18,height:18,borderRadius:9,background:'#fff',left:notifPrefs[key]?23:3,transition:'left .2s'}}/>
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* PRIVACY — single card with 3 segmented rows (trophies / stats /
+          groups). Each row: Public / Friends / Private. The whole block
+          lives under one SecLabel so it reads as ONE setting, not three.
+          Updates fire on click; backend echoes canonical state back. */}
+      {privacy && (() => {
+        const SECTIONS = [
+          { key: 'trophies', icon: '🏆', label: t('settings.privacy_trophies'),  body: t('settings.privacy_trophies_desc') },
+          { key: 'stats',    icon: '📊', label: t('settings.privacy_stats'),     body: t('settings.privacy_stats_desc') },
+          { key: 'groups',   icon: '👥', label: t('settings.privacy_groups'),    body: t('settings.privacy_groups_desc') },
+        ];
+        const LEVELS = [
+          { value: 'public',  short: '🌍', label: t('settings.privacy_public') },
+          { value: 'friends', short: '🤝', label: t('settings.privacy_friends') },
+          { value: 'private', short: '🔒', label: t('settings.privacy_private') },
+        ];
+        return (
+          <>
+            <SecLabel mt={16}>{t('settings.privacy_title')}</SecLabel>
+            <div style={{ ...S.card, marginBottom: 12 }}>
+              {SECTIONS.map((s, i) => (
+                <div key={s.key} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 0',
+                  borderTop: i === 0 ? 'none' : '1px solid var(--rule)',
+                  flexWrap: 'wrap',
+                }}>
+                  <span aria-hidden style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{s.icon}</span>
+                  <div style={{ flex: 1, minWidth: 160 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{s.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--dim)', lineHeight: 1.4, marginTop: 2 }}>{s.body}</div>
+                  </div>
+                  <div role="radiogroup" aria-label={s.label}
+                    style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                    {LEVELS.map(lv => {
+                      const active = privacy[s.key] === lv.value;
+                      return (
+                        <button key={lv.value}
+                          onClick={() => !active && updatePrivacy(s.key, lv.value)}
+                          aria-pressed={active}
+                          title={lv.label}
+                          style={{
+                            padding: '6px 10px', borderRadius: 999, cursor: active ? 'default' : 'pointer',
+                            border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
+                            background: active ? 'var(--gold)1a' : 'transparent',
+                            color: active ? 'var(--gold)' : 'var(--dim)',
+                            fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 700,
+                            letterSpacing: '.04em', whiteSpace: 'nowrap',
+                            WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+                          }}>
+                          <span aria-hidden style={{ marginRight: 4 }}>{lv.short}</span>{lv.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+      })()}
 
       {/* GROUP MEMBERS (collapsible — read-only) */}
       {(() => {
@@ -388,80 +473,6 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
         );
       })()}
 
-      {/* VAULT PIN */}
-      <SecLabel mt={16}>{t('settings.vault_pin')}</SecLabel>
-      <div style={{...S.card,marginBottom:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:600}}>{vaultPin?t('settings.vault_active'):t('settings.vault_none')}</div>
-            <div style={{fontSize:12,color:"var(--dim)",marginTop:2}}>{vaultPin?t('settings.vault_protected'):t('settings.vault_accessible')}</div>
-            <div style={{fontSize:10,color:"var(--mut)",marginTop:4}}>{t('settings.vault_warning')}</div>
-          </div>
-        </div>
-        {pinErr&&<div style={{fontSize:12,color:"var(--red)",marginBottom:8}}>{pinErr}</div>}
-        {pinPhase==="set"&&(
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>{t('settings.pin_new')}</div>
-            <Inp type="text" value={pin1} onChange={e=>setPin1(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:8}}/>
-            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>{t('settings.pin_confirm')}</div>
-            <Inp type="text" value={pin2} onChange={e=>setPin2(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:12}}/>
-            <div style={{display:"flex",gap:8}}>
-              <Btn variant="gold" sm onClick={savePin}>{t('settings.pin_save')}</Btn>
-              <Btn variant="ghost" sm onClick={()=>{setPinPhase(null);setPin1("");setPin2("");setPinErr("");}}>{t('settings.pin_cancel')}</Btn>
-            </div>
-          </div>
-        )}
-        {!pinPhase&&(
-          <div style={{display:"flex",gap:8}}>
-            <Btn variant="ghost" sm onClick={()=>setPinPhase("set")}>{vaultPin?t('settings.pin_change'):t('settings.pin_set')}</Btn>
-            {vaultPin&&<Btn variant="ghost" sm style={{color:"var(--red)",borderColor:"var(--red)22"}} onClick={()=>onSetVaultPin(null)}>{t('settings.pin_remove')}</Btn>}
-          </div>
-        )}
-      </div>
-
-      {/* THEME — three-way selector: dark / light / amber. Persists to LS. */}
-      <SecLabel>{t('settings.theme')}</SecLabel>
-      <div style={{...S.card,marginBottom:12}}>
-        <div style={{marginBottom:12}}>
-          <div style={{fontSize:14,fontWeight:600}}>
-            {theme === 'amber' ? t('settings.theme_amber') : (isDark ? t('settings.theme_dark') : t('settings.theme_light'))}
-          </div>
-          <div style={{fontSize:12,color:"var(--dim)"}}>{t('settings.theme_desc')}</div>
-        </div>
-        <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-          {[
-            {id:'dark',  label:t('settings.theme_dark'),  preview:['#1a1530','#c4a878']},
-            {id:'light', label:t('settings.theme_light'), preview:['#ede8d8','#7a5e30']},
-            {id:'amber', label:t('settings.theme_amber'), preview:['#1f1108','#e8b86a']},
-          ].map(opt => {
-            const active = (theme || (isDark ? 'dark' : 'light')) === opt.id;
-            return (
-              <button key={opt.id} type="button"
-                onClick={() => setTheme ? setTheme(opt.id) : setIsDark(opt.id === 'dark')}
-                style={{
-                  display:'flex', alignItems:'center', gap:8,
-                  padding:'8px 14px', borderRadius:999,
-                  border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
-                  background: active ? 'var(--gold)18' : 'transparent',
-                  color: active ? 'var(--gold)' : 'var(--dim)',
-                  fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
-                  letterSpacing:'.04em', cursor:'pointer',
-                  transition:'all .18s',
-                  WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
-                }}>
-                <span style={{
-                  width: 18, height: 18, borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${opt.preview[0]} 50%, ${opt.preview[1]} 50%)`,
-                  border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
-                  flexShrink: 0,
-                }}/>
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* CUSTOM CATS */}
       <SecLabel>{t('settings.custom_cats')}</SecLabel>
       {canCats ? (
@@ -523,34 +534,35 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
         )}
       </div>
 
-      {/* PUSH STATUS — diagnostic + manual enable button */}
-      <PushStatusPanel user={user} S={S} t={t} toast={toast}/>
-
-      {/* NOTIFICATIONS */}
-      <SecLabel mt={16}>{t('settings.notif_title')}</SecLabel>
+      {/* VAULT PIN */}
+      <SecLabel mt={16}>{t('settings.vault_pin')}</SecLabel>
       <div style={{...S.card,marginBottom:12}}>
-        {[
-          {key:'on_group_bet',   label:t('settings.notif_group_bet'),   desc:t('settings.notif_group_bet_desc')},
-          {key:'on_challenged',  label:t('settings.notif_challenged'),  desc:t('settings.notif_challenged_desc')},
-          {key:'on_targeted',    label:t('settings.notif_targeted'),    desc:t('settings.notif_targeted_desc')},
-          {key:'on_resolved',    label:t('settings.notif_resolved'),    desc:t('settings.notif_resolved_desc')},
-          {key:'on_expiry',      label:t('settings.notif_expiry'),      desc:t('settings.notif_expiry_desc')},
-          {key:'on_bet_message', label:t('settings.notif_bet_message'), desc:t('settings.notif_bet_message_desc')},
-        ].map(({key,label,desc},i,arr)=>(
-          <div key={key} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:i<arr.length-1?'1px solid var(--brd)':'none',gap:10}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:13,fontWeight:600}}>{label}</div>
-              <div style={{fontSize:11,color:'var(--dim)',marginTop:2}}>{desc}</div>
-            </div>
-            <button onClick={()=>{
-              const next={...notifPrefs,[key]:!notifPrefs[key]};
-              setNotifPrefs(next);
-              api.saveNotifPrefs(next).catch(console.error);
-            }} style={{width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',position:'relative',background:notifPrefs[key]?'var(--gold)':'var(--brd)',transition:'background .2s',flexShrink:0}}>
-              <div style={{position:'absolute',top:3,width:18,height:18,borderRadius:9,background:'#fff',left:notifPrefs[key]?23:3,transition:'left .2s'}}/>
-            </button>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:600}}>{vaultPin?t('settings.vault_active'):t('settings.vault_none')}</div>
+            <div style={{fontSize:12,color:"var(--dim)",marginTop:2}}>{vaultPin?t('settings.vault_protected'):t('settings.vault_accessible')}</div>
+            <div style={{fontSize:10,color:"var(--mut)",marginTop:4}}>{t('settings.vault_warning')}</div>
           </div>
-        ))}
+        </div>
+        {pinErr&&<div style={{fontSize:12,color:"var(--red)",marginBottom:8}}>{pinErr}</div>}
+        {pinPhase==="set"&&(
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>{t('settings.pin_new')}</div>
+            <Inp type="text" value={pin1} onChange={e=>setPin1(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:8}}/>
+            <div style={{fontSize:12,color:"var(--dim)",marginBottom:6}}>{t('settings.pin_confirm')}</div>
+            <Inp type="text" value={pin2} onChange={e=>setPin2(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="●●●●" style={{letterSpacing:8,fontSize:20,marginBottom:12}}/>
+            <div style={{display:"flex",gap:8}}>
+              <Btn variant="gold" sm onClick={savePin}>{t('settings.pin_save')}</Btn>
+              <Btn variant="ghost" sm onClick={()=>{setPinPhase(null);setPin1("");setPin2("");setPinErr("");}}>{t('settings.pin_cancel')}</Btn>
+            </div>
+          </div>
+        )}
+        {!pinPhase&&(
+          <div style={{display:"flex",gap:8}}>
+            <Btn variant="ghost" sm onClick={()=>setPinPhase("set")}>{vaultPin?t('settings.pin_change'):t('settings.pin_set')}</Btn>
+            {vaultPin&&<Btn variant="ghost" sm style={{color:"var(--red)",borderColor:"var(--red)22"}} onClick={()=>onSetVaultPin(null)}>{t('settings.pin_remove')}</Btn>}
+          </div>
+        )}
       </div>
 
       {/* CREDITS */}
