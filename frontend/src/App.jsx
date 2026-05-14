@@ -54,15 +54,22 @@ function urlB64ToUint8(b64) {
 // Exported so SettingsView can call it from a Re-enable button (the
 // initial silent attempt at login often fails because some users blank-
 // dismiss the OS prompt without realizing it was the notifications one).
-export async function registerPush(user) {
+// `prompt: true` asks the OS for permission if it's still 'default'.
+// `prompt: false` only re-subscribes silently when permission is already
+// granted — used at login so we don't burn the request on a user who has
+// no idea what the notification is for yet.
+export async function registerPush(user, { prompt = true } = {}) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return 'unsupported';
   try {
     const reg = await navigator.serviceWorker.register('/sw.js');
     const { publicKey } = await fetch('/api/push/vapid-key').then(r => r.json());
     if (!publicKey) return 'no-vapid';
     if (Notification.permission === 'denied') return 'denied';
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') return perm; // 'denied' | 'default'
+    if (Notification.permission !== 'granted') {
+      if (!prompt) return 'default';
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') return perm; // 'denied' | 'default'
+    }
     const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlB64ToUint8(publicKey) });
     const token = localStorage.getItem('bc_token');
     await fetch('/api/push/subscribe', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify({user, subscription:sub.toJSON()}) });
@@ -583,7 +590,13 @@ export default function App() {
   const [eggTick,         setEggTick]         = useState(0);     // bumps after a secret unlock so trophy polling refreshes
   const [pendingFriendCount, setPendingFriendCount] = useState(0);
 
-  useEffect(() => { if (user && groups.length > 0) registerPush(user); }, [user, groups.length]);
+  // Silent push re-subscribe on login: only refreshes the subscription when
+  // permission is *already* granted. The actual prompt is deferred to
+  // handleCreate (after the user's first successful bet), where they've
+  // already seen what notifications would be about.
+  useEffect(() => {
+    if (user && groups.length > 0) registerPush(user, { prompt: false });
+  }, [user, groups.length]);
 
   // Poll incoming friend-request count for the nav badge. Cheap (single
   // small JSON), refreshes when the user lands on the Friends view too.
@@ -712,6 +725,20 @@ export default function App() {
     try {
       await api.createBet({ ...data, id: `b${Date.now()}`, createdAt: Date.now() });
       setShowCreate(false);
+      // First-bet trigger: now that the user has created their first bet,
+      // the value of push notifications (someone accepted / resolved your
+      // bet) is concrete. Ask once, then never again — denial / dismissal
+      // is respected and the user can re-enable from Settings.
+      if (typeof window !== 'undefined') {
+        try {
+          if (!localStorage.getItem('bc_push_first_ask_done')
+              && 'Notification' in window
+              && Notification.permission === 'default') {
+            localStorage.setItem('bc_push_first_ask_done', '1');
+            registerPush(user, { prompt: true }).catch(() => {});
+          }
+        } catch {}
+      }
       // Same resume-from-paused-tour path as the onClose wrapper, so creating
       // a real bet during the tutorial demo still lands the user back on the
       // next tour page instead of dropping them out cold.
