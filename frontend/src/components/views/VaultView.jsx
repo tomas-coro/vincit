@@ -2,6 +2,7 @@ import React from 'react';
 import { Btn, SecLabel, Avatar, COLORS, getC, fmtQ, fmtD, tLeft, isSoon, DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import BetCard from '../BetCard.jsx';
+import EmptyState from '../EmptyState.jsx';
 
 const S = {
   card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
@@ -12,7 +13,7 @@ const S = {
 const Bdg=({c,bg,children})=><span style={{...S.bdg,background:bg,color:c}}>{children}</span>;
 const qToP = q=>Math.round(100/parseFloat(q));
 
-export default function VaultView({user,profiles,bets,cats,onReveal,onFlame,unlocked,onPinRequest,vaultPin,isDesktop,onDelete,onEdit,hideTitle=false}){
+export default function VaultView({user,profiles,bets,cats,onReveal,onFlame,unlocked,onPinRequest,vaultPin,isDesktop,onDelete,onEdit,onOpenCreate,hideTitle=false}){
   const { t, lang } = useLang();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const active=bets.filter(b=>b.creator===user&&b.isSecret&&b.status==="active");
@@ -37,12 +38,14 @@ export default function VaultView({user,profiles,bets,cats,onReveal,onFlame,unlo
     </div>
   );
 
-  const emptyState=active.length===0&&resolved.length===0&&(
-    <div style={{textAlign:"center",padding:"52px 0",color:"var(--dim)"}}>
-      <div style={{fontSize:48,marginBottom:12}}>🔒</div>
-      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,marginBottom:6}}>{t('vault_view.empty_title')}</div>
-      <div style={{fontSize:13}}>{t('vault_view.empty_sub')}</div>
-    </div>
+  const emptyState = active.length === 0 && resolved.length === 0 && (
+    <EmptyState
+      emoji="🔒"
+      title={t('empty.vault_title')}
+      body={t('empty.vault_body')}
+      cta={onOpenCreate ? { label: t('empty.vault_cta'), icon: '+', onClick: onOpenCreate } : null}
+      tutorial={{ label: t('empty.how_label'), body: t('empty.vault_tutorial') }}
+    />
   );
 
   const activeCards=active.map(b=>{

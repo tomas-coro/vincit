@@ -3,6 +3,7 @@ import { SecLabel, Avatar, fmtQ, qToP, COLORS, getC, DEF_CAT_IDS as DEF_IDS } fr
 import { useLang } from '../../i18n.js';
 import Sparkline from '../Sparkline.jsx';
 import StreakBadge, { StreakInline } from '../StreakBadge.jsx';
+import EmptyState from '../EmptyState.jsx';
 import * as api from '../../api.js';
 
 // Editorial section pattern — no card box, content separated by hairlines.
@@ -15,7 +16,7 @@ const S = {
 
 const Bdg=({c,bg,children})=><span style={{...S.bdg,background:bg,color:c}}>{children}</span>;
 
-export default function StatsView({user,profiles,groupMembers,credits,bets,cats,isDesktop}){
+export default function StatsView({user,profiles,groupMembers,credits,bets,cats,isDesktop,onOpenCreate}){
   const { t } = useLang();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const won=bets.filter(b=>b.creator===user&&b.status==="won");
@@ -334,7 +335,13 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
       )}
 
       {h2hResolved.length === 0 ? (
-        <div style={{fontSize:12, color:'var(--dim)', textAlign:'center', padding:'12px 0'}}>{t('h2h.no_data')}</div>
+        <EmptyState
+          emoji="⚔️"
+          title={t('empty.h2h_title')}
+          body={t('empty.h2h_body')}
+          cta={onOpenCreate ? { label: t('empty.h2h_cta'), icon: '+', onClick: onOpenCreate } : null}
+          tutorial={{ label: t('empty.how_label'), body: t('empty.h2h_tutorial') }}
+        />
       ) : (
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, paddingTop:10, borderTop:'1px solid var(--brd)'}}>
           <div style={{textAlign:'center'}}>

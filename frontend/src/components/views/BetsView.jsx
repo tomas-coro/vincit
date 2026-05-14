@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useLang } from '../../i18n.js';
 import BetCard from '../BetCard.jsx';
 import { DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
+import EmptyState from '../EmptyState.jsx';
 
-export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime,hideTitle=false}){
+export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime,onOpenCreate,hideTitle=false}){
   const { t } = useLang();
   const [fStatus, setFStatus] = useState('active');
   const [fCat,    setFCat]    = useState('all');
@@ -74,12 +75,20 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
       </div>
 
       {visible.length === 0
-        ? <div style={{textAlign:'center',padding:'52px 0',color:'var(--dim)'}}>
-            <div style={{fontSize:48,marginBottom:12}}>🎯</div>
-            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17}}>
-              {q ? t('bets_view.search_empty',{q:query.trim()}) : t('bets_view.empty')}
-            </div>
-          </div>
+        ? (q
+            ? <div style={{textAlign:'center',padding:'52px 0',color:'var(--dim)'}}>
+                <div style={{fontSize:48,marginBottom:12}}>🎯</div>
+                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17}}>
+                  {t('bets_view.search_empty',{q:query.trim()})}
+                </div>
+              </div>
+            : <EmptyState
+                emoji="🎯"
+                title={t('empty.bets_title')}
+                body={t('empty.bets_body')}
+                cta={onOpenCreate ? { label: t('empty.bets_cta'), icon: '+', onClick: onOpenCreate } : null}
+                tutorial={{ label: t('empty.how_label'), body: t('empty.bets_tutorial') }}
+              />)
         : <div style={isDesktop?{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,alignItems:'start'}:{}}>
             {visible.map(b => <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats}
               onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} onDelete={onDelete} onEdit={onEdit}

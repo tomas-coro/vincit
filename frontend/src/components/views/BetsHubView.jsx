@@ -15,6 +15,8 @@ export default function BetsHubView({
   onConfirmOutcome, onWithdrawResolve, onOvertime,
   // Vault-specific
   onReveal, vaultUnlocked, onPinRequest, vaultPin,
+  // Empty-state CTA (passed through to BetsView/VaultView)
+  onOpenCreate,
 }) {
   const { t } = useLang();
 
@@ -79,6 +81,7 @@ export default function BetsHubView({
           onReveal={onReveal} onFlame={onFlame}
           unlocked={vaultUnlocked} onPinRequest={onPinRequest} vaultPin={vaultPin}
           onDelete={onDelete} onEdit={onEdit}
+          onOpenCreate={onOpenCreate}
         />
       ) : (
         <BetsView
@@ -90,6 +93,7 @@ export default function BetsHubView({
           onDelete={onDelete} onEdit={onEdit}
           onAccept={onAccept} onReject={onReject} can={can}
           onConfirmOutcome={onConfirmOutcome} onWithdrawResolve={onWithdrawResolve} onOvertime={onOvertime}
+          onOpenCreate={onOpenCreate}
         />
       )}
     </div>

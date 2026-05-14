@@ -1322,8 +1322,9 @@ export default function App() {
                 onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can}
                 onReveal={b => setRevealBet(b)} vaultUnlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin}
                 onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)}
+                onOpenCreate={() => setShowCreate(true)}
               />}
-            {view === 'stats'     && <StatsView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} isDesktop={isDesktop} />}
+            {view === 'stats'     && <StatsView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} isDesktop={isDesktop} onOpenCreate={() => setShowCreate(true)} />}
             {view === 'trophies'  && <TrophiesView bets={bets} isDesktop={isDesktop} />}
             {view === 'friends'   && <FriendsView groups={groups} user={user} onSwitchToGroup={switchGroup} isDesktop={isDesktop} />}
             {view === 'admin' && authUser?.is_admin && <AdminView isDesktop={isDesktop} meId={authUser?.id} />}
