@@ -788,6 +788,7 @@ export default function App() {
     if (data.categories) setCustomCats(data.categories);
     if (data.reactions)  setReactions(data.reactions);
     if (data.settings)   setSettings(data.settings);
+    stateLoadedRef.current = true;
   }, []), activeGroupId, token, setSyncError);
 
   const cats = [...DEF_CATS, ...customCats];
@@ -845,6 +846,13 @@ export default function App() {
   // Populated on first state load with every already-resolved bet, so
   // historical wins don't pop on first sign-in.
   const seenResolutionsRef = useRef(null);
+  // Flips true the first time the SSE/refresh callback delivers state
+  // for the current group. We gate the seenResolutionsRef init on this
+  // so the baseline isn't set during the one-render window where `bets`
+  // is still its `useState([])` default — otherwise the baseline would
+  // capture zero bets, and every already-resolved bet in the real
+  // response would be celebrated as a fresh win on page load.
+  const stateLoadedRef = useRef(false);
   const [editingBet, setEditingBet]       = useState(null);
   const [acceptingBet, setAcceptingBet]   = useState(null);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -871,6 +879,7 @@ export default function App() {
   // a few seconds per bet while the user is just trying to browse.
   useEffect(() => {
     seenResolutionsRef.current = null;
+    stateLoadedRef.current = false;
     setWinAnimQueue([]);
     setCommentBetQueue([]);
   }, [activeGroupId]);
@@ -886,6 +895,10 @@ export default function App() {
     if (!user || !Array.isArray(bets)) return;
     const seen = seenResolutionsRef.current;
     if (seen == null) {
+      // Wait for the first real state payload — initializing with the
+      // empty `useState([])` default would mark zero bets as seen, then
+      // every resolved bet in the next SSE/refresh would celebrate.
+      if (!stateLoadedRef.current) return;
       // First state load — record every already-resolved bet without
       // celebrating, so historical wins don't replay on sign-in.
       const init = new Set();

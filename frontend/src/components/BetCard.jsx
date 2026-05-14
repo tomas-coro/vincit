@@ -635,52 +635,59 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                 flex:1, minHeight:0, overflowY:'auto',
                 padding:'4px 0 calc(16px + env(safe-area-inset-bottom))',
               }}>
-                {rows.map(r => (
-                  <div key={r.id} style={{
-                    display:'flex', alignItems:'center', gap:14,
-                    padding:'14px 22px', borderBottom:'1px solid var(--rule)',
-                  }}>
-                    <div style={{
-                      width:40, height:40, borderRadius:'50%',
-                      background:`${r.color}33`, border:`2px solid ${r.color}88`,
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      overflow:'hidden', fontSize:20, lineHeight:1, flexShrink:0,
+                {rows.map(r => {
+                  const sideCol = r.voted
+                    ? (r.side === 'yes' ? 'var(--grn)' : 'var(--red)')
+                    : 'var(--dim)';
+                  return (
+                    <div key={r.id} style={{
+                      display:'flex', alignItems:'center', gap:14,
+                      padding:'12px 22px', borderBottom:'1px solid var(--rule)',
                     }}>
-                      {r.avatarUrl
-                        ? <img src={r.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                        : r.avatar}
-                    </div>
-                    <div style={{flex:1, minWidth:0}}>
                       <div style={{
-                        fontSize:14, fontWeight:700, color:'var(--txt)',
+                        width:38, height:38, borderRadius:'50%',
+                        background:`${r.color}33`, border:`2px solid ${r.color}88`,
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        overflow:'hidden', fontSize:19, lineHeight:1, flexShrink:0,
+                      }}>
+                        {r.avatarUrl
+                          ? <img src={r.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                          : r.avatar}
+                      </div>
+                      <div style={{
+                        flex:1, minWidth:0,
+                        fontSize:15, fontWeight:700, color:'var(--txt)',
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                       }}>{r.name}</div>
-                      <div style={{
-                        fontSize:12, marginTop:3,
-                        color: r.voted ? 'var(--dim)' : 'var(--gold)',
-                        fontFamily:"'Manrope',sans-serif",
-                      }}>
-                        {r.voted
-                          ? `${r.stake} ₡`
-                          : t('bet_card.invitee_pending')}
-                      </div>
+                      {r.voted ? (
+                        <div style={{
+                          display:'flex', alignItems:'center', gap:8, flexShrink:0,
+                        }}>
+                          <span style={{
+                            fontSize:13, fontWeight:600, color:'var(--dim)',
+                            fontFamily:"'Manrope',sans-serif",
+                            fontVariantNumeric:'tabular-nums',
+                          }}>{r.stake} ₡</span>
+                          <span style={{
+                            fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase',
+                            padding:'4px 10px', borderRadius:999,
+                            background: `${sideCol}1f`, color: sideCol,
+                            border: `1px solid ${sideCol}55`,
+                            fontFamily:"'Manrope',sans-serif",
+                          }}>{r.side === 'yes' ? t('bet_card.yes') : t('bet_card.no')}</span>
+                        </div>
+                      ) : (
+                        <span style={{
+                          fontSize:11, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase',
+                          padding:'4px 10px', borderRadius:999,
+                          background:'var(--gold)18', color:'var(--gold)',
+                          border:'1px solid var(--gold)44',
+                          fontFamily:"'Manrope',sans-serif", flexShrink:0,
+                        }}>{t('bet_card.invitee_pending')}</span>
+                      )}
                     </div>
-                    {r.voted ? (
-                      <span style={{
-                        fontSize:11, fontWeight:800, letterSpacing:'.08em', textTransform:'uppercase',
-                        padding:'5px 12px', borderRadius:999,
-                        background: r.side === 'yes' ? 'var(--grn)22' : 'var(--red)22',
-                        color: r.side === 'yes' ? 'var(--grn)' : 'var(--red)',
-                        border: `1px solid ${r.side === 'yes' ? 'var(--grn)55' : 'var(--red)55'}`,
-                        fontFamily:"'Manrope',sans-serif",
-                      }}>{r.side === 'yes' ? t('bet_card.yes') : t('bet_card.no')}</span>
-                    ) : (
-                      <span style={{
-                        fontSize:16, opacity:.55, flexShrink:0,
-                      }} aria-hidden>⏳</span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
