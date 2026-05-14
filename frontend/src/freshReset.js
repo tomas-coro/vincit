@@ -10,6 +10,7 @@ export const FRESH_ACCOUNT_LS_KEYS = [
   'bc_egg_phoenix_popped_v2',
   'bc_egg_streak_tip_shown',
   'bc_onboarding_done',
+  'bc_settings_intro_seen',
 ];
 
 const ACK_KEY = 'bc_fresh_reset_ack';

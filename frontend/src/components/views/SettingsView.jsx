@@ -30,6 +30,16 @@ const S = {
 
 export default function SettingsView({user,profiles,groupMembers,isDark,setIsDark,theme,setTheme,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onTestReset,onLogout,onOpenProfileEdit,isAdmin=false,can}){
   const { t, lang, setLang } = useLang();
+  // First-visit intro tip — points at the 4 main areas of the page so
+  // users don't have to scroll-hunt for things like push toggles or
+  // theme switcher. One-time, dismissible, persisted in LS.
+  const [introDismissed, setIntroDismissed] = useState(() => {
+    try { return !!localStorage.getItem('bc_settings_intro_seen'); } catch { return false; }
+  });
+  const dismissIntro = () => {
+    try { localStorage.setItem('bc_settings_intro_seen', '1'); } catch {}
+    setIntroDismissed(true);
+  };
   // Backward-compat: if `can` is missing, fall back to isAdmin gating
   const allow = perm => typeof can === 'function' ? can(perm) : !!isAdmin;
   const canCats     = allow('manage_categories');
@@ -110,6 +120,48 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
           </button>
         )}
       </div>
+
+      {/* First-visit intro — what lives in Settings, in 4 lines.
+          One-shot: dismiss persists across sessions. Hidden after that. */}
+      {!introDismissed && (
+        <div style={{
+          padding: '14px 16px', marginBottom: 18,
+          background: 'var(--gold)0a',
+          border: '1px solid var(--gold)44',
+          borderRadius: 12,
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+        }}>
+          <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }} aria-hidden>💡</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
+              fontSize: 16, fontWeight: 600, color: 'var(--gold)', marginBottom: 8,
+            }}>{t('settings.intro_title')}</div>
+            <ul style={{
+              fontSize: 12, color: 'var(--dim)', lineHeight: 1.7,
+              paddingLeft: 0, margin: 0, listStyle: 'none',
+            }}>
+              <li>🔔 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_push_label')}</b> — {t('settings.intro_push_body')}</li>
+              <li>🌗 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_theme_label')}</b> — {t('settings.intro_theme_body')}</li>
+              <li>👥 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_groups_label')}</b> — {t('settings.intro_groups_body')}</li>
+              <li>🔒 <b style={{ color: 'var(--txt)' }}>{t('settings.intro_vault_label')}</b> — {t('settings.intro_vault_body')}</li>
+            </ul>
+            <button onClick={dismissIntro} style={{
+              marginTop: 12, padding: '6px 14px', borderRadius: 999,
+              background: 'var(--gold)', border: 'none', color: '#1a1530',
+              fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 800,
+              letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer',
+              WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+            }}>{t('settings.intro_dismiss')}</button>
+          </div>
+          <button onClick={dismissIntro} aria-label="Chiudi"
+            style={{
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: 'var(--mut)', fontSize: 18, padding: '0 4px', lineHeight: 1,
+              flexShrink: 0,
+            }}>×</button>
+        </div>
+      )}
 
       {/* LANGUAGE */}
       <SecLabel>{t('settings.lang_label')}</SecLabel>
