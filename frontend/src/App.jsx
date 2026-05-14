@@ -597,7 +597,7 @@ export default function App() {
   const [theme, setTheme] = useState(() => {
     try {
       const v = localStorage.getItem('bc_theme');
-      if (v === 'light' || v === 'dark' || v === 'amber') return v;
+      if (['dark','light','amber','selva','sakura','pece'].includes(v)) return v;
     } catch {}
     return 'dark';
   });
