@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { SecLabel } from './Atoms.jsx';
 import { useLang } from '../i18n.js';
 import * as api from '../api.js';
@@ -229,7 +229,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
                 gridTemplateColumns:'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
                 gap: 10,
               }}>
-                {items.map(a => <SecretTrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate} onOpen={() => setDetail(a)}/>)}
+                {items.map(a => <SecretTrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate} onOpen={(rect) => setDetail({ a, rect })}/>)}
               </div>
             </div>
           );
@@ -242,24 +242,33 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
               textTransform:'uppercase', marginBottom:8, fontWeight:700,
             }}>{t('trophies.cat_'+cat)}</div>
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(min(160px, 100%), 1fr))', gap:8}}>
-              {items.map(a => <TrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate} onOpen={() => setDetail(a)}/>)}
+              {items.map(a => <TrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate} onOpen={(rect) => setDetail({ a, rect })}/>)}
             </div>
           </div>
         );
       })}
 
       {detail && (
-        <TrophyDetailModal a={detail} t={t} fmtDate={fmtDate} onClose={() => setDetail(null)} />
+        <TrophyDetailPopover
+          a={detail.a}
+          anchorRect={detail.rect}
+          t={t}
+          fmtDate={fmtDate}
+          onClose={() => setDetail(null)}
+        />
       )}
     </div>
   );
 }
 
-// Detail modal opened by tapping any tile — shows the unlock date(s) so the
-// player can recall when they first earned the trophy and (for multi-level
-// ones) when they pushed it to MAX. Locked trophies open the same modal but
-// with the "still locked" placeholder so a tap is never a dead end.
-function TrophyDetailModal({ a, t, fmtDate, onClose }) {
+// Anchored popover shown on tile tap — lives just outside the clicked tile
+// and grows into place from the tile's center, so the user reads it as
+// "the tile expanding to reveal its history" rather than a generic modal
+// taking over the page. No heavy backdrop: only a thin click-catcher to
+// dismiss-on-outside. Closes on ESC, scroll, resize, or clicking another
+// tile (the popover's mousedown-outside handler fires before the new
+// tile's click, so switching trophies feels instant).
+function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
   const masked = !!a.secret && !a.unlocked;
   const labelName = masked ? t('trophies.secret_locked')      : t('trophies.'+a.id);
   const labelDesc = masked ? t('trophies.secret_locked_desc') : t('trophies.'+a.id+'_desc');
@@ -269,84 +278,158 @@ function TrophyDetailModal({ a, t, fmtDate, onClose }) {
   const tierC = tierFor(level);
   const accent = a.unlocked ? tierC : 'var(--mut)';
 
-  // For 1-level trophies (the common case) we just want the single unlock
-  // date — there's no "L1 vs MAX" distinction. For multi-level ones we show
-  // both rows when they differ, otherwise collapse to one.
   const showFirstAndMax = max_level > 1 && a.firstUnlockedAt && a.unlockedAt && a.firstUnlockedAt !== a.unlockedAt;
+
+  const popoverRef = useRef(null);
+  const [pos, setPos] = useState(null);
+  const POPOVER_W = 260;
+  const GAP = 10;
+  const MARGIN = 10;
+
+  // Compute placement once anchorRect is known. We prefer below the tile
+  // and fall back to above; if neither fits, sit alongside it. Horizontal
+  // position is anchor-center clamped to the viewport so the popover never
+  // pokes off-screen on small grids.
+  useLayoutEffect(() => {
+    if (!anchorRect) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    // Measure actual height once rendered (first paint uses an estimate).
+    const measured = popoverRef.current?.offsetHeight;
+    const h = measured && measured > 0 ? measured : 210;
+
+    const anchorCx = anchorRect.left + anchorRect.width / 2;
+    let left = anchorCx - POPOVER_W / 2;
+    left = Math.max(MARGIN, Math.min(left, vw - POPOVER_W - MARGIN));
+
+    const spaceBelow = vh - anchorRect.bottom;
+    const spaceAbove = anchorRect.top;
+    let top, origin;
+    if (spaceBelow >= h + GAP) {
+      top = anchorRect.bottom + GAP;
+      origin = `${anchorCx - left}px 0`;
+    } else if (spaceAbove >= h + GAP) {
+      top = anchorRect.top - h - GAP;
+      origin = `${anchorCx - left}px 100%`;
+    } else {
+      // Tight viewport: pin to the side that has more room, clamped in.
+      top = Math.max(MARGIN, Math.min(anchorRect.top, vh - h - MARGIN));
+      origin = '50% 50%';
+    }
+    setPos({ left, top, origin });
+  }, [anchorRect, a.id]);
+
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') onClose?.(); };
+    const onScroll = () => onClose?.();
+    const onResize = () => onClose?.();
+    const onPointerDown = e => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) onClose?.();
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+    // pointerdown fires before click so switching directly to another tile
+    // works in one motion: this popover closes, the new tile's onClick opens
+    // its own popover, no double-tap needed.
+    window.addEventListener('pointerdown', onPointerDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, [onClose]);
 
   const Row = ({ label, value, kicker }) => (
     <div style={{
       display:'flex', justifyContent:'space-between', alignItems:'baseline',
-      padding:'10px 0', borderBottom:'1px solid var(--rule)',
+      padding:'8px 0', borderTop:'1px solid var(--rule)',
     }}>
       <div>
         <div style={{
-          fontSize:9, letterSpacing:'.22em', textTransform:'uppercase',
+          fontSize:8.5, letterSpacing:'.22em', textTransform:'uppercase',
           color:'var(--dim)', fontWeight:700, fontFamily:"'Manrope',sans-serif",
         }}>{label}</div>
-        {kicker && <div style={{fontSize:11, color:'var(--mut)', marginTop:2}}>{kicker}</div>}
+        {kicker && <div style={{fontSize:10.5, color:'var(--mut)', marginTop:2}}>{kicker}</div>}
       </div>
       <div style={{
-        fontSize:13, fontWeight:700, color:'var(--txt)',
+        fontSize:12.5, fontWeight:700, color:'var(--txt)',
         fontFamily:"'Manrope',sans-serif", fontVariantNumeric:'tabular-nums',
       }}>{value}</div>
     </div>
   );
 
   return (
-    <div onClick={onClose} style={{
-      position:'fixed', inset:0, zIndex:300,
-      background:'rgba(8,6,18,.78)', backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)',
-      display:'flex', alignItems:'center', justifyContent:'center', padding:16,
-    }}>
-      <div onClick={e => e.stopPropagation()} className="bIn" style={{
-        width:'100%', maxWidth:400,
-        background:'var(--surf)', border:'1px solid var(--rule)',
-        borderTop:`4px solid ${accent}`, borderRadius:16,
-        boxShadow:'0 30px 80px rgba(0,0,0,.55)',
-        display:'flex', flexDirection:'column', overflow:'hidden',
-      }}>
-        <div style={{position:'relative', padding:'22px 22px 18px', borderBottom:'1px solid var(--rule)', textAlign:'center'}}>
-          <button onClick={onClose} aria-label="Chiudi" style={{
-            position:'absolute', top:14, right:14,
-            background:'transparent', border:'1px solid var(--rule)',
-            cursor:'pointer', borderRadius:'50%',
-            color:'var(--dim)', fontSize:14, width:30, height:30,
-            display:'flex', alignItems:'center', justifyContent:'center',
-            lineHeight:1,
-          }}>✕</button>
+    <>
+      <style>{`
+        @keyframes tdpIn { 0%{opacity:0;transform:scale(.78)} 60%{opacity:1;transform:scale(1.03)} 100%{opacity:1;transform:scale(1)} }
+      `}</style>
+      <div
+        ref={popoverRef}
+        role="dialog"
+        aria-label={labelName}
+        style={{
+          position:'fixed',
+          left: pos ? pos.left : -9999, top: pos ? pos.top : -9999,
+          width: POPOVER_W, zIndex: 290,
+          background:'linear-gradient(160deg, var(--surf) 0%, var(--card) 100%)',
+          border:'1px solid var(--rule)',
+          borderTop:`3px solid ${accent}`,
+          borderRadius:14,
+          boxShadow:`0 18px 50px rgba(0,0,0,.55), 0 0 0 1px ${accent}22, 0 0 30px ${accent}1f`,
+          padding:'14px 16px 12px',
+          transformOrigin: pos ? pos.origin : '50% 50%',
+          animation: pos ? 'tdpIn 240ms cubic-bezier(.18,.9,.32,1.18) both' : 'none',
+          visibility: pos ? 'visible' : 'hidden',
+        }}
+      >
+        <div style={{display:'flex', alignItems:'flex-start', gap:12}}>
           <div style={{
-            fontSize: masked ? 50 : 54, lineHeight:1, marginBottom:8,
+            fontSize: masked ? 30 : 32, lineHeight:1, flexShrink:0,
             fontFamily: masked ? "'Playfair Display',serif" : undefined,
             fontStyle: masked ? 'italic' : undefined,
             fontWeight: masked ? 900 : undefined,
             color: masked ? 'var(--mut)' : undefined,
-            filter: masked ? 'none' : a.unlocked ? `drop-shadow(0 4px 18px ${tierC}77)` : 'grayscale(1) opacity(.55)',
+            filter: masked ? 'none' : a.unlocked ? `drop-shadow(0 2px 10px ${tierC}77)` : 'grayscale(1) opacity(.55)',
           }}>{displayIcon}</div>
-          <div style={{
-            fontFamily:"'Manrope',sans-serif", fontSize:9, fontWeight:800,
-            letterSpacing:'.32em', textTransform:'uppercase',
-            color: accent, marginBottom:6,
-          }}>{t('trophies.cat_'+(a.category || 'mission'))}</div>
-          <div style={{
-            fontFamily: masked ? "'Cormorant Garamond',serif" : "'Manrope',sans-serif",
-            fontStyle: masked ? 'italic' : undefined,
-            fontSize:18, fontWeight:700, color:'var(--txt)',
-            letterSpacing: masked ? '.06em' : undefined,
-          }}>{labelName}</div>
-          <div style={{
-            fontSize:12, color:'var(--dim)', marginTop:6, lineHeight:1.45,
-            fontStyle: masked ? 'italic' : undefined,
-          }}>{labelDesc}</div>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{
+              fontFamily:"'Manrope',sans-serif", fontSize:8, fontWeight:800,
+              letterSpacing:'.28em', textTransform:'uppercase',
+              color: accent, marginBottom:2,
+            }}>{t('trophies.cat_'+(a.category || 'mission'))}</div>
+            <div style={{
+              fontFamily: masked ? "'Cormorant Garamond',serif" : "'Manrope',sans-serif",
+              fontStyle: masked ? 'italic' : undefined,
+              fontSize:15, fontWeight:700, color:'var(--txt)',
+              letterSpacing: masked ? '.06em' : '-0.005em',
+              lineHeight:1.2,
+              overflow:'hidden', textOverflow:'ellipsis',
+              display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical',
+            }}>{labelName}</div>
+          </div>
+          <button onClick={onClose} aria-label="Chiudi" style={{
+            background:'transparent', border:'1px solid var(--rule)',
+            cursor:'pointer', borderRadius:'50%',
+            color:'var(--dim)', fontSize:11, width:22, height:22,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            flexShrink:0, lineHeight:1, padding:0,
+          }}>✕</button>
         </div>
 
-        <div style={{padding:'4px 22px 18px'}}>
+        <div style={{
+          fontSize:11, color:'var(--dim)', marginTop:8, lineHeight:1.4,
+          fontStyle: masked ? 'italic' : undefined,
+        }}>{labelDesc}</div>
+
+        <div style={{marginTop:8}}>
           {!a.unlocked ? (
             <div style={{
-              margin:'14px 0 4px', padding:'12px 14px',
+              marginTop:6, padding:'8px 10px',
               background:'var(--mut)0f', border:'1px dashed var(--brd)',
-              borderRadius:10, textAlign:'center',
-              fontSize:11, letterSpacing:'.18em', textTransform:'uppercase',
+              borderRadius:8, textAlign:'center',
+              fontSize:10, letterSpacing:'.16em', textTransform:'uppercase',
               color:'var(--mut)', fontFamily:"'Manrope',sans-serif", fontWeight:700,
             }}>🔒 {t('trophies.detail_locked')}</div>
           ) : showFirstAndMax ? (
@@ -365,7 +448,7 @@ function TrophyDetailModal({ a, t, fmtDate, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -385,8 +468,8 @@ function SecretTrophyTile({ a, t, fmtDate, onOpen }) {
   const clickProps = {
     role: 'button',
     tabIndex: 0,
-    onClick: () => onOpen?.(),
-    onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(); } },
+    onClick: (e) => onOpen?.(e.currentTarget.getBoundingClientRect()),
+    onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(e.currentTarget.getBoundingClientRect()); } },
   };
 
   if (isMeta) {
@@ -547,8 +630,8 @@ function TrophyTile({ a, t, fmtDate, onOpen }) {
 
   return (
     <div role="button" tabIndex={0}
-      onClick={() => onOpen?.()}
-      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(); } }}
+      onClick={e => onOpen?.(e.currentTarget.getBoundingClientRect())}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(e.currentTarget.getBoundingClientRect()); } }}
       className={`${unlocked ? 'card-hover' : ''}${isMax ? ' pGold' : ''}`}
       style={{
       padding:'10px 12px 12px',
