@@ -500,7 +500,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   // disambiguates members who happen to share the same emoji avatar
   // (Atoms.jsx already does this for the standalone <Avatar> atom — we
   // mirror the same ring/halo treatment here for visual consistency).
-  const MemberAvatar = ({ m, active, disabled, color = 'var(--gold)', size = 44, onClick }) => {
+  const MemberAvatar = ({ m, active, disabled, color = 'var(--gold)', size = 34, onClick }) => {
     const userColor = COLORS[m.colorKey] || '#5b8af0';
     return (
       <button type="button"
@@ -510,8 +510,8 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         title={m.name}
         aria-pressed={active}
         style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-          padding: '6px 4px', borderRadius: 12,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+          padding: '4px 2px', borderRadius: 10,
           background: active ? `${color === 'var(--gold)' ? 'var(--gold)' : 'var(--pur)'}10` : 'transparent',
           border: `1px solid ${active ? color : 'transparent'}`,
           cursor: disabled ? 'not-allowed' : 'pointer',
@@ -525,11 +525,11 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
           background: `${userColor}33`,
           border: `2px solid ${active ? color : `${userColor}88`}`,
           boxShadow: active
-            ? `0 0 0 3px ${color === 'var(--gold)' ? 'var(--gold)22' : 'var(--pur)22'}, 0 0 14px ${userColor}55`
-            : `0 0 8px ${userColor}33`,
+            ? `0 0 0 2px ${color === 'var(--gold)' ? 'var(--gold)22' : 'var(--pur)22'}, 0 0 10px ${userColor}55`
+            : `0 0 6px ${userColor}33`,
           position: 'relative', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden', fontSize: size * 0.5, lineHeight: 1,
+          overflow: 'hidden', fontSize: size * 0.46, lineHeight: 1,
           transition: 'box-shadow .2s, border-color .15s',
         }}>
           {m.avatarUrl
@@ -537,17 +537,17 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
             : (m.avatar || '😊')}
           {active && (
             <div aria-hidden style={{
-              position: 'absolute', top: -3, right: -3,
-              width: 18, height: 18, borderRadius: '50%',
+              position: 'absolute', top: -2, right: -2,
+              width: 14, height: 14, borderRadius: '50%',
               background: color, color: '#1a1530',
-              fontSize: 11, fontWeight: 800,
+              fontSize: 9, fontWeight: 800,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               border: '2px solid var(--surf)',
             }}>✓</div>
           )}
         </div>
         <span style={{
-          fontSize: 10.5, fontWeight: 600,
+          fontSize: 10, fontWeight: 600,
           color: active ? color : 'var(--dim)',
           letterSpacing: '.01em', maxWidth: '100%',
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -559,8 +559,8 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
 
   const MEMBER_GRID_STYLE = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))',
-    gap: 6,
+    gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))',
+    gap: 4,
     width: '100%',
   };
 
@@ -597,7 +597,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   );
 
   const OpponentBlock = needsOpponent && others.length > 0 && (
-    <div data-coach="opponent" style={{ marginBottom: 24 }}>
+    <div data-coach="opponent" style={{ marginBottom: 14 }}>
       <label style={S.lbl}>{t('create.opponent_label')}</label>
       <SearchInput visible={others.length >= SEARCH_THRESHOLD} />
       <div style={MEMBER_GRID_STYLE}>
@@ -1027,7 +1027,6 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         }}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",padding:"26px 32px 20px",borderBottom:"1px solid var(--rule)",flexShrink:0}}>
             <div>
-              <div className="bc-meta" style={{marginBottom:8}}>— Nuovo bet</div>
               <div style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:"italic",fontSize:30,fontWeight:600,lineHeight:1,color:"var(--txt)"}}>{t('create.title')}</div>
             </div>
             <div style={{display:'flex', alignItems:'center', gap:6}}>
@@ -1050,10 +1049,10 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
             <div ref={scrollAreaRef} style={{padding:"22px 24px",overflowY:"auto"}}>
               {TemplatesBlock}
               {TypeBlock}
+              {TitleBlock}
               {OpponentBlock}
               {SubsetBlock}
               {TargetBlock}
-              {TitleBlock}
               {StakeBlock}
               {WinBlock}
               {CategoryBlock}
@@ -1142,10 +1141,10 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
 
         {TemplatesBlock}
         {TypeBlock}
+        {TitleBlock}
         {OpponentBlock}
         {SubsetBlock}
         {TargetBlock}
-        {TitleBlock}
         {StakeBlock}
         {WinBlock}
         {CategoryBlock}
