@@ -34,8 +34,10 @@ export function CoinDisk({ size, children }) {
   );
 }
 
-// CROCE — the "tails" / design side. Decorative BC monogram framed by 12
-// rim dots like a clock face, with a sweeping laurel curve at the bottom.
+// CROCE — the "tails" / design side. The italic Cormorant ampersand
+// matches the face stamped on the splash-screen coin, so the easter
+// egg reads as the same currency the brand opens with. Framed by 12
+// rim dots like a clock face + a sweeping laurel curve at the bottom.
 export function CoinFaceCroce({ size }) {
   return (
     <CoinDisk size={size}>
@@ -55,12 +57,12 @@ export function CoinFaceCroce({ size }) {
       </svg>
       <div style={{
         fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontWeight:700,
-        fontSize: size * 0.42, lineHeight: 1, letterSpacing: '-0.04em',
+        fontSize: size * 0.5, lineHeight: 1, letterSpacing: '-0.02em',
         color:'#3d2412',
         textShadow: '0 1px 0 rgba(255,255,255,.55), 0 -1px 0 rgba(0,0,0,.35)',
         position:'relative', zIndex: 1,
-        transform: `translateY(${-size * 0.05}px)`,
-      }}>BC</div>
+        transform: `translateY(${-size * 0.04}px)`,
+      }}>&amp;</div>
     </CoinDisk>
   );
 }
