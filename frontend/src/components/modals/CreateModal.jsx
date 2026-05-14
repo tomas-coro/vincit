@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Btn, Inp, Toggle, SecLabel, Q_PRE, qToP, pToQ, fmtQ, clamp, DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
+import { Btn, Inp, Toggle, SecLabel, Q_PRE, qToP, pToQ, fmtQ, clamp, COLORS, DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
 import { useToast } from '../../Toast.jsx';
 import * as api from '../../api.js';
@@ -476,32 +476,112 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     </div>
   );
 
+  // ─── Member picker primitives ─────────────────────────────────────
+  // Compact avatar-grid + optional search. At 4-6 members the chip-row
+  // layout scaled fine, but past 8 it became a wall of pills that
+  // dominated the form. New pattern: 44px avatar circles, name shown
+  // only via tooltip / aria-label / a "selezionato: …" summary line,
+  // plus a search input when the group has 7+ members so picking
+  // someone in a busy group is one keystroke + one tap.
+  const SEARCH_THRESHOLD = 7;
+  const [memberSearch, setMemberSearch] = useState('');
+  const matchesSearch = (m) => {
+    const q = memberSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (m.name || '').toLowerCase().includes(q);
+  };
+
+  const MemberAvatar = ({ m, active, disabled, color = 'var(--gold)', size = 44, onClick }) => (
+    <button type="button"
+      onClick={() => { if (!disabled) onClick(m.id); }}
+      disabled={disabled}
+      aria-label={m.name}
+      title={m.name}
+      aria-pressed={active}
+      style={{
+        width: size, height: size, padding: 0,
+        borderRadius: '50%',
+        border: `2px solid ${active ? color : 'transparent'}`,
+        background: 'transparent',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? .3 : 1,
+        position: 'relative', flexShrink: 0,
+        transition: 'transform .15s, border-color .15s, box-shadow .2s',
+        transform: active ? 'scale(1.06)' : 'scale(1)',
+        boxShadow: active ? `0 0 0 4px ${color === 'var(--gold)' ? 'var(--gold)22' : 'var(--pur)22'}` : 'none',
+      }}>
+      <div style={{
+        width: '100%', height: '100%', borderRadius: '50%',
+        background: `${COLORS[m.colorKey] || '#5b8af0'}33`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden', fontSize: size * 0.5, lineHeight: 1,
+      }}>
+        {m.avatarUrl
+          ? <img src={m.avatarUrl} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+          : (m.avatar || '😊')}
+      </div>
+      {active && (
+        <div aria-hidden style={{
+          position: 'absolute', top: -3, right: -3,
+          width: 18, height: 18, borderRadius: '50%',
+          background: color, color: '#1a1530',
+          fontSize: 11, fontWeight: 800,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: '2px solid var(--surf)',
+        }}>✓</div>
+      )}
+    </button>
+  );
+
+  const SearchInput = ({ visible }) => visible && (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8,
+      padding: '6px 12px', marginBottom: 10,
+      border: '1px solid var(--brd)', borderRadius: 999,
+      background: 'var(--inp)',
+    }}>
+      <span aria-hidden style={{ color: 'var(--mut)', fontSize: 13 }}>🔍</span>
+      <input value={memberSearch} onChange={e => setMemberSearch(e.target.value)}
+        placeholder={t('create.member_search_ph')}
+        aria-label={t('create.member_search_ph')}
+        style={{
+          flex: 1, border: 'none', outline: 'none', background: 'transparent',
+          color: 'var(--txt)', fontFamily: "'Manrope',sans-serif", fontSize: 13,
+        }}/>
+      {memberSearch && (
+        <button onClick={() => setMemberSearch('')} aria-label="Pulisci ricerca"
+          style={{ background:'transparent', border:'none', cursor:'pointer',
+            color:'var(--mut)', fontSize:14, padding:'0 4px', lineHeight:1 }}>×</button>
+      )}
+    </div>
+  );
+
+  const summaryLine = (label, color = 'var(--gold)') => (
+    <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 8, lineHeight: 1.5, minHeight: 18 }}>
+      <span style={{ color: 'var(--mut)', letterSpacing: '.2em', textTransform: 'uppercase', fontSize: 9, fontWeight: 700, marginRight: 8 }}>
+        →
+      </span>
+      <span style={{ color }}>{label}</span>
+    </div>
+  );
+
   const OpponentBlock = needsOpponent && others.length > 0 && (
     <div data-coach="opponent" style={{ marginBottom: 24 }}>
       <label style={S.lbl}>{t('create.opponent_label')}</label>
-      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-        {others.map(m => {
-          const active = opponentId === m.id;
-          return (
-            <button key={m.id} type="button" onClick={() => setOpponentId(m.id)}
-              style={{
-                display:'inline-flex', alignItems:'center', gap:10,
-                padding:'6px 16px 6px 6px', borderRadius:999,
-                border:`1px solid ${active ? 'var(--gold)' : 'var(--rule)'}`,
-                background: active ? 'var(--soft)' : 'transparent',
-                color: active ? 'var(--gold)' : 'var(--txt)',
-                cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight: active ? 600 : 500,
-                letterSpacing:'.01em',
-                transition:'all .15s',
-              }}>
-              {m.avatarUrl
-                ? <img src={m.avatarUrl} alt="" style={{width:26,height:26,borderRadius:'50%',objectFit:'cover'}}/>
-                : <span style={{fontSize:18,lineHeight:1}}>{m.avatar || '😊'}</span>}
-              <span style={{fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:15}}>{m.name}</span>
-            </button>
-          );
-        })}
+      <SearchInput visible={others.length >= SEARCH_THRESHOLD} />
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+        {others.filter(matchesSearch).map(m => (
+          <MemberAvatar key={m.id} m={m}
+            active={opponentId === m.id}
+            color="var(--gold)"
+            onClick={setOpponentId}/>
+        ))}
       </div>
+      {summaryLine(
+        opponentId
+          ? others.find(m => m.id === opponentId)?.name || ''
+          : t('create.opponent_pick')
+      )}
     </div>
   );
 
@@ -520,50 +600,45 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
           {t('create.subset_cap', { current: allowedSet.size, max: maxOthers })}
         </span>
       </div>
-      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
+      <SearchInput visible={others.length >= SEARCH_THRESHOLD} />
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
         {!mustUseSubset && (
           <button onClick={() => setAllowedSet(new Set())}
+            aria-pressed={allowedSet.size === 0}
             style={{
               padding:'8px 14px', borderRadius:24,
               border:`1px solid ${allowedSet.size === 0 ? 'var(--gold)' : 'var(--brd)'}`,
               background: allowedSet.size === 0 ? 'var(--gold)1a' : 'transparent',
               color: allowedSet.size === 0 ? 'var(--gold)' : 'var(--dim)',
-              cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight:600,
+              cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
+              letterSpacing:'.06em',
             }}>{t('create.subset_all')}</button>
         )}
-        {others.map(m => {
+        {others.filter(matchesSearch).map(m => {
           const active = allowedSet.has(m.id);
-          // When the user is at the cap, disable every non-selected chip.
           const disabledByCap = !active && allowedSet.size >= maxOthers;
           return (
-            <button key={m.id}
-              onClick={() => { if (!disabledByCap) toggleAllowed(m.id); }}
-              disabled={disabledByCap}
-              style={{
-                display:'inline-flex', alignItems:'center', gap:8,
-                padding:'8px 14px 8px 8px', borderRadius:24,
-                border:`1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
-                background: active ? 'var(--gold)1a' : 'transparent',
-                color: active ? 'var(--gold)' : 'var(--dim)',
-                cursor: disabledByCap ? 'not-allowed' : 'pointer',
-                opacity: disabledByCap ? .4 : 1,
-                fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight:600,
-              }}>
-              {m.avatarUrl
-                ? <img src={m.avatarUrl} alt="" style={{width:24,height:24,borderRadius:'50%',objectFit:'cover'}}/>
-                : <span style={{fontSize:18,lineHeight:1}}>{m.avatar || '😊'}</span>}
-              <span>{m.name}</span>
-              {active && <span style={{ fontSize: 11, color:'var(--gold)' }}>✓</span>}
-            </button>
+            <MemberAvatar key={m.id} m={m}
+              active={active} disabled={disabledByCap}
+              color="var(--gold)"
+              onClick={toggleAllowed}/>
           );
         })}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--mut)' }}>
+      <div style={{ fontSize: 11, color: 'var(--mut)', marginTop: 8, lineHeight: 1.5 }}>
         {mustUseSubset
           ? t('create.subset_hint_cap', { max: maxOthers })
           : allowedSet.size === 0
             ? t('create.subset_hint_all')
             : t('create.subset_hint_some', { n: allowedSet.size })}
+        {allowedSet.size > 0 && (
+          <span style={{ display:'block', marginTop:4, color:'var(--gold)' }}>
+            {Array.from(allowedSet)
+              .map(id => others.find(o => o.id === id)?.name)
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -574,36 +649,32 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   const TargetBlock = betType !== 'vault' && targetCandidates.length > 0 && (
     <div style={{ marginBottom: 14 }}>
       <label style={S.lbl}>{t('create.target_label')}</label>
-      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+      <SearchInput visible={targetCandidates.length >= SEARCH_THRESHOLD} />
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
         <button onClick={() => setTargetId(null)}
+          aria-pressed={!targetId}
           style={{
             padding:'8px 14px', borderRadius:24,
-            border:`1px solid ${!targetId ? 'var(--gold)' : 'var(--brd)'}`,
-            background: !targetId ? 'var(--gold)1a' : 'transparent',
-            color: !targetId ? 'var(--gold)' : 'var(--dim)',
-            cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight:600,
+            border:`1px solid ${!targetId ? 'var(--pur)' : 'var(--brd)'}`,
+            background: !targetId ? 'var(--pur)1a' : 'transparent',
+            color: !targetId ? 'var(--pur)' : 'var(--dim)',
+            cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
+            letterSpacing:'.06em',
           }}>—  {t('create.target_none')}</button>
-        {targetCandidates.map(m => {
-          const active = targetId === m.id;
-          return (
-            <button key={m.id} onClick={() => setTargetId(m.id)}
-              style={{
-                display:'inline-flex', alignItems:'center', gap:8,
-                padding:'8px 14px 8px 8px', borderRadius:24,
-                border:`1px solid ${active ? 'var(--pur)' : 'var(--brd)'}`,
-                background: active ? 'var(--pur)1a' : 'transparent',
-                color: active ? 'var(--pur)' : 'var(--dim)',
-                cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight:600,
-              }}>
-              {m.avatarUrl
-                ? <img src={m.avatarUrl} alt="" style={{width:24,height:24,borderRadius:'50%',objectFit:'cover'}}/>
-                : <span style={{fontSize:18,lineHeight:1}}>{m.avatar || '😊'}</span>}
-              <span>🎯 {m.name}</span>
-            </button>
-          );
-        })}
+        {targetCandidates.filter(matchesSearch).map(m => (
+          <MemberAvatar key={m.id} m={m}
+            active={targetId === m.id}
+            color="var(--pur)"
+            onClick={setTargetId}/>
+        ))}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--mut)', marginTop: 6, lineHeight: 1.4 }}>
+      {summaryLine(
+        targetId
+          ? `🎯 ${targetCandidates.find(m => m.id === targetId)?.name || ''}`
+          : t('create.target_none'),
+        targetId ? 'var(--pur)' : 'var(--mut)'
+      )}
+      <div style={{ fontSize: 11, color: 'var(--mut)', marginTop: 4, lineHeight: 1.4 }}>
         {t('create.target_hint')}
       </div>
     </div>
