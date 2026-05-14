@@ -1324,8 +1324,14 @@ export function LanguageProvider({ children }) {
     let val = TRANSLATIONS[lang] ?? TRANSLATIONS.it;
     for (const k of keys) { val = val?.[k]; if (val === undefined) break; }
     if (val === undefined) { val = TRANSLATIONS.it; for (const k of keys) { val = val?.[k]; if (val === undefined) break; } }
+    const subst = (s) => Object.entries(vars).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), s);
+    // Array values (e.g. EmptyState multi-paragraph tutorials) were
+    // previously returned as the raw key string because of the
+    // `typeof !== 'string'` guard — now we substitute vars per item
+    // and return the array intact for the caller to render.
+    if (Array.isArray(val)) return val.map(v => typeof v === 'string' ? subst(v) : v);
     if (typeof val !== 'string') return key;
-    return Object.entries(vars).reduce((s,[k,v]) => s.replaceAll(`{${k}}`,String(v)), val);
+    return subst(val);
   }, [lang]);
   return React.createElement(LanguageContext.Provider, { value: { t, lang, setLang } }, children);
 }
