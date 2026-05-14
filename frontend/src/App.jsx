@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, lazy, Suspense } from 
 import { useSync } from './useSync.js';
 import * as api from './api.js';
 
-import { DARK, LIGHT, AMBER, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx';
+import { DARK, LIGHT, AMBER, SELVA, SAKURA, rootVars, DEF_CATS, COLORS } from './components/Atoms.jsx';
 import { useLang } from './i18n.js';
 import SplashScreen from './components/SplashScreen.jsx';
 import { SkeletonDashboard, SkeletonList } from './components/Skeleton.jsx';
@@ -140,9 +140,9 @@ const CSS_BASE = `
   content:'';
   position:fixed; inset:0; z-index:-1;
   background:
-    radial-gradient(60vmax 40vmax at 12% 18%,  rgba(183,148,244,.10) 0%, transparent 55%),
-    radial-gradient(70vmax 50vmax at 88% 82%,  rgba(196,168,120,.07) 0%, transparent 60%),
-    radial-gradient(40vmax 30vmax at 50% 95%,  rgba(122,162,255,.05) 0%, transparent 60%);
+    radial-gradient(60vmax 40vmax at 12% 18%,  color-mix(in srgb, var(--pur)  14%, transparent) 0%, transparent 55%),
+    radial-gradient(70vmax 50vmax at 88% 82%,  color-mix(in srgb, var(--gold) 10%, transparent) 0%, transparent 60%),
+    radial-gradient(40vmax 30vmax at 50% 95%,  color-mix(in srgb, var(--blu)   8%, transparent) 0%, transparent 60%);
   filter: blur(4px);
   animation: ambientDrift 38s ease-in-out infinite;
   pointer-events:none;
@@ -606,7 +606,7 @@ export default function App() {
   }, [theme]);
   const isDark = theme === 'dark';
   const setIsDark = (v) => setTheme(v ? 'dark' : 'light');
-  const C = theme === 'light' ? LIGHT : theme === 'amber' ? AMBER : DARK;
+  const C = theme === 'light' ? LIGHT : theme === 'amber' ? AMBER : theme === 'selva' ? SELVA : theme === 'sakura' ? SAKURA : DARK;
   const isDesktop = useBreakpoint(768);
   const { t } = useLang();
 
@@ -1520,7 +1520,7 @@ export default function App() {
                 : dist === 2 ? 1.03
                 : 1;
               return (
-                <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => setView(n.id)}
+                <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => view === n.id ? window.scrollTo({ top: 0, behavior: 'smooth' }) : setView(n.id)}
                   onMouseEnter={() => setNavHover(idx)}
                   className="nav-item" style={{
                   display: 'flex', alignItems: 'center', gap: 10,
@@ -1673,7 +1673,7 @@ export default function App() {
             const baseLift = [0, 6, 2, 8, 4, 6, 0];
             const lift = isActive ? -8 : baseLift[idx % baseLift.length];
             return (
-              <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => setView(n.id)} style={{
+              <div key={n.id} data-tour={`nav-${n.id}`} onClick={() => view === n.id ? window.scrollTo({ top: 0, behavior: 'smooth' }) : setView(n.id)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                 padding: '4px 8px', cursor: 'pointer',
                 transform: `translateY(${lift}px)`,

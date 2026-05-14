@@ -219,20 +219,22 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
         </div>
       </div>
 
-      {/* THEME — three-way selector: dark / light / amber. Persists to LS. */}
+      {/* THEME — five-way selector. Persists to LS. */}
       <SecLabel>{t('settings.theme')}</SecLabel>
       <div style={{...S.card,marginBottom:12}}>
         <div style={{marginBottom:12}}>
           <div style={{fontSize:14,fontWeight:600}}>
-            {theme === 'amber' ? t('settings.theme_amber') : (isDark ? t('settings.theme_dark') : t('settings.theme_light'))}
+            {{dark:t('settings.theme_dark'),light:t('settings.theme_light'),amber:t('settings.theme_amber'),selva:t('settings.theme_selva'),sakura:t('settings.theme_sakura')}[theme] ?? t('settings.theme_dark')}
           </div>
           <div style={{fontSize:12,color:"var(--dim)"}}>{t('settings.theme_desc')}</div>
         </div>
-        <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(100px, 1fr))', gap:8}}>
           {[
-            {id:'dark',  label:t('settings.theme_dark'),  preview:['#1a1530','#c4a878']},
-            {id:'light', label:t('settings.theme_light'), preview:['#ede8d8','#7a5e30']},
-            {id:'amber', label:t('settings.theme_amber'), preview:['#1f1108','#e8b86a']},
+            {id:'dark',   label:t('settings.theme_dark'),   preview:['#1a1530','#c4a878']},
+            {id:'light',  label:t('settings.theme_light'),  preview:['#ede8d8','#7a5e30']},
+            {id:'amber',  label:t('settings.theme_amber'),  preview:['#1f1108','#e8b86a']},
+            {id:'selva',  label:t('settings.theme_selva'),  preview:['#0d1b10','#c8a040']},
+            {id:'sakura', label:t('settings.theme_sakura'), preview:['#1e1018','#e8b0b0']},
           ].map(opt => {
             const active = (theme || (isDark ? 'dark' : 'light')) === opt.id;
             return (
@@ -240,17 +242,18 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
                 onClick={() => setTheme ? setTheme(opt.id) : setIsDark(opt.id === 'dark')}
                 style={{
                   display:'flex', alignItems:'center', gap:8,
-                  padding:'8px 14px', borderRadius:999,
+                  padding:'8px 12px', borderRadius:999,
                   border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
                   background: active ? 'var(--gold)18' : 'transparent',
                   color: active ? 'var(--gold)' : 'var(--dim)',
-                  fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
+                  fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:700,
                   letterSpacing:'.04em', cursor:'pointer',
                   transition:'all .18s',
                   WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
+                  whiteSpace:'nowrap',
                 }}>
                 <span style={{
-                  width: 18, height: 18, borderRadius: '50%',
+                  width: 16, height: 16, borderRadius: '50%',
                   background: `linear-gradient(135deg, ${opt.preview[0]} 50%, ${opt.preview[1]} 50%)`,
                   border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
                   flexShrink: 0,
