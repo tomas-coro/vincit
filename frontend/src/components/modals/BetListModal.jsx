@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { fmtD, COLORS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
@@ -97,6 +97,43 @@ export default function BetListModal({
     return Array.from(ids).map(personFromId);
   };
 
+  // Full roster for the expanded view — every party with their side,
+  // stake, and (for resolved bets) win/loss outcome.
+  const rosterFor = (b) => {
+    if (b.isSecret) return [];
+    const counterBets = Array.isArray(b.counterBets) ? b.counterBets : [];
+    const creatorWon = b.status === 'won';
+    const seen = new Set();
+    const rows = [];
+
+    const push = (id, side, stake, quotaUsed) => {
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      const p = personFromId(id);
+      const q = parseFloat(quotaUsed) || parseFloat(b.quota) || 1;
+      const won = side === 'yes' ? creatorWon : !creatorWon;
+      const payout = won ? Math.round((stake || 0) * q) : 0;
+      const delta = won ? payout - (stake || 0) : -(stake || 0);
+      rows.push({
+        ...p, side, stake: stake || 0,
+        outcome: (b.status === 'won' || b.status === 'lost') ? (won ? 'won' : 'lost') : null,
+        delta,
+        isYou: id === userId,
+      });
+    };
+
+    push(b.creator, 'yes', b.stake, b.quota);
+    if (b.opponent && b.opponent !== b.creator && counterBets.every(c => c.bettor !== b.opponent)) {
+      // 1v1 targeted/surprise bet without an explicit counter row.
+      const oppStake = b.opponentStake != null ? b.opponentStake : b.stake;
+      push(b.opponent, 'no', oppStake, b.quota);
+    }
+    for (const cb of counterBets) {
+      push(cb.bettor, cb.side, cb.stake, cb.quotaUsed);
+    }
+    return rows;
+  };
+
   const overlay = (
     <div
       onClick={onClose}
@@ -163,107 +200,196 @@ export default function BetListModal({
             </div>
           )}
 
-          {sorted.map(b => {
-            const parts = participantsFor(b);
-            const lead  = parts[0] || { label: '—', emoji: '🙂', color: '#5b8af0' };
-            const extras = parts.slice(1); // for the "+ Anna · Luca" tail
-            const iWasCreator = b.creator === userId;
-            // From the user's POV: did *I* win this bet? (Same logic as h2h.)
-            const iWon =
-              (iWasCreator && b.status === 'won') ||
-              (!iWasCreator && b.status === 'lost');
-            const delta = iWon
-              ? Number(b.potentialWin || 0) - Number(b.stake || 0)
-              : -Number(b.stake || 0);
-            // Tail label: "vs Marco · Anna · Luca" (no "vs " on extras).
-            const partsLabel = parts.map(p => p.label).join(' · ');
-            return (
-              <div key={b.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 22px', borderBottom: '1px solid var(--rule)',
-              }}>
-                {/* Counterpart avatar stack — main avatar plus a small
-                    fan of secondary avatars when the bet had multiple
-                    participants. Capped at 2 extras to keep the row tight;
-                    the participantsLabel below still spells out all names. */}
-                <div style={{
-                  display: 'flex', alignItems: 'center',
-                  flexShrink: 0,
-                }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: '50%',
-                    background: lead.color ? `${lead.color}33` : 'var(--mut)33',
-                    border: `2px solid ${lead.color ? `${lead.color}88` : 'var(--brd)'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    overflow: 'hidden', fontSize: 18, lineHeight: 1,
-                  }}>
-                    {lead.avatarUrl
-                      ? <img src={lead.avatarUrl} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
-                      : lead.emoji}
-                  </div>
-                  {extras.slice(0, 2).map((p, i) => (
-                    <div key={p.id || i} style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: p.color ? `${p.color}33` : 'var(--mut)33',
-                      border: '2px solid var(--surf)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      overflow: 'hidden', fontSize: 14, lineHeight: 1,
-                      marginLeft: -10,
-                    }}>
-                      {p.avatarUrl
-                        ? <img src={p.avatarUrl} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
-                        : p.emoji}
-                    </div>
-                  ))}
-                  {extras.length > 2 && (
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: 'var(--card)', border: '2px solid var(--surf)',
-                      color: 'var(--dim)', fontSize: 10, fontWeight: 700,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      marginLeft: -10,
-                    }}>+{extras.length - 2}</div>
-                  )}
-                </div>
-
-                {/* Title + counterpart */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
-                    fontSize: 15, fontWeight: 600, color: 'var(--txt)',
-                    lineHeight: 1.25, marginBottom: 2,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  }}>{b.title}</div>
-                  <div style={{
-                    fontSize: 11, color: 'var(--dim)', lineHeight: 1.3,
-                    display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
-                  }}>
-                    <span style={{
-                      maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>vs {partsLabel}</span>
-                    <span style={{ color: 'var(--mut)' }}>·</span>
-                    <span>{fmtD(b.resolvedAt || b.createdAt)}</span>
-                  </div>
-                </div>
-
-                {/* Delta */}
-                <div style={{
-                  flexShrink: 0, textAlign: 'right',
-                  fontFamily: "'Playfair Display',serif",
-                  fontFeatureSettings: "'lnum' 1, 'tnum' 1",
-                  fontSize: 16, fontWeight: 700,
-                  color: iWon ? 'var(--grn)' : 'var(--red)',
-                  letterSpacing: '-0.02em',
-                }}>
-                  {iWon ? '+' : ''}{delta}<span style={{ fontSize: 11, marginLeft: 2 }}>₡</span>
-                </div>
-              </div>
-            );
-          })}
+          {sorted.map(b => (
+            <BetRow
+              key={b.id}
+              bet={b}
+              roster={rosterFor(b)}
+              participants={participantsFor(b)}
+              userId={userId}
+              autoExpand={sorted.length === 1}
+            />
+          ))}
         </div>
       </div>
     </div>
   );
 
   return typeof document !== 'undefined' ? createPortal(overlay, document.body) : overlay;
+}
+
+// One bet entry — collapsible row with an expandable participants
+// roster underneath. Auto-expanded when the modal contains a single
+// bet (the Dashboard V/P case), so the user immediately sees who was
+// in. For multi-bet lists the row stays compact and expands on tap.
+function BetRow({ bet: b, roster, participants, userId, autoExpand }) {
+  const [open, setOpen] = useState(!!autoExpand);
+  const parts = participants;
+  const lead  = parts[0] || { label: '—', emoji: '🙂', color: '#5b8af0' };
+  const extras = parts.slice(1);
+  const iWasCreator = b.creator === userId;
+  const iWon =
+    (iWasCreator && b.status === 'won') ||
+    (!iWasCreator && b.status === 'lost');
+  const delta = iWon
+    ? Number(b.potentialWin || 0) - Number(b.stake || 0)
+    : -Number(b.stake || 0);
+  const partsLabel = parts.map(p => p.label).join(' · ');
+  const canExpand = roster.length > 0;
+
+  return (
+    <div style={{ borderBottom: '1px solid var(--rule)' }}>
+      <div
+        onClick={canExpand ? () => setOpen(o => !o) : undefined}
+        role={canExpand ? 'button' : undefined}
+        tabIndex={canExpand ? 0 : undefined}
+        onKeyDown={canExpand ? (e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); }
+        }) : undefined}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 22px',
+          cursor: canExpand ? 'pointer' : 'default',
+          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+        }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: lead.color ? `${lead.color}33` : 'var(--mut)33',
+            border: `2px solid ${lead.color ? `${lead.color}88` : 'var(--brd)'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden', fontSize: 18, lineHeight: 1,
+          }}>
+            {lead.avatarUrl
+              ? <img src={lead.avatarUrl} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+              : lead.emoji}
+          </div>
+          {extras.slice(0, 2).map((p, i) => (
+            <div key={p.id || i} style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: p.color ? `${p.color}33` : 'var(--mut)33',
+              border: '2px solid var(--surf)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden', fontSize: 14, lineHeight: 1,
+              marginLeft: -10,
+            }}>
+              {p.avatarUrl
+                ? <img src={p.avatarUrl} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                : p.emoji}
+            </div>
+          ))}
+          {extras.length > 2 && (
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'var(--card)', border: '2px solid var(--surf)',
+              color: 'var(--dim)', fontSize: 10, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginLeft: -10,
+            }}>+{extras.length - 2}</div>
+          )}
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
+            fontSize: 15, fontWeight: 600, color: 'var(--txt)',
+            lineHeight: 1.25, marginBottom: 2,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>{b.title}</div>
+          <div style={{
+            fontSize: 11, color: 'var(--dim)', lineHeight: 1.3,
+            display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+          }}>
+            <span style={{
+              maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>vs {partsLabel}</span>
+            <span style={{ color: 'var(--mut)' }}>·</span>
+            <span>{fmtD(b.resolvedAt || b.createdAt)}</span>
+          </div>
+        </div>
+
+        <div style={{ display:'flex', alignItems:'center', gap: 8, flexShrink: 0 }}>
+          <div style={{
+            textAlign: 'right',
+            fontFamily: "'Playfair Display',serif",
+            fontFeatureSettings: "'lnum' 1, 'tnum' 1",
+            fontSize: 16, fontWeight: 700,
+            color: iWon ? 'var(--grn)' : 'var(--red)',
+            letterSpacing: '-0.02em',
+          }}>
+            {iWon ? '+' : ''}{delta}<span style={{ fontSize: 11, marginLeft: 2 }}>₡</span>
+          </div>
+          {canExpand && (
+            <span aria-hidden style={{
+              color: 'var(--mut)', fontSize: 11, lineHeight: 1,
+              transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+              transition: 'transform .2s ease',
+              display: 'inline-block', width: 12, textAlign: 'center',
+            }}>▸</span>
+          )}
+        </div>
+      </div>
+
+      {/* Expanded roster — each participant with avatar, side, stake,
+          and (for resolved bets) their personal delta. "Tu" is pinned
+          first so the viewer's row is immediately visible. */}
+      {open && canExpand && (
+        <div style={{
+          padding: '4px 22px 14px',
+          background: 'var(--card)55',
+          borderTop: '1px solid var(--rule)',
+        }}>
+          <div className="bc-meta" style={{ fontSize: 8, padding: '10px 0 8px' }}>
+            — Partecipanti
+          </div>
+          {[...roster].sort((a,b)=> (a.isYou ? -1 : b.isYou ? 1 : 0)).map(r => (
+            <div key={r.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 0',
+              borderTop: '1px dashed var(--rule)',
+            }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%',
+                background: `${r.color}33`, border: `2px solid ${r.color}88`,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                overflow:'hidden', fontSize: 15, lineHeight: 1, flexShrink: 0,
+              }}>
+                {r.avatarUrl
+                  ? <img src={r.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  : r.emoji}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 13, fontWeight: 700, color: 'var(--txt)',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {r.label}{r.isYou && (
+                    <span style={{
+                      fontSize: 9, marginLeft: 6, color: 'var(--gold)',
+                      letterSpacing: 1, fontFamily: "'Manrope',sans-serif",
+                    }}>TU</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--dim)', marginTop: 1 }}>
+                  {r.side === 'yes' ? 'SÌ' : 'NO'} · {r.stake} ₡
+                </div>
+              </div>
+              {r.outcome && (
+                <div style={{
+                  textAlign: 'right',
+                  fontFamily: "'Playfair Display',serif",
+                  fontFeatureSettings: "'lnum' 1, 'tnum' 1",
+                  fontSize: 14, fontWeight: 700,
+                  color: r.outcome === 'won' ? 'var(--grn)' : 'var(--red)',
+                  letterSpacing: '-0.02em',
+                }}>
+                  {r.outcome === 'won' ? '+' : ''}{r.delta}<span style={{ fontSize: 10, marginLeft: 2 }}>₡</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

@@ -858,6 +858,17 @@ export default function App() {
     if (user && groups.length > 0) registerPush(user, { prompt: false });
   }, [user, groups.length]);
 
+  // When the user switches groups, drop the celebration baseline + any
+  // queued overlays. Otherwise the new group's already-resolved bets
+  // (none of which were in the previous baseline) would fire WinOverlay
+  // back-to-back as the list arrives — leaving the 🏆 cup on screen for
+  // a few seconds per bet while the user is just trying to browse.
+  useEffect(() => {
+    seenResolutionsRef.current = null;
+    setWinAnimQueue([]);
+    setCommentBetQueue([]);
+  }, [activeGroupId]);
+
   // Resolution-diff celebration: counter-bettors (and other participants
   // who didn't trigger the resolve themselves) used to find out their
   // bet had resolved only via the regular bet card refresh — no

@@ -24,6 +24,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const [photoBusy, setPhotoBusy] = useState(false);
   const [lightbox, setLightbox] = useState(null);
   const [editSubsetOpen, setEditSubsetOpen] = useState(false);
+  const [inviteesPeekOpen, setInviteesPeekOpen] = useState(false);
 
   const handlePhotoCapture = async dataUrl => {
     if (!onReactionPhoto) return;
@@ -248,22 +249,36 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             )}
           </div>
 
-          {/* Invited members stack (subset bets only, while active) */}
-          {Array.isArray(bet.allowedMembers) && bet.allowedMembers.length > 0 && !done && (() => {
+          {/* Invited members stack (subset bets — active AND done).
+              Tap behavior:
+                - owner / moderator on an active bet → SubsetEditModal
+                  (add/remove invitees)
+                - everyone else, or any viewer on a done bet → peek modal
+                  (read-only roster with per-person vote status).
+              Done bets are no longer mutable, so even owners get the
+              peek. Before this, resolved/expired subset bets showed
+              "👥 N invitati" but the roster was unreachable. */}
+          {Array.isArray(bet.allowedMembers) && bet.allowedMembers.length > 0 && (() => {
             const ids = bet.allowedMembers;
             const counterers = new Set((bet.counterBets || []).map(cb => cb.bettor));
             // Always include the creator at the front of the stack for context.
             const stackIds = [bet.creator, ...ids.filter(id => id !== bet.creator)].slice(0, 6);
-            const canEditSubset = isOwner || canModerate;
+            const canEditSubset = !done && (isOwner || canModerate);
+            const handleClick = canEditSubset
+              ? () => setEditSubsetOpen(true)
+              : () => setInviteesPeekOpen(true);
             return (
               <div
-                onClick={canEditSubset ? () => setEditSubsetOpen(true) : undefined}
-                title={canEditSubset ? t('bet_card.manage_subset') : undefined}
+                onClick={handleClick}
+                role="button" tabIndex={0}
+                title={canEditSubset ? t('bet_card.manage_subset') : t('bet_card.see_invitees')}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
                 style={{
                 display:'flex', alignItems:'center', gap:8, marginBottom:10,
                 padding:'6px 10px', borderRadius:10,
                 background:'var(--blu)0d', border:'1px solid var(--blu)33',
-                cursor: canEditSubset ? 'pointer' : 'default',
+                cursor: 'pointer',
+                WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
               }}>
                 <div style={{ display:'flex', alignItems:'center' }}>
                   {stackIds.map((id, i) => {
@@ -298,9 +313,9 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                     ? t('bet_card.subset_progress', { done: counterers.size, total: ids.length })
                     : t('bet_card.subset_pending', { n: ids.length })}
                 </div>
-                {canEditSubset && (
-                  <span style={{ fontSize: 12, color: 'var(--blu)', opacity: .7 }}>✏️</span>
-                )}
+                <span style={{ fontSize: 12, color: 'var(--blu)', opacity: .7 }}>
+                  {canEditSubset ? '✏️' : '▸'}
+                </span>
               </div>
             );
           })()}
@@ -519,6 +534,102 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
           onClose={() => setEditSubsetOpen(false)}
         />
       )}
+
+      {/* Invitees roster (read-only) — opens when a non-owner taps the
+          "👥 N invitati" strip. Shows each invited member with their
+          current vote status. Tapping outside or ESC closes. */}
+      {inviteesPeekOpen && (() => {
+        const cbMap = new Map((bet.counterBets || []).map(cb => [cb.bettor, cb]));
+        const rows = bet.allowedMembers.map(id => {
+          const p = profiles[id] || {};
+          const cb = cbMap.get(id);
+          return {
+            id,
+            name: p.name || '—',
+            avatar: p.avatar || '😊',
+            avatarUrl: p.avatarUrl,
+            color: COLORS[p.colorKey] || '#5b8af0',
+            voted: !!cb,
+            side: cb?.side || null,
+            stake: cb?.stake || 0,
+          };
+        });
+        return (
+          <div onClick={() => setInviteesPeekOpen(false)} style={{
+            position:'fixed', inset:0, zIndex:200,
+            background:'rgba(8,6,18,.78)',
+            backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)',
+            display:'flex', alignItems:'center', justifyContent:'center', padding:16,
+          }}>
+            <div onClick={e => e.stopPropagation()} className="bIn" style={{
+              width:'100%', maxWidth:420, maxHeight:'min(80dvh, 640px)',
+              background:'var(--surf)', border:'1px solid var(--rule)',
+              borderTop:'4px solid var(--blu)', borderRadius:14,
+              boxShadow:'0 30px 80px rgba(0,0,0,.55)',
+              display:'flex', flexDirection:'column',
+            }}>
+              <div style={{
+                padding:'18px 20px 12px', borderBottom:'1px solid var(--rule)',
+                display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
+              }}>
+                <div>
+                  <div className="bc-meta" style={{fontSize:8}}>— {t('bet_card.invitees_title')}</div>
+                  <div style={{
+                    fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+                    fontSize:20, fontWeight:700, color:'var(--blu)', marginTop:2,
+                  }}>"{bet.title}"</div>
+                  <div className="bc-meta" style={{fontSize:9, marginTop:6}}>
+                    {rows.length} {rows.length === 1 ? t('bet_card.invitee_one') : t('bet_card.invitee_many')}
+                  </div>
+                </div>
+                <button onClick={() => setInviteesPeekOpen(false)} aria-label="Chiudi" style={{
+                  background:'transparent', border:'none', cursor:'pointer',
+                  color:'var(--dim)', fontSize:22, padding:'4px 8px',
+                }}>✕</button>
+              </div>
+              <div style={{
+                flex:1, minHeight:0, overflowY:'auto',
+                padding:'4px 0 calc(16px + env(safe-area-inset-bottom))',
+              }}>
+                {rows.map(r => (
+                  <div key={r.id} style={{
+                    display:'flex', alignItems:'center', gap:12,
+                    padding:'12px 20px', borderBottom:'1px solid var(--rule)',
+                  }}>
+                    <div style={{
+                      width:36, height:36, borderRadius:'50%',
+                      background:`${r.color}33`, border:`2px solid ${r.color}88`,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      overflow:'hidden', fontSize:18, lineHeight:1, flexShrink:0,
+                    }}>
+                      {r.avatarUrl
+                        ? <img src={r.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                        : r.avatar}
+                    </div>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{fontSize:14, fontWeight:700, color:'var(--txt)'}}>{r.name}</div>
+                      <div style={{fontSize:11, color:'var(--dim)', marginTop:2}}>
+                        {r.voted
+                          ? `${r.side === 'yes' ? '✅ ' + t('bet_card.yes') : '❌ ' + t('bet_card.no')} · ${r.stake} ₡`
+                          : t('bet_card.invitee_pending')}
+                      </div>
+                    </div>
+                    {r.voted && (
+                      <span style={{
+                        fontSize:10, fontWeight:800, letterSpacing:'.08em', textTransform:'uppercase',
+                        padding:'4px 10px', borderRadius:999,
+                        background: r.side === 'yes' ? 'var(--grn)22' : 'var(--red)22',
+                        color: r.side === 'yes' ? 'var(--grn)' : 'var(--red)',
+                        border: `1px solid ${r.side === 'yes' ? 'var(--grn)55' : 'var(--red)55'}`,
+                      }}>{r.side === 'yes' ? 'SÌ' : 'NO'}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {lightbox && (
         <div onClick={()=>setLightbox(null)} style={{
