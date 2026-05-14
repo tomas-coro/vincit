@@ -351,10 +351,10 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
     .map(b => b.status);
 
   // 3-tap handler — triggers the matching egg overlay on the third tap within
-  // 1.8s. Resets after firing OR after the window expires. Pulse animation
-  // on each tap to confirm the input registered.
+  // 1.8s. Gated on a real ≥3 streak: easter eggs are a celebration of being
+  // genuinely on fire (or genuinely cold), not a freebie after one result.
   const handleStreakTap = () => {
-    if (fireLevel < 1) return;
+    if (fireLevel < 3) return;
     setStreakPulseKey(k => k + 1);
     const next = streakTapCount + 1;
     if (streakTapTimerRef.current) clearTimeout(streakTapTimerRef.current);
@@ -376,7 +376,8 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
   const streakAccent = isWinStreak ? (isHotStreak ? 'var(--red)' : 'var(--gold)') : 'var(--blu)';
 
   const renderStreakHero = () => {
-    if (fireLevel < 1) return null;
+    // Hide the hero entirely below 3 — a "streak" needs to feel earned.
+    if (fireLevel < 3) return null;
     return (
       <div
         onClick={handleStreakTap}

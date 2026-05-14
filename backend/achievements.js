@@ -92,15 +92,17 @@ async function unlockSecret(userId, achievementId) {
     [userId, achievementId, Date.now()]
   );
 
-  // Friendly push notification — opt-in via the resolved-pref toggle.
+  // Friendly push notification — secret trophies are explicit user
+  // actions (triple-tap + accept the overlay), so we always notify
+  // regardless of the bet-resolution preference. They're rare events;
+  // missing them because the user toggled off "bet resolved" pushes
+  // would be unexpected.
   try {
-    if (await isPrefEnabled(userId, 'on_resolved')) {
-      sendPushToUser(userId, {
-        title: '🏆 Trofeo segreto sbloccato!',
-        body:  'Hai trovato un easter egg — controlla la collezione',
-        url:   '/',
-      });
-    }
+    sendPushToUser(userId, {
+      title: '🏆 Trofeo segreto sbloccato!',
+      body:  'Hai trovato un easter egg — controlla la collezione',
+      url:   '/',
+    });
   } catch (e) { console.error('[secret-unlock notify]', e); }
 
   return { ok: true, alreadyUnlocked: false };
