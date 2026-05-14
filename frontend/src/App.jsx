@@ -1719,7 +1719,6 @@ export default function App() {
                   boxShadow: '0 14px 30px -8px var(--pur), 0 1px 0 rgba(255,255,255,.18) inset',
                   transition: 'transform .18s',
                 }}>+</div>
-                <span aria-hidden style={{ fontSize: 8, color: 'var(--gold)', letterSpacing:'.2em', textTransform:'uppercase', fontWeight: 600 }}>{t('app.new_bet_label')}</span>
               </div>
             );
           })()}

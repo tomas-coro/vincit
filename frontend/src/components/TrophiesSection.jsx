@@ -246,7 +246,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
                 gridTemplateColumns:'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
                 gap: 10,
               }}>
-                {items.map(a => <SecretTrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate} onOpen={(rect) => setDetail({ a, rect })}/>)}
+                {items.map(a => <SecretTrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate} onOpen={(rect) => setDetail(prev => prev?.a?.id === a.id ? null : { a, rect })}/>)}
               </div>
             </div>
           );
@@ -259,7 +259,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
                 <FinalTrophyTile
                   key={a.id} a={a} t={t} fmtDate={fmtDate}
                   finaleGoals={finaleGoals}
-                  onOpen={rect => setDetail({ a, rect })}
+                  onOpen={rect => setDetail(prev => prev?.a?.id === a.id ? null : { a, rect })}
                 />
               ))}
             </div>
@@ -273,7 +273,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
               textTransform:'uppercase', marginBottom:8, fontWeight:700,
             }}>{t('trophies.cat_'+cat)}</div>
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(min(160px, 100%), 1fr))', gap:8}}>
-              {items.map(a => <TrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate} onOpen={(rect) => setDetail({ a, rect })}/>)}
+              {items.map(a => <TrophyTile key={a.id} a={a} t={t} fmtDate={fmtDate} onOpen={(rect) => setDetail(prev => prev?.a?.id === a.id ? null : { a, rect })}/>)}
             </div>
           </div>
         );
@@ -362,14 +362,8 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose?.(); };
     const onResize = () => onClose?.();
-    const onPointerDown = e => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) onClose?.();
-    };
     window.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResize);
-    window.addEventListener('pointerdown', onPointerDown, true);
-    // Delay scroll-to-close by one frame — avoids false positives from any
-    // layout reflow that fires a synthetic scroll event on initial mount.
     let onScroll;
     const tid = setTimeout(() => {
       onScroll = () => onClose?.();
@@ -378,7 +372,6 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
-      window.removeEventListener('pointerdown', onPointerDown, true);
       clearTimeout(tid);
       if (onScroll) window.removeEventListener('scroll', onScroll, true);
     };
@@ -408,6 +401,14 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
       <style>{`
         @keyframes tdpIn { 0%{opacity:0;transform:scale(.78)} 60%{opacity:1;transform:scale(1.03)} 100%{opacity:1;transform:scale(1)} }
       `}</style>
+      {/* Transparent backdrop — click/tap anywhere outside the popover closes it.
+          Using a backdrop div instead of a capture-phase pointerdown listener
+          so it never intercepts taps on tiles underneath the popover. */}
+      <div
+        onClick={() => onClose?.()}
+        style={{ position:'fixed', inset:0, zIndex:8999 }}
+        aria-hidden
+      />
       <div
         ref={popoverRef}
         role="dialog"
@@ -418,7 +419,7 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
         style={{
           position:'fixed',
           left: pos.left, top: pos.top,
-          width: POPOVER_W, zIndex: 290,
+          width: POPOVER_W, zIndex: 9000,
           maxHeight: `calc(100dvh - ${MARGIN * 2}px)`,
           overflowY: 'auto',
           background:'linear-gradient(160deg, var(--surf) 0%, var(--card) 100%)',

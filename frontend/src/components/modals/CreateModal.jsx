@@ -1116,10 +1116,26 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   }
 
   // ─── Mobile layout (bottom sheet, unchanged behavior) ─────────────────
+  const swipeStartY = useRef(null);
+  const handleSheetTouchStart = e => { swipeStartY.current = e.touches[0].clientY; };
+  const handleSheetTouchMove  = e => {
+    if (swipeStartY.current === null) return;
+    if (e.touches[0].clientY - swipeStartY.current > 72) { swipeStartY.current = null; onClose(); }
+  };
+  const handleSheetTouchEnd   = () => { swipeStartY.current = null; };
+
   return (<>
     {SlotMachine}
     <div style={{position:"fixed",inset:0,background:"rgba(15,11,35,.78)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}}>
-      <div className="sUp" style={{background:"var(--surf)",borderRadius:"12px 12px 0 0",width:"100%",maxWidth:480,padding:"30px 26px 40px",maxHeight:"92vh",overflowY:"auto",borderTop:"1px solid var(--rule)",boxShadow:"0 -20px 60px rgba(0,0,0,.4)"}}>
+      <div
+        className="sUp"
+        onTouchStart={handleSheetTouchStart}
+        onTouchMove={handleSheetTouchMove}
+        onTouchEnd={handleSheetTouchEnd}
+        style={{position:'relative',background:"var(--surf)",borderRadius:"12px 12px 0 0",width:"100%",maxWidth:480,padding:"30px 26px 40px",maxHeight:"92vh",overflowY:"auto",borderTop:"1px solid var(--rule)",boxShadow:"0 -20px 60px rgba(0,0,0,.4)"}}
+      >
+        {/* Drag handle — visual affordance for swipe-to-dismiss */}
+        <div style={{position:'absolute',top:10,left:'50%',transform:'translateX(-50%)',width:36,height:4,borderRadius:2,background:'var(--mut)',opacity:.6}}/>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:28}}>
           <div>
             <div className="bc-meta" style={{marginBottom:8}}>— Nuovo bet</div>
