@@ -491,47 +491,75 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     return (m.name || '').toLowerCase().includes(q);
   };
 
-  const MemberAvatar = ({ m, active, disabled, color = 'var(--gold)', size = 44, onClick }) => (
-    <button type="button"
-      onClick={() => { if (!disabled) onClick(m.id); }}
-      disabled={disabled}
-      aria-label={m.name}
-      title={m.name}
-      aria-pressed={active}
-      style={{
-        width: size, height: size, padding: 0,
-        borderRadius: '50%',
-        border: `2px solid ${active ? color : 'transparent'}`,
-        background: 'transparent',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? .3 : 1,
-        position: 'relative', flexShrink: 0,
-        transition: 'transform .15s, border-color .15s, box-shadow .2s',
-        transform: active ? 'scale(1.06)' : 'scale(1)',
-        boxShadow: active ? `0 0 0 4px ${color === 'var(--gold)' ? 'var(--gold)22' : 'var(--pur)22'}` : 'none',
-      }}>
-      <div style={{
-        width: '100%', height: '100%', borderRadius: '50%',
-        background: `${COLORS[m.colorKey] || '#5b8af0'}33`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden', fontSize: size * 0.5, lineHeight: 1,
-      }}>
-        {m.avatarUrl
-          ? <img src={m.avatarUrl} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
-          : (m.avatar || '😊')}
-      </div>
-      {active && (
-        <div aria-hidden style={{
-          position: 'absolute', top: -3, right: -3,
-          width: 18, height: 18, borderRadius: '50%',
-          background: color, color: '#1a1530',
-          fontSize: 11, fontWeight: 800,
+  // Tile = avatar disc + name caption stacked vertically. Each tile sits
+  // in a CSS-grid cell so layout adapts from 4 cols on phone to 8+ on
+  // desktop without media queries. The colorKey ring around the avatar
+  // disambiguates members who happen to share the same emoji avatar
+  // (Atoms.jsx already does this for the standalone <Avatar> atom — we
+  // mirror the same ring/halo treatment here for visual consistency).
+  const MemberAvatar = ({ m, active, disabled, color = 'var(--gold)', size = 44, onClick }) => {
+    const userColor = COLORS[m.colorKey] || '#5b8af0';
+    return (
+      <button type="button"
+        onClick={() => { if (!disabled) onClick(m.id); }}
+        disabled={disabled}
+        aria-label={m.name}
+        title={m.name}
+        aria-pressed={active}
+        style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          padding: '6px 4px', borderRadius: 12,
+          background: active ? `${color === 'var(--gold)' ? 'var(--gold)' : 'var(--pur)'}10` : 'transparent',
+          border: `1px solid ${active ? color : 'transparent'}`,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? .35 : 1,
+          minWidth: 0,
+          transition: 'background .15s, border-color .15s',
+          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+        }}>
+        <div style={{
+          width: size, height: size, borderRadius: '50%',
+          background: `${userColor}33`,
+          border: `2px solid ${active ? color : `${userColor}88`}`,
+          boxShadow: active
+            ? `0 0 0 3px ${color === 'var(--gold)' ? 'var(--gold)22' : 'var(--pur)22'}, 0 0 14px ${userColor}55`
+            : `0 0 8px ${userColor}33`,
+          position: 'relative', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: '2px solid var(--surf)',
-        }}>✓</div>
-      )}
-    </button>
-  );
+          overflow: 'hidden', fontSize: size * 0.5, lineHeight: 1,
+          transition: 'box-shadow .2s, border-color .15s',
+        }}>
+          {m.avatarUrl
+            ? <img src={m.avatarUrl} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+            : (m.avatar || '😊')}
+          {active && (
+            <div aria-hidden style={{
+              position: 'absolute', top: -3, right: -3,
+              width: 18, height: 18, borderRadius: '50%',
+              background: color, color: '#1a1530',
+              fontSize: 11, fontWeight: 800,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '2px solid var(--surf)',
+            }}>✓</div>
+          )}
+        </div>
+        <span style={{
+          fontSize: 10.5, fontWeight: 600,
+          color: active ? color : 'var(--dim)',
+          letterSpacing: '.01em', maxWidth: '100%',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          lineHeight: 1.2,
+        }}>{m.name}</span>
+      </button>
+    );
+  };
+
+  const MEMBER_GRID_STYLE = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))',
+    gap: 6,
+    width: '100%',
+  };
 
   const SearchInput = ({ visible }) => visible && (
     <div style={{
@@ -569,7 +597,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     <div data-coach="opponent" style={{ marginBottom: 24 }}>
       <label style={S.lbl}>{t('create.opponent_label')}</label>
       <SearchInput visible={others.length >= SEARCH_THRESHOLD} />
-      <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+      <div style={MEMBER_GRID_STYLE}>
         {others.filter(matchesSearch).map(m => (
           <MemberAvatar key={m.id} m={m}
             active={opponentId === m.id}
@@ -601,8 +629,8 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         </span>
       </div>
       <SearchInput visible={others.length >= SEARCH_THRESHOLD} />
-      <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
-        {!mustUseSubset && (
+      {!mustUseSubset && (
+        <div style={{ marginBottom: 10 }}>
           <button onClick={() => setAllowedSet(new Set())}
             aria-pressed={allowedSet.size === 0}
             style={{
@@ -613,7 +641,9 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
               cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
               letterSpacing:'.06em',
             }}>{t('create.subset_all')}</button>
-        )}
+        </div>
+      )}
+      <div style={MEMBER_GRID_STYLE}>
         {others.filter(matchesSearch).map(m => {
           const active = allowedSet.has(m.id);
           const disabledByCap = !active && allowedSet.size >= maxOthers;
@@ -650,7 +680,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     <div style={{ marginBottom: 14 }}>
       <label style={S.lbl}>{t('create.target_label')}</label>
       <SearchInput visible={targetCandidates.length >= SEARCH_THRESHOLD} />
-      <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
+      <div style={{ marginBottom: 10 }}>
         <button onClick={() => setTargetId(null)}
           aria-pressed={!targetId}
           style={{
@@ -661,6 +691,8 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
             cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
             letterSpacing:'.06em',
           }}>—  {t('create.target_none')}</button>
+      </div>
+      <div style={MEMBER_GRID_STYLE}>
         {targetCandidates.filter(matchesSearch).map(m => (
           <MemberAvatar key={m.id} m={m}
             active={targetId === m.id}
