@@ -17,6 +17,11 @@ export default function BetsHubView({
   onReveal, vaultUnlocked, onPinRequest, vaultPin,
   // Empty-state CTA (passed through to BetsView/VaultView)
   onOpenCreate,
+  // BetsView reset signal: when the parent bumps `betsViewKey` we
+  // remount BetsView so its `useState(initialStatus || 'active')`
+  // re-applies the new initial. Used by the Dashboard "Vedi tutte"
+  // CTA to land on the "Tutte" filter regardless of prior state.
+  betsViewKey = 0, initialStatus,
 }) {
   const { t } = useLang();
 
@@ -85,6 +90,8 @@ export default function BetsHubView({
         />
       ) : (
         <BetsView
+          key={betsViewKey}
+          initialStatus={initialStatus}
           hideTitle
           user={user} profiles={profiles} bets={bets} cats={cats}
           isDesktop={isDesktop}

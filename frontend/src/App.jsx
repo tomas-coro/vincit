@@ -743,6 +743,19 @@ export default function App() {
 
   const [view, setView] = useState('dashboard');
   const [betsTab, setBetsTab] = useState('open'); // 'open' | 'vault' — inside the Bets hub
+  // Bumping `betsViewKey` remounts BetsView with a fresh `initialStatus`
+  // — used when the dashboard "Vedi tutte" CTA needs to land on the
+  // "All" status filter regardless of whatever filter the user left
+  // BetsView on. Bottom-nav navigation does NOT bump this, so the user's
+  // own filter state is preserved during normal browsing.
+  const [betsViewKey, setBetsViewKey]           = useState(0);
+  const [betsInitialStatus, setBetsInitialStatus] = useState(undefined);
+  const goToAllBets = () => {
+    setBetsTab('open');
+    setBetsInitialStatus('all');
+    setBetsViewKey(k => k + 1);
+    setView('bets');
+  };
   const [vaultUnlocked, setVaultUnlocked] = useState(false);
   // Convenience: dashboard teaser CTA → jump straight into the Vault tab
   const goToVault = () => { setBetsTab('vault'); setView('bets'); };
@@ -1379,10 +1392,11 @@ export default function App() {
             return null;
           }
           return (<>
-            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onGoToBets={() => { setBetsTab('open'); setView('bets'); }} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={onEggFired} onOpenDie={() => setDieRollOpen(true)} onOpenIceEgg={() => setIceEggOpen(true)} onOpenPhoenixEgg={() => setPhoenixEggOpen(true)} />}
+            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onGoToBets={goToAllBets} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={onEggFired} onOpenDie={() => setDieRollOpen(true)} onOpenIceEgg={() => setIceEggOpen(true)} onOpenPhoenixEgg={() => setPhoenixEggOpen(true)} />}
             {view === 'bets'      && <BetsHubView
                 tab={betsTab} setTab={setBetsTab}
                 user={user} profiles={profiles} bets={bets} cats={cats} isDesktop={isDesktop}
+                betsViewKey={betsViewKey} initialStatus={betsInitialStatus}
                 onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame}
                 reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto}
                 onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can}

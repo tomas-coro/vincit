@@ -4,9 +4,12 @@ import BetCard from '../BetCard.jsx';
 import { DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
 import EmptyState from '../EmptyState.jsx';
 
-export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime,onOpenCreate,hideTitle=false}){
+export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,onFlame,isDesktop,reactions,onReaction,onReactionPhoto,onDelete,onEdit,onAccept,onReject,can,onConfirmOutcome,onWithdrawResolve,onOvertime,onOpenCreate,initialStatus,hideTitle=false}){
   const { t } = useLang();
-  const [fStatus, setFStatus] = useState('active');
+  // `initialStatus` is honored only on mount — parent uses React `key` to
+  // force a remount when it wants the filter to snap to a new default
+  // (e.g. Dashboard "Vedi tutte" lands on 'all').
+  const [fStatus, setFStatus] = useState(initialStatus || 'active');
   const [fCat,    setFCat]    = useState('all');
   const [fWho,    setFWho]    = useState('all');
   const [query,   setQuery]   = useState('');
