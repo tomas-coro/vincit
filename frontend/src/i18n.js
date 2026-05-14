@@ -312,7 +312,8 @@ const TRANSLATIONS = {
       help_body:'Cliccalo in qualsiasi momento per riaprire questo tutorial. Se ti dimentichi come funziona qualcosa, sai dove guardare.',
     },
     stats_group: { title:'🏆 Classifica gruppo', balance:'Saldo', win_rate:'WR', wins:'V', losses:'P', best_win:'Migliore', net:'Net', no_data:'Nessuna bet risolta nel gruppo' },
-    h2h: { title:'⚔️ Testa a testa', you:'Tu', net_me:'Bilancio per me', bets:'Bet', no_data:'Nessuna bet diretta tra voi' },
+    h2h: { title:'⚔️ Testa a testa', you:'Tu', net_me:'Bilancio per me', bets:'Bet', no_data:'Nessuna bet diretta tra voi',
+      last5:'Ultime 5', streak_short:'di fila', biggest_win:'Vittoria più grossa', biggest_loss:'Sconfitta più dura', top_cat:'Categoria preferita' },
     trophies: {
       title:'🏆 Trofei', empty:'Nessun trofeo sbloccato', locked:'Bloccato', unlocked_at:'Sbloccato il',
       max_reached:'MASSIMO RAGGIUNTO', unlocked_header:'Trofeo sbloccato',
@@ -896,7 +897,8 @@ const TRANSLATIONS = {
       help_body:"Tap it any time to re-open this tutorial. If you forget how something works, you know where to look.",
     },
     stats_group: { title:'🏆 Group leaderboard', balance:'Balance', win_rate:'WR', wins:'W', losses:'L', best_win:'Best', net:'Net', no_data:'No resolved bets in the group' },
-    h2h: { title:'⚔️ Head to head', you:'You', net_me:'Net for me', bets:'Bets', no_data:'No direct bets between you' },
+    h2h: { title:'⚔️ Head to head', you:'You', net_me:'Net for me', bets:'Bets', no_data:'No direct bets between you',
+      last5:'Last 5', streak_short:'in a row', biggest_win:'Biggest win', biggest_loss:'Biggest loss', top_cat:'Top category' },
     trophies: {
       title:'🏆 Trophies', empty:'No trophies unlocked yet', locked:'Locked', unlocked_at:'Unlocked on',
       max_reached:'MAX REACHED', unlocked_header:'Trophy unlocked',

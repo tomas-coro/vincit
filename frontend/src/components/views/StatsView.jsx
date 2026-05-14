@@ -204,19 +204,61 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
     (b.creator === h2hId && b.opponent === user)
   );
   const h2hResolved = h2hBets.filter(b => ['won','lost'].includes(b.status));
-  const myWinsVsThem = h2hResolved.filter(b =>
+
+  // Helper: did *I* win this bet, given the bet's perspective?
+  const iWon = (b) =>
     (b.creator === user && b.status === 'won') ||
-    (b.creator === h2hId && b.status === 'lost')
-  ).length;
-  const theirWinsVsMe = h2hResolved.filter(b =>
-    (b.creator === h2hId && b.status === 'won') ||
-    (b.creator === user && b.status === 'lost')
-  ).length;
-  const h2hNetMe = h2hResolved.reduce((s, b) => {
-    if (b.creator === user) return s + (b.status === 'won' ? (b.potentialWin - b.stake) : -b.stake);
-    if (b.creator === h2hId) return s + (b.status === 'won' ? -b.stake : (b.potentialWin - b.stake));
-    return s;
-  }, 0);
+    (b.creator === h2hId && b.status === 'lost');
+  // Net credits I made on a single h2h bet (signed).
+  const netForMe = (b) => {
+    if (b.creator === user)   return b.status === 'won' ? (b.potentialWin - b.stake) : -b.stake;
+    if (b.creator === h2hId)  return b.status === 'won' ? -b.stake : (b.potentialWin - b.stake);
+    return 0;
+  };
+
+  const myWinsVsThem = h2hResolved.filter(iWon).length;
+  const theirWinsVsMe = h2hResolved.length - myWinsVsThem;
+  const h2hNetMe = h2hResolved.reduce((s, b) => s + netForMe(b), 0);
+
+  // Last N resolved h2h bets, newest first — used for the W/L streak chips.
+  const h2hChrono = [...h2hResolved].sort(
+    (a,b) => (a.resolvedAt || a.createdAt) - (b.resolvedAt || b.createdAt)
+  );
+  const lastFive = [...h2hChrono].slice(-5);
+
+  // Biggest single win + biggest single loss, in credit terms.
+  const h2hBiggestWin = h2hResolved
+    .filter(iWon)
+    .reduce((best, b) => {
+      const n = netForMe(b);
+      return (!best || n > netForMe(best)) ? b : best;
+    }, null);
+  const h2hBiggestLoss = h2hResolved
+    .filter(b => !iWon(b))
+    .reduce((worst, b) => {
+      const n = netForMe(b);
+      return (!worst || n < netForMe(worst)) ? b : worst;
+    }, null);
+
+  // Current trailing streak vs this opponent (positive = my wins in a row,
+  // negative = their wins in a row, 0 = no resolved bets).
+  let h2hCurrentStreak = 0;
+  for (let i = h2hChrono.length - 1; i >= 0; i--) {
+    const won = iWon(h2hChrono[i]);
+    if (i === h2hChrono.length - 1) { h2hCurrentStreak = won ? 1 : -1; continue; }
+    if ((won && h2hCurrentStreak > 0) || (!won && h2hCurrentStreak < 0)) {
+      h2hCurrentStreak += won ? 1 : -1;
+    } else break;
+  }
+
+  // Dominant category — where most of the resolved h2h bets live.
+  const h2hCatCounts = h2hResolved.reduce((m, b) => {
+    if (!b.category) return m;
+    m[b.category] = (m[b.category] || 0) + 1;
+    return m;
+  }, {});
+  const h2hTopCat = Object.entries(h2hCatCounts).sort((a,b) => b[1]-a[1])[0];
+  const h2hTopCatObj = h2hTopCat ? cats.find(c => c.id === h2hTopCat[0]) : null;
 
   // Compact "VS" header avatars (used both for 2-people and N-people layouts)
   const myProfile = profiles[user];
@@ -313,6 +355,99 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
               {winnerSide==='me' ? 'LEAD' : winnerSide==='them' ? 'BEHIND' : 'EVEN'}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Richer h2h breakdown — last 5 chips, biggest swings, streak, top cat.
+          All optional: each row hides itself if there's no data to show. */}
+      {h2hResolved.length > 0 && (
+        <div style={{marginTop:14, paddingTop:14, borderTop:'1px solid var(--brd)'}}>
+          {/* Last 5: most recent on the right, like a heartbeat */}
+          {lastFive.length > 0 && (
+            <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:14}}>
+              <span style={{fontSize:9, color:'var(--mut)', letterSpacing:'.3em', textTransform:'uppercase', fontWeight:700, flexShrink:0}}>
+                {t('h2h.last5')}
+              </span>
+              <div style={{display:'flex', gap:5, flex:1}}>
+                {lastFive.map((b) => {
+                  const me = iWon(b);
+                  return (
+                    <div key={b.id} title={`${b.title} · ${me ? '+' : ''}${netForMe(b)} ₡`}
+                      style={{
+                        width:20, height:20, borderRadius:6,
+                        background: me ? 'var(--grn)22' : 'var(--red)22',
+                        border: `1px solid ${me ? 'var(--grn)66' : 'var(--red)66'}`,
+                        color: me ? 'var(--grn)' : 'var(--red)',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:10, fontWeight:800, letterSpacing:0,
+                      }}>{me ? 'V' : 'P'}</div>
+                  );
+                })}
+              </div>
+              {Math.abs(h2hCurrentStreak) >= 2 && (
+                <span style={{
+                  fontSize:10, fontWeight:800, letterSpacing:'.06em',
+                  padding:'3px 8px', borderRadius:999,
+                  background: h2hCurrentStreak > 0 ? 'var(--grn)22' : 'var(--red)22',
+                  color: h2hCurrentStreak > 0 ? 'var(--grn)' : 'var(--red)',
+                  border: `1px solid ${h2hCurrentStreak > 0 ? 'var(--grn)66' : 'var(--red)66'}`,
+                }}>
+                  {h2hCurrentStreak > 0 ? '🔥' : '❄️'} {Math.abs(h2hCurrentStreak)} {t('h2h.streak_short')}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Biggest win / biggest loss */}
+          {(h2hBiggestWin || h2hBiggestLoss) && (
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14}}>
+              {h2hBiggestWin && (
+                <div style={{padding:'10px 12px', borderLeft:'3px solid var(--grn)', background:'var(--grn)08'}}>
+                  <div style={{fontSize:9, color:'var(--grn)', letterSpacing:'.22em', textTransform:'uppercase', fontWeight:700, marginBottom:4}}>
+                    {t('h2h.biggest_win')}
+                  </div>
+                  <div style={{fontSize:14, fontWeight:700, color:'var(--grn)', marginBottom:2}}>
+                    +{netForMe(h2hBiggestWin)} ₡
+                  </div>
+                  <div style={{fontSize:10, color:'var(--dim)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                    "{h2hBiggestWin.title}"
+                  </div>
+                </div>
+              )}
+              {h2hBiggestLoss && (
+                <div style={{padding:'10px 12px', borderLeft:'3px solid var(--red)', background:'var(--red)08'}}>
+                  <div style={{fontSize:9, color:'var(--red)', letterSpacing:'.22em', textTransform:'uppercase', fontWeight:700, marginBottom:4}}>
+                    {t('h2h.biggest_loss')}
+                  </div>
+                  <div style={{fontSize:14, fontWeight:700, color:'var(--red)', marginBottom:2}}>
+                    {netForMe(h2hBiggestLoss)} ₡
+                  </div>
+                  <div style={{fontSize:10, color:'var(--dim)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                    "{h2hBiggestLoss.title}"
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Top category — only if there are at least 2 resolved bets to make
+              a "favorite" claim meaningful. */}
+          {h2hTopCat && h2hResolved.length >= 2 && h2hTopCatObj && (
+            <div style={{display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--dim)'}}>
+              <span style={{fontSize:9, color:'var(--mut)', letterSpacing:'.3em', textTransform:'uppercase', fontWeight:700}}>
+                {t('h2h.top_cat')}
+              </span>
+              <span style={{
+                padding:'3px 10px', borderRadius:999,
+                border:`1px solid ${h2hTopCatObj.color || 'var(--brd)'}66`,
+                background:`${h2hTopCatObj.color || 'var(--brd)'}14`,
+                color: h2hTopCatObj.color || 'var(--txt)',
+                fontWeight:700, fontSize:11,
+              }}>
+                {h2hTopCatObj.e || ''} {catLabel(h2hTopCatObj)} · {h2hTopCat[1]}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>
