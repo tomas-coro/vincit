@@ -62,6 +62,7 @@ const TRANSLATIONS = {
     bets_view: { title:'🎯 Bets Condivise', sub_one:'1 attiva in questo momento', sub_many:'{n} attive in questo momento', mine:'Le mie', theirs:'Di {name}', empty:'Nessuna bet condivisa attiva',
       f_all:'Tutte', f_active:'Attive', f_won:'Vinte', f_lost:'Perse', f_expired:'Scadute',
       f_mine:'Le mie', f_theirs:'Del partner', f_cats:'Cat.',
+      search_ph:'Cerca per titolo…', search_empty:'Nessuna bet trovata per "{q}"',
     },
     vault_view: {
       title:'🔒 Vault Segreto', subtitle:'Solo tu vedi queste bet',
@@ -645,6 +646,7 @@ const TRANSLATIONS = {
     bets_view: { title:'🎯 Shared Bets', sub_one:'1 active right now', sub_many:'{n} active right now', mine:'Mine', theirs:"{name}'s", empty:'No active shared bets',
       f_all:'All', f_active:'Active', f_won:'Won', f_lost:'Lost', f_expired:'Expired',
       f_mine:'Mine', f_theirs:"Partner's", f_cats:'Cat.',
+      search_ph:'Search by title…', search_empty:'No bets matching "{q}"',
     },
     vault_view: {
       title:'🔒 Secret Vault', subtitle:'Only you can see these bets',

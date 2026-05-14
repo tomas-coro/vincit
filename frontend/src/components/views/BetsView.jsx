@@ -8,12 +8,15 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
   const [fStatus, setFStatus] = useState('active');
   const [fCat,    setFCat]    = useState('all');
   const [fWho,    setFWho]    = useState('all');
+  const [query,   setQuery]   = useState('');
 
+  const q = query.trim().toLowerCase();
   const visible = bets
     .filter(b => !b.isSecret)
     .filter(b => fStatus === 'all' || b.status === fStatus || (fStatus === 'active' && (b.status === 'pending' || b.status === 'disputed')))
     .filter(b => fCat    === 'all' || b.category === fCat)
-    .filter(b => fWho    === 'all' || (fWho === 'mine' ? b.creator === user : b.creator !== user));
+    .filter(b => fWho    === 'all' || (fWho === 'mine' ? b.creator === user : b.creator !== user))
+    .filter(b => !q || (b.title || '').toLowerCase().includes(q));
 
   const pill = active => ({
     padding:'5px 12px', borderRadius:20, flexShrink:0, cursor:'pointer', whiteSpace:'nowrap',
@@ -35,6 +38,26 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
         </>
       )}
 
+      {/* Search input — real-time filter by title. Stays out of the way
+          when empty, expands into a proper editorial search row when typing. */}
+      <div style={{
+        display:'flex', alignItems:'center', gap:10,
+        padding:'8px 4px', marginBottom:6,
+        borderBottom: q ? '1px solid var(--gold)44' : '1px solid var(--brd)',
+        transition: 'border-color .2s',
+      }}>
+        <span style={{ color: q ? 'var(--gold)' : 'var(--dim)', fontSize:14 }}>🔍</span>
+        <input value={query} onChange={e=>setQuery(e.target.value)}
+          placeholder={t('bets_view.search_ph')}
+          style={{ flex:1, border:'none', outline:'none', background:'transparent',
+            color:'var(--txt)', fontFamily:"'Manrope',sans-serif", fontSize:14, letterSpacing:'.01em' }}/>
+        {q && (
+          <button onClick={()=>setQuery('')} aria-label="Pulisci ricerca"
+            style={{ background:'transparent', border:'none', cursor:'pointer',
+              color:'var(--mut)', fontSize:16, padding:'2px 6px', lineHeight:1 }}>×</button>
+        )}
+      </div>
+
       <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:8,marginBottom:14,
         scrollbarWidth:'none',WebkitOverflowScrolling:'touch'}}>
         {['all','active','won','lost','expired'].map(s =>
@@ -53,7 +76,9 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
       {visible.length === 0
         ? <div style={{textAlign:'center',padding:'52px 0',color:'var(--dim)'}}>
             <div style={{fontSize:48,marginBottom:12}}>🎯</div>
-            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17}}>{t('bets_view.empty')}</div>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17}}>
+              {q ? t('bets_view.search_empty',{q:query.trim()}) : t('bets_view.empty')}
+            </div>
           </div>
         : <div style={isDesktop?{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,alignItems:'start'}:{}}>
             {visible.map(b => <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats}
