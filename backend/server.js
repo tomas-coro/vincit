@@ -1,4 +1,20 @@
 require('dotenv').config();
+
+// Error tracking — must initialize BEFORE any other requires that throw,
+// so Sentry's auto-instrumentation can wrap them. No-op if SENTRY_DSN
+// isn't set, so local dev / fresh deploys without an account still boot
+// cleanly. Add SENTRY_DSN as an env var on Render (or in backend/.env)
+// to start capturing.
+const Sentry = require('@sentry/node');
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  });
+}
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -135,6 +151,13 @@ app.use('/api/friends',    authMiddleware, friendsRouter);
 // Admin diagnostics — gated on a shared secret in process.env.ADMIN_KEY,
 // no JWT needed. See routes/admin.js for the route shapes.
 app.use('/api/admin',      require('./routes/admin.js'));
+
+// Sentry Express error handler — must be added AFTER all routes so it
+// catches errors thrown from any of them. No-op if init() was skipped
+// (no DSN), so safe to register unconditionally.
+if (process.env.SENTRY_DSN && typeof Sentry.setupExpressErrorHandler === 'function') {
+  Sentry.setupExpressErrorHandler(app);
+}
 
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 app.get('*', (req, res) => {
