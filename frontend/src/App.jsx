@@ -274,7 +274,9 @@ function DieRollOverlay({ open, onClose, onEggUnlock }) {
   return (
     <div onClick={onClose} style={{
       position:'fixed', inset:0, zIndex:9500,
-      background:'radial-gradient(circle at 50% 45%, rgba(43,34,71,.95) 0%, rgba(15,11,35,.96) 70%)',
+      // Theme-aware backdrop — purple glow on top of the active theme's
+      // bg, so light/amber don't get a hardcoded dark blue overlay.
+      background:'radial-gradient(circle at 50% 45%, var(--pur)33 0%, var(--bg) 75%)',
       backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
       display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
       padding:24, cursor:'pointer',
@@ -352,7 +354,9 @@ function CoinFlipOverlay({ open, onClose, onEggUnlock }) {
   return (
     <div onClick={onClose} style={{
       position:'fixed', inset:0, zIndex:9500,
-      background:'radial-gradient(circle at 50% 45%, rgba(43,34,71,.95) 0%, rgba(15,11,35,.96) 70%)',
+      // Theme-aware backdrop — purple glow on top of the active theme's
+      // bg, so light/amber don't get a hardcoded dark blue overlay.
+      background:'radial-gradient(circle at 50% 45%, var(--pur)33 0%, var(--bg) 75%)',
       backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
       display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
       padding:24, cursor:'pointer',

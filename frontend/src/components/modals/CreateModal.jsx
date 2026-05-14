@@ -960,7 +960,8 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   const SlotMachine = jackpotPhase && (
     <div onClick={startJackpotFade} style={{
       position:'fixed', inset:0, zIndex:9600,
-      background:'radial-gradient(circle at 50% 45%, rgba(43,34,71,.96) 0%, rgba(15,11,35,.98) 70%)',
+      // Theme-aware backdrop — see DieRollOverlay for the rationale.
+      background:'radial-gradient(circle at 50% 45%, var(--pur)33 0%, var(--bg) 75%)',
       backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
       display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
       padding:24, cursor:'pointer',
