@@ -30,6 +30,9 @@ const CATALOG = [
   { id: 'quick_resolve',  icon: '⏱️', category: 'mission',   levels: [3, 10, 25, 60, 150] },      // 5
   { id: 'comeback',       icon: '💪', category: 'mission',   levels: [3, 5, 8, 12, 20] },         // 5
   { id: 'equilibrium',    icon: '☯',  category: 'mission',   levels: [10, 30, 80, 200, 500] },    // 5
+  // Activity streak — longest run of consecutive days the user has done
+  // something (created or resolved a bet). Rewards daily engagement.
+  { id: 'activity_streak',icon: '📅', category: 'mission',   levels: [3, 7, 14, 30, 60] },        // 5
 
   // ─── Shadow ────────────────────────────────────────────────────────
   { id: 'losses',         icon: '🥀', category: 'shadow',    levels: [1, 10, 30, 75, 200] },      // 5
@@ -193,6 +196,34 @@ async function computeProgressFor(userId) {
   const bestNightDay       = Object.values(nightByDay).reduce((mx, n) => Math.max(mx, n), 0);
   const epicNightHit       = bestNightDay >= 5 ? 1 : 0;
 
+  // Activity-streak: longest run of consecutive calendar days where the
+  // user did anything meaningful — created a bet OR resolved one as the
+  // creator. Days are computed in the server's local timezone (good
+  // enough for an Italian-first app; cross-TZ users tolerate a small
+  // window drift). Returns the best run, not the current trailing one.
+  const activityDaySet = new Set();
+  for (const b of allMine) {
+    if (b.created_at)  activityDaySet.add(new Date(Number(b.created_at)).toISOString().slice(0, 10));
+  }
+  for (const b of resolved) {
+    if (b.resolved_at) activityDaySet.add(new Date(Number(b.resolved_at)).toISOString().slice(0, 10));
+  }
+  const sortedDays = [...activityDaySet].sort();
+  let activityStreakBest = 0;
+  let activityStreakRun  = 0;
+  let prevDay = null;
+  for (const day of sortedDays) {
+    if (prevDay === null) { activityStreakRun = 1; }
+    else {
+      const diffDays = Math.round(
+        (new Date(day).getTime() - new Date(prevDay).getTime()) / 86400000
+      );
+      activityStreakRun = diffDays === 1 ? activityStreakRun + 1 : 1;
+    }
+    if (activityStreakRun > activityStreakBest) activityStreakBest = activityStreakRun;
+    prevDay = day;
+  }
+
   const quickResolveCount = resolved.filter(b => {
     const ra = Number(b.resolved_at) || 0;
     const ca = Number(b.created_at) || 0;
@@ -301,6 +332,7 @@ async function computeProgressFor(userId) {
     night_owl:      hourBuckets.night,
     early_bird:     hourBuckets.morning,
     marathon:       bestDayCount,
+    activity_streak: activityStreakBest,
     commentator:    commentsCount,
     reactor:        reactionsGiven,
     quick_resolve:  quickResolveCount,

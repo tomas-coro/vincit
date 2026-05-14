@@ -385,6 +385,7 @@ const TRANSLATIONS = {
       night_owl:'Nottambulo',         night_owl_desc:'Bet create tra mezzanotte e le 5.',
       early_bird:'Mattiniero',        early_bird_desc:'Bet create prima delle 8.',
       marathon:'Maratona',            marathon_desc:'Bet create in un singolo giorno.',
+      activity_streak:'Fedele',       activity_streak_desc:'Giorni di fila in cui hai creato o risolto una bet.',
       commentator:'Commentatore',     commentator_desc:'Commenti scritti nei thread delle bet.',
       quick_resolve:'Lampo',          quick_resolve_desc:'Bet risolte entro 1h dalla creazione.',
       comeback:'Comeback',            comeback_desc:'Vittoria dopo N sconfitte consecutive.',
@@ -435,6 +436,8 @@ const TRANSLATIONS = {
       trail_label:'ULTIME 5',
       trail_won:'V',
       trail_lost:'P',
+      daily_streak_label:'GIORNI DI FILA',
+      daily_streak_tooltip:'Sei attivo da {n} giorni consecutivi',
     },
     templates: {
       title_settings:'I miei template', title_picker:'Template salvati',
@@ -1031,6 +1034,7 @@ const TRANSLATIONS = {
       night_owl:'Night owl',          night_owl_desc:'Bets created between midnight and 5am.',
       early_bird:'Early bird',        early_bird_desc:'Bets created before 8am.',
       marathon:'Marathon',            marathon_desc:'Bets created in a single day.',
+      activity_streak:'Devoted',      activity_streak_desc:'Consecutive days you created or resolved a bet.',
       commentator:'Commentator',      commentator_desc:'Comments posted in bet threads.',
       quick_resolve:'Lightning',      quick_resolve_desc:'Bets resolved within 1h of creation.',
       comeback:'Comeback',            comeback_desc:'Win after N losses in a row.',
@@ -1077,6 +1081,8 @@ const TRANSLATIONS = {
       trail_label:'LAST 5',
       trail_won:'W',
       trail_lost:'L',
+      daily_streak_label:'DAYS IN A ROW',
+      daily_streak_tooltip:"You've been active {n} days in a row",
     },
     templates: {
       title_settings:'My templates', title_picker:'Saved templates',

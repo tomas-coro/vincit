@@ -521,6 +521,23 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
             <span className="bc-meta" style={{fontSize: 8}}>OGGI · GRUPPO</span>
           </div>
         )}
+        {/* Daily-activity streak — sits next to OGGI on the sub-hero row.
+            Only surfaces at ≥2 consecutive days so it feels earned. */}
+        {(() => {
+          const days = computeStreak(bets, user);
+          if (days < 2) return null;
+          return (
+            <div style={{display:'flex', alignItems:'baseline', gap: 8, flexShrink: 0}}
+              title={t('dashboard_extra.daily_streak_tooltip', { n: days })}>
+              <span style={{ fontSize: 'clamp(22px, 3vw, 28px)', lineHeight: 1, flexShrink: 0 }} aria-hidden>📅</span>
+              <span className="bc-num" style={{
+                fontSize: 'clamp(28px, 4vw, 38px)',
+                color:'var(--gold)', lineHeight: 1,
+              }}>{days}</span>
+              <span className="bc-meta" style={{fontSize: 8}}>{t('dashboard_extra.daily_streak_label')}</span>
+            </div>
+          );
+        })()}
         {latestBet && (
           <div style={{
             display:'flex', alignItems:'baseline', gap: 10,
