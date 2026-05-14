@@ -20,7 +20,7 @@ const TRANSLATIONS = {
       type_vault:'🔒 Vault',           type_vault_desc:'Solo tu la vedi',
       type_open:'👥 Aperta',           type_open_desc:'Tutto il gruppo · counter aperto',
       type_targeted:'🎯 Mirata',       type_targeted_desc:'Sfida diretta vs un membro',
-      type_surprise:'🤫 Sorpresa',     type_surprise_desc:'Vs un membro · scoperta solo dopo',
+      type_surprise:'🎭 Sorpresa',     type_surprise_desc:'Vs un membro · scoperta solo dopo',
       opponent_label:'Avversario',     opponent_pick:'Scegli chi sfidare',
       target_label:'Bersaglio (opzionale)', target_hint:'La persona su cui scommettete · scoprirà la bet quando sarà risolta',
       target_none:'Nessuno',
@@ -140,7 +140,7 @@ const TRANSLATIONS = {
     },
     bet_card: {
       reveal:'🔓 Rivela', declare:'Dichiara esito', secret_label:'Bet Segreta', challenge:'Sfida diretta',
-      surprise_label:'🤫 Sorpresa', targeted_vs:'🎯 vs {name}', target_on:'🎯 su {name}',
+      surprise_label:'🎭 Sorpresa', targeted_vs:'🎯 vs {name}', target_on:'🎯 su {name}',
       tap_close:'TOCCA PER CHIUDERE',
       stake:'Stake', win:'Win', yes:'SÌ', no:'NO',
       counter_cta:'⚡ Scommetti SÌ {qy}× o NO {qn}×',
@@ -291,7 +291,7 @@ const TRANSLATIONS = {
       type_targeted_body:'Scegli tu chi sfidare. La bet è visibile al gruppo, ma solo la persona scelta può accettarla o rilanciare con una contro-offerta.',
 
       type_surprise_kicker:'Tipo di bet',
-      type_surprise_title:'🤫 Sorpresa',
+      type_surprise_title:'🎭 Sorpresa',
       type_surprise_body:'Come Mirata, ma nascosta al gruppo (e all\'avversario) finché non si risolve. Quando esce l\'esito, tutti scoprono cosa avevi in mente.',
 
       stake_kicker:'La posta',
@@ -603,7 +603,7 @@ const TRANSLATIONS = {
       type_vault:'🔒 Vault',           type_vault_desc:'Only you see it',
       type_open:'👥 Open',             type_open_desc:'Whole group · counter open',
       type_targeted:'🎯 Targeted',     type_targeted_desc:'Direct challenge vs a member',
-      type_surprise:'🤫 Surprise',     type_surprise_desc:'Vs a member · revealed only after',
+      type_surprise:'🎭 Surprise',     type_surprise_desc:'Vs a member · revealed only after',
       opponent_label:'Opponent',       opponent_pick:'Pick who to challenge',
       target_label:'Target (optional)', target_hint:"The person you're betting about · they'll see the bet when it's resolved",
       target_none:'Nobody',
@@ -723,7 +723,7 @@ const TRANSLATIONS = {
     },
     bet_card: {
       reveal:'🔓 Reveal', declare:'Declare result', secret_label:'Secret Bet', challenge:'Direct challenge',
-      surprise_label:'🤫 Surprise', targeted_vs:'🎯 vs {name}', target_on:'🎯 on {name}',
+      surprise_label:'🎭 Surprise', targeted_vs:'🎯 vs {name}', target_on:'🎯 on {name}',
       tap_close:'TAP TO CLOSE',
       stake:'Stake', win:'Win', yes:'YES', no:'NO',
       counter_cta:'⚡ Bet YES {qy}× or NO {qn}×',
@@ -874,7 +874,7 @@ const TRANSLATIONS = {
       type_targeted_body:'You pick who to challenge. The bet is visible to the group, but only the chosen person can accept or come back with a counter-offer.',
 
       type_surprise_kicker:'Bet type',
-      type_surprise_title:'🤫 Surprise',
+      type_surprise_title:'🎭 Surprise',
       type_surprise_body:"Like Targeted, but hidden from the group (and the opponent) until it resolves. When the outcome drops, everyone finds out what you had in mind.",
 
       stake_kicker:'The stake',

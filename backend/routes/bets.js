@@ -299,7 +299,7 @@ module.exports = function(broadcastUpdate) {
                   && bet.target_user !== bet.creator && bet.target_user !== bet.opponent) {
                 if (await isPrefEnabled(bet.target_user, 'on_targeted')) {
                   sendPushToUser(bet.target_user, {
-                    title: bet.is_surprise === 1 ? '🤫 Sorpresa, eri tu il bersaglio' : '🎯 Bet su di te risolta',
+                    title: bet.is_surprise === 1 ? '🎭 Sorpresa, eri tu il bersaglio' : '🎯 Bet su di te risolta',
                     body:  `"${bet.title}" · ${outcome === 'won' ? 'esito SÌ' : 'esito NO'}`,
                     url:   '/',
                   });

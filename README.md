@@ -2,7 +2,7 @@
 
 Guida per orientarsi nel repo senza dover aprire tutti i file. Una riga per ogni file: a cosa serve, quando aprirlo, cosa non aspettarti di trovarci.
 
-> **Cos'è l'app**: gioco privato di scommesse per gruppi (coppie, amici, famiglia). Quote decimali europee, crediti virtuali (₡, default 100). Multi-gruppo per utente. 4 tipi di bet: 🔒 Vault (privata), 👥 Open, 🎯 Targeted (vs un membro), 🤫 Surprise (vs un membro, nascosta al gruppo).
+> **Cos'è l'app**: gioco privato di scommesse per gruppi (coppie, amici, famiglia). Quote decimali europee, crediti virtuali (₡, default 100). Multi-gruppo per utente. 4 tipi di bet: 🔒 Vault (privata), 👥 Open, 🎯 Targeted (vs un membro), 🎭 Surprise (vs un membro, nascosta al gruppo).
 
 ---
 

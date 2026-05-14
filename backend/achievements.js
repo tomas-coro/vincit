@@ -21,7 +21,7 @@ const CATALOG = [
   { id: 'high_roller',    icon: '🪙', category: 'challenge', levels: [100, 500, 2000, 5000, 12000] }, // 5
 
   // ─── Mission ───────────────────────────────────────────────────────
-  { id: 'surprise',       icon: '🤫', category: 'mission',   levels: [1, 5, 15, 40, 100] },        // 5
+  { id: 'surprise',       icon: '🎭', category: 'mission',   levels: [1, 5, 15, 40, 100] },        // 5
   { id: 'pegno',          icon: '🎁', category: 'mission',   levels: [1, 5, 15, 40, 100] },        // 5
   { id: 'night_owl',      icon: '🦉', category: 'mission',   levels: [3, 15, 40, 100, 250] },     // 5
   { id: 'early_bird',     icon: '🌅', category: 'mission',   levels: [3, 15, 40, 100, 250] },     // 5
