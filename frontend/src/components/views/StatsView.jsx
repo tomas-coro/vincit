@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SecLabel, Avatar, fmtQ, qToP, COLORS, getC, DEF_CAT_IDS as DEF_IDS } from '../Atoms.jsx';
 import { useLang } from '../../i18n.js';
+import { useToast } from '../../Toast.jsx';
+import { shareH2HCard } from '../../lib/h2hImage.js';
 import Sparkline from '../Sparkline.jsx';
 import StreakBadge, { StreakInline } from '../StreakBadge.jsx';
 import EmptyState from '../EmptyState.jsx';
@@ -18,6 +20,7 @@ const Bdg=({c,bg,children})=><span style={{...S.bdg,background:bg,color:c}}>{chi
 
 export default function StatsView({user,profiles,groupMembers,credits,bets,cats,isDesktop,onOpenCreate}){
   const { t } = useLang();
+  const toast = useToast();
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const won=bets.filter(b=>b.creator===user&&b.status==="won");
   const lost=bets.filter(b=>b.creator===user&&b.status==="lost");
@@ -268,9 +271,46 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
   const showSelector = others.length > 1;
   const winnerSide = myWinsVsThem === theirWinsVsMe ? null : (myWinsVsThem > theirWinsVsMe ? 'me' : 'them');
 
+  // Share-as-image: only meaningful when there's at least one resolved
+  // h2h bet (otherwise the card is empty numbers).
+  const shareH2H = async () => {
+    if (!h2hOpponent) return;
+    try {
+      await shareH2HCard({
+        myName: profiles[user]?.name || t('h2h.you'),
+        myColor: COLORS[profiles[user]?.colorKey] || '#5b8af0',
+        opponentName: h2hOpponent.name,
+        opponentColor: COLORS[h2hOpponent.colorKey] || '#a07ef5',
+        myWins: myWinsVsThem,
+        theirWins: theirWinsVsMe,
+        netMe: h2hNetMe,
+        totalBets: h2hResolved.length,
+        streak: h2hCurrentStreak,
+      });
+    } catch (e) {
+      console.error('[h2h-share]', e);
+      toast.error('Errore durante la condivisione');
+    }
+  };
+
   const h2hCard = h2hOpponent && (
     <div style={{...S.card, marginBottom:10}}>
-      <SecLabel>{t('h2h.title')}</SecLabel>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, marginBottom:8 }}>
+        <SecLabel>{t('h2h.title')}</SecLabel>
+        {h2hResolved.length > 0 && (
+          <button onClick={shareH2H} aria-label={t('h2h.share')}
+            style={{
+              padding:'5px 12px', borderRadius:999,
+              background:'var(--gold)18', border:'1px solid var(--gold)55',
+              color:'var(--gold)', cursor:'pointer',
+              fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:700,
+              letterSpacing:'.08em', textTransform:'uppercase',
+              display:'inline-flex', alignItems:'center', gap:5,
+            }}>
+            <span aria-hidden>🔗</span> {t('h2h.share')}
+          </button>
+        )}
+      </div>
 
       {/* Avatars VS header — always shown */}
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:14, marginBottom:14}}>
