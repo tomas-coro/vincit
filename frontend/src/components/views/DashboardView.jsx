@@ -432,7 +432,7 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
               color: streakAccent, lineHeight: .92,
             }}>{fireLevel}</div>
             <div className="bc-meta" style={{marginTop:6, fontSize:8}}>
-              — {t('dashboard_extra.streak_short')}
+              — {isWinStreak ? t('dashboard_extra.streak_wins') : t('dashboard_extra.streak_losses')}
             </div>
           </div>
           {streakTapCount > 0 && (

@@ -826,6 +826,11 @@ export default function App() {
   const [overtimeBet, setOvertimeBet]     = useState(null);
   const [showPin, setShowPin]             = useState(false);
   const [winAnim, setWinAnim]             = useState(null);
+  // Bets whose resolution we've already celebrated for this user, so
+  // an incoming SSE doesn't replay the WinOverlay on every reconnect.
+  // Populated on first state load with every already-resolved bet, so
+  // historical wins don't pop on first sign-in.
+  const seenResolutionsRef = useRef(null);
   const [commentBetModal, setCommentBetModal] = useState(null);
   const [editingBet, setEditingBet]       = useState(null);
   const [acceptingBet, setAcceptingBet]   = useState(null);
@@ -845,6 +850,60 @@ export default function App() {
   useEffect(() => {
     if (user && groups.length > 0) registerPush(user, { prompt: false });
   }, [user, groups.length]);
+
+  // Resolution-diff celebration: counter-bettors (and other participants
+  // who didn't trigger the resolve themselves) used to find out their
+  // bet had resolved only via the regular bet card refresh — no
+  // WinOverlay, no comment prompt, often no push (if their device
+  // hadn't subscribed yet). We watch the bets array for any bet that
+  // transitions from "not yet resolved on this client" to resolved
+  // with the user on the winning side, and fire the celebration.
+  useEffect(() => {
+    if (!user || !Array.isArray(bets)) return;
+    const seen = seenResolutionsRef.current;
+    if (seen == null) {
+      // First state load — record every already-resolved bet without
+      // celebrating, so historical wins don't replay on sign-in.
+      const init = new Set();
+      for (const b of bets) {
+        if (b.status === 'won' || b.status === 'lost') init.add(b.id);
+      }
+      seenResolutionsRef.current = init;
+      return;
+    }
+    for (const b of bets) {
+      if (b.status !== 'won' && b.status !== 'lost') continue;
+      if (seen.has(b.id)) continue;
+      seen.add(b.id);
+      // Did *I* win this bet?
+      let iWon = false;
+      let payout = 0;
+      if (b.creator === user) {
+        iWon = b.status === 'won';
+        payout = b.potentialWin || 0;
+      } else if (Array.isArray(b.counterBets)) {
+        const mine = b.counterBets.find(c => c?.bettor === user);
+        if (mine?.side) {
+          const userYes = mine.side === 'yes';
+          const creatorWon = b.status === 'won';
+          iWon = userYes === creatorWon;
+          if (iWon) {
+            const q = parseFloat(mine.quotaUsed) || 1;
+            payout = Math.round((mine.stake || 0) * q);
+          }
+        }
+      }
+      if (iWon && payout > 0) {
+        setWinAnim(payout);
+        // Slight delay before the comment prompt so it doesn't crash
+        // into the WinOverlay's confetti.
+        setTimeout(() => {
+          setCommentBetModal({ ...b, status: 'won' });
+        }, 1800);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bets, user]);
 
   // Active-involvement prompt: once we can confirm the user is part of
   // any bet (creator / opponent / target / counter-bettor / member of

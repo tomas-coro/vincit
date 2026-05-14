@@ -112,20 +112,55 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
       })()}
 
       {visible.length === 0
-        ? (q
-            ? <div style={{textAlign:'center',padding:'52px 0',color:'var(--dim)'}}>
-                <div style={{fontSize:48,marginBottom:12}}>🎯</div>
-                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17}}>
-                  {t('bets_view.search_empty',{q:query.trim()})}
+        ? (() => {
+            // Three different empty states depending on WHY the list is empty:
+            //   - active search query → "nothing matches your search"
+            //   - the group has at least one shared bet but filters hide all
+            //     of them → "no bets match these filters" + reset link
+            //   - genuinely no shared bets in the group → the onboarding
+            //     "Crea la prima bet" card with tutorial
+            const totalShared = bets.filter(b => !b.isSecret).length;
+            if (q) {
+              return (
+                <div style={{textAlign:'center',padding:'52px 0',color:'var(--dim)'}}>
+                  <div style={{fontSize:48,marginBottom:12}}>🎯</div>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17}}>
+                    {t('bets_view.search_empty',{q:query.trim()})}
+                  </div>
                 </div>
-              </div>
-            : <EmptyState
+              );
+            }
+            if (totalShared > 0) {
+              return (
+                <div style={{textAlign:'center',padding:'52px 0',color:'var(--dim)'}}>
+                  <div style={{fontSize:48,marginBottom:12}}>🎯</div>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17, marginBottom: 14}}>
+                    {t('bets_view.filter_empty')}
+                  </div>
+                  <button onClick={() => { setFStatus('all'); setFCat('all'); setFWho('all'); setQuery(''); }}
+                    style={{
+                      padding:'8px 18px', borderRadius:999,
+                      background:'var(--gold)1a', border:'1px solid var(--gold)55',
+                      color:'var(--gold)', cursor:'pointer',
+                      fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:800,
+                      letterSpacing:'.08em', textTransform:'uppercase',
+                      WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
+                    }}>
+                    {t('bets_view.filter_reset')}
+                  </button>
+                </div>
+              );
+            }
+            return (
+              <EmptyState
                 emoji="🎯"
                 title={t('empty.bets_title')}
                 body={t('empty.bets_body')}
                 cta={onOpenCreate ? { label: t('empty.bets_cta'), icon: '+', onClick: onOpenCreate } : null}
                 tutorial={{ label: t('empty.how_label'), body: t('empty.bets_tutorial') }}
-              />)
+              />
+            );
+          })()
         : <div style={isDesktop?{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,alignItems:'start'}:{}}>
             {visible.map(b => <BetCard key={b.id} bet={b} user={user} profiles={profiles} cats={cats}
               onResolve={onResolve} onFlame={onFlame} onCounter={onCounter} onDelete={onDelete} onEdit={onEdit}

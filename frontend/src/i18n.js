@@ -65,6 +65,8 @@ const TRANSLATIONS = {
       f_all:'Tutte', f_active:'Attive', f_won:'Vinte', f_lost:'Perse', f_expired:'Scadute',
       f_mine:'Le mie', f_theirs:'Del partner', f_cats:'Cat.',
       search_ph:'Cerca per titolo…', search_empty:'Nessuna bet trovata per "{q}"',
+      filter_empty:'Nessuna bet con questi filtri.',
+      filter_reset:'Reset filtri',
     },
     vault_view: {
       title:'🔒 Vault Segreto', subtitle:'Solo tu vedi queste bet',
@@ -456,6 +458,8 @@ const TRANSLATIONS = {
     },
     dashboard_extra: {
       streak_short:'GIORNI',
+      streak_wins:'VITTORIE DI FILA',
+      streak_losses:'SCONFITTE DI FILA',
       trail_label:'ULTIME 5',
       trail_won:'V',
       trail_lost:'P',
@@ -751,6 +755,8 @@ const TRANSLATIONS = {
       f_all:'All', f_active:'Active', f_won:'Won', f_lost:'Lost', f_expired:'Expired',
       f_mine:'Mine', f_theirs:"Partner's", f_cats:'Cat.',
       search_ph:'Search by title…', search_empty:'No bets matching "{q}"',
+      filter_empty:'No bets match these filters.',
+      filter_reset:'Reset filters',
     },
     vault_view: {
       title:'🔒 Secret Vault', subtitle:'Only you can see these bets',
@@ -1135,6 +1141,8 @@ const TRANSLATIONS = {
     },
     dashboard_extra: {
       streak_short:'DAY STREAK',
+      streak_wins:'WINS IN A ROW',
+      streak_losses:'LOSSES IN A ROW',
       trail_label:'LAST 5',
       trail_won:'W',
       trail_lost:'L',

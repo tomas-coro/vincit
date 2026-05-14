@@ -52,22 +52,47 @@ export default function BetListModal({
     };
   };
 
-  // Everyone on the OTHER side of the bet from the user's POV. Includes
-  // the named opponent, the target_user, and every counter-bettor. So
-  // an open / subset-restricted bet with multiple participants shows
-  // them all instead of just the first one. Deduplicates by id and
-  // strips the viewer themself.
+  // Everyone on the OPPOSING side of the bet from the viewer's POV.
+  // "vs" should only list actual opponents, not allies who happened to
+  // place a counter-bet on the SAME side as the viewer (e.g. both
+  // voted YES on an open bet — they were teammates, not rivals).
+  //
+  // Side semantics for an open bet:
+  //   - The creator's implicit position is YES (the bet title).
+  //   - Each counter_bet has a `side` of 'yes' or 'no'.
+  //   - The viewer's side: 'yes' if they're the creator OR a counter
+  //     with side='yes', otherwise 'no'.
+  // For a 1-vs-1 targeted bet without counter-bets, the opponent is
+  // simply the other named person (opponent or target_user).
   const participantsFor = (b) => {
     if (b.isSecret) return [{ id: null, label: 'Vault', emoji: '🔒' }];
-    const ids = new Set();
-    if (b.creator !== userId) ids.add(b.creator);
-    if (b.opponent && b.opponent !== userId)       ids.add(b.opponent);
-    if (b.targetUser && b.targetUser !== userId)   ids.add(b.targetUser);
-    if (Array.isArray(b.counterBets)) {
-      for (const cb of b.counterBets) {
-        if (cb?.bettor && cb.bettor !== userId) ids.add(cb.bettor);
-      }
+    const counterBets = Array.isArray(b.counterBets) ? b.counterBets : [];
+
+    // Resolve the viewer's own side.
+    let mySide = null;
+    if (b.creator === userId) mySide = 'yes';
+    else {
+      const mine = counterBets.find(c => c?.bettor === userId);
+      if (mine?.side) mySide = mine.side;
     }
+    const opposite = mySide === 'yes' ? 'no' : 'yes';
+
+    const ids = new Set();
+    // Creator only counts as an "opponent" when the viewer is on the
+    // OTHER side from creator (i.e. viewer is on 'no').
+    if (b.creator !== userId && mySide === 'no') ids.add(b.creator);
+    // Named opponent + target_user always count as opponents (they're
+    // the explicit opposition by design of targeted/surprise bets).
+    if (b.opponent && b.opponent !== userId)     ids.add(b.opponent);
+    if (b.targetUser && b.targetUser !== userId) ids.add(b.targetUser);
+    // Counter-bettors: only those on the OPPOSITE side from the viewer.
+    // If mySide is null (somehow neither creator nor counter-bettor)
+    // we include every counter-bettor as opposition by default.
+    for (const cb of counterBets) {
+      if (!cb?.bettor || cb.bettor === userId) continue;
+      if (!mySide || cb.side === opposite) ids.add(cb.bettor);
+    }
+
     if (ids.size === 0) return [{ id: null, label: 'Aperta', emoji: '👥' }];
     return Array.from(ids).map(personFromId);
   };
