@@ -932,11 +932,11 @@ export default function App() {
       }
       if (iWon && payout > 0) {
         setWinAnimQueue(q => [...q, payout]);
-        // Slight delay before the comment prompt so it doesn't crash
-        // into the WinOverlay's confetti.
-        setTimeout(() => {
-          setCommentBetQueue(q => [...q, { ...b, status: 'won' }]);
-        }, 1800);
+        // Enqueue the comment prompt immediately — the render gate
+        // `commentBetModal && winAnimQueue.length === 0` in the JSX
+        // holds it back until every trophy has played and popped, so
+        // we don't need an artificial setTimeout here.
+        setCommentBetQueue(q => [...q, { ...b, status: 'won' }]);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1748,7 +1748,7 @@ export default function App() {
       {overtimeBet    && <OvertimeModal bet={overtimeBet} profiles={profiles} onResult={handleOvertimeResolve} onClose={() => setOvertimeBet(null)} />}
       {showPin        && <PinModal user={user} profiles={profiles} vaultPin={vaultPin} onSuccess={() => { setVaultUnlocked(true); setShowPin(false); }} onClose={() => setShowPin(false)} />}
       {winAnim        && <WinOverlay amount={winAnim} onDone={() => setWinAnimQueue(q => q.slice(1))} />}
-      {commentBetModal && <CommentModal bet={commentBetModal} onSave={handleComment} onSkip={() => setCommentBetQueue(q => q.slice(1))} />}
+      {commentBetModal && winAnimQueue.length === 0 && <CommentModal bet={commentBetModal} onSave={handleComment} onSkip={() => setCommentBetQueue(q => q.slice(1))} />}
       {editingBet && <EditModal bet={editingBet} cats={cats} user={user} onSave={handleEdit} onClose={() => setEditingBet(null)}/>}
       {acceptingBet && (
         <AcceptModal

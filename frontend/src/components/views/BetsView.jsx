@@ -8,8 +8,10 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
   const { t } = useLang();
   // `initialStatus` is honored only on mount — parent uses React `key` to
   // force a remount when it wants the filter to snap to a new default
-  // (e.g. Dashboard "Vedi tutte" lands on 'all').
-  const [fStatus, setFStatus] = useState(initialStatus || 'active');
+  // (e.g. Dashboard "Vedi tutte" lands on 'all'). Default landing tab is
+  // 'all' (Tutte) — users want the full list when they tap into Bets
+  // from the nav, not just the currently-active ones.
+  const [fStatus, setFStatus] = useState(initialStatus || 'all');
   const [fCat,    setFCat]    = useState('all');
   const [fWho,    setFWho]    = useState('all');
   const [query,   setQuery]   = useState('');
