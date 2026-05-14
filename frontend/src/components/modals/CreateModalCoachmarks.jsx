@@ -2,22 +2,30 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLang } from '../../i18n.js';
 
-// Concept-A coachmark sequence for the CreateModal. Six steps walk the user
-// through making their first bet: intro card (no spotlight) → title → type
-// → stake → win → submit. Each non-intro step measures a target element
-// inside the modal via [data-coach="..."], dims everything else with a
-// box-shadow "cutout", floats an italic Cormorant bubble next to it with
-// an animated gold arrow pointing in. Auto-scrolls the target into view
-// in the modal's own scroll container if it's out of bounds.
+// Concept-A coachmark sequence for the CreateModal. Ten steps walk the user
+// through making their first bet: intro card → title → four type sub-steps
+// (vault/open/targeted/surprise) → stake → win → submit → help (points at
+// the "?" button so the user knows the tutorial is always re-openable).
+// Each non-intro step measures a target element inside the modal via
+// [data-coach="..."], dims everything else with a box-shadow "cutout",
+// floats an italic Cormorant bubble next to it with an animated gold arrow
+// pointing in. Auto-scrolls the target into view if it's out of bounds.
 
 const STEPS = [
   // First step is a centered intro card with no target.
   { target: null,       place: 'center' },
   { target: 'title',    place: 'bottom' },
+  // Four sub-steps on the same `type` selector, one per bet kind. The
+  // spotlight stays put while the bubble copy changes.
+  { target: 'type',     place: 'bottom' },
+  { target: 'type',     place: 'bottom' },
+  { target: 'type',     place: 'bottom' },
   { target: 'type',     place: 'bottom' },
   { target: 'stake',    place: 'bottom' },
   { target: 'win',      place: 'bottom' },
   { target: 'submit',   place: 'top'    },
+  // Final step points at the always-available "?" trigger in the header.
+  { target: 'help',     place: 'bottom' },
 ];
 
 const CSS = `
@@ -93,7 +101,11 @@ export default function CreateModalCoachmarks({ open, onClose }) {
 
   const isLast = step === STEPS.length - 1;
   const s = STEPS[step];
-  const stepKey = ['intro', 'title', 'type', 'stake', 'win', 'submit'][step];
+  const stepKey = [
+    'intro', 'title',
+    'type_vault', 'type_open', 'type_targeted', 'type_surprise',
+    'stake', 'win', 'submit', 'help',
+  ][step];
 
   const goNext = () => {
     if (isLast) { close(); return; }
@@ -217,10 +229,12 @@ export default function CreateModalCoachmarks({ open, onClose }) {
           letterSpacing: '-0.01em',
         }}>{t(`coach.${stepKey}_title`)}</div>
 
-        {/* Body */}
+        {/* Body — `pre-line` so i18n strings can include explicit \n
+            paragraph breaks (e.g. intro). */}
         <div style={{
           fontSize: 13, color: 'var(--dim)',
           lineHeight: 1.5, marginBottom: 16,
+          whiteSpace: 'pre-line',
         }}>{t(`coach.${stepKey}_body`)}</div>
 
         {/* Nav row */}

@@ -52,6 +52,9 @@ export default function AdminView({ isDesktop, meId }) {
   const [nukeAvailable, setNukeAvailable] = useState(false);
   const [loading,   setLoading]   = useState(true);
   const [query,     setQuery]     = useState('');
+  const [filter,    setFilter]    = useState('all');     // all | admin | issues | nogroup | new
+  const [sortBy,    setSortBy]    = useState('recent');  // recent | name | bets | credits
+  const [compact,   setCompact]   = useState(true);      // one-line rows vs detailed
   const [selectedId,  setSelectedId]  = useState(null);
   const [detail,      setDetail]      = useState(null);
   const [busy,        setBusy]        = useState(false);
@@ -82,13 +85,57 @@ export default function AdminView({ isDesktop, meId }) {
     api.adminUserByEmail(u.email).then(setDetail).catch(() => setDetail(null));
   }, [selectedId, users]);
 
+  // Lowercase-email collision set: any email that appears on >1 account.
+  // Pre-computed once per `users` snapshot so the per-row "ha problemi"
+  // check is O(1).
+  const duplicateEmails = useMemo(() => {
+    const counts = new Map();
+    for (const u of users) {
+      const k = (u.email || '').toLowerCase();
+      if (!k) continue;
+      counts.set(k, (counts.get(k) || 0) + 1);
+    }
+    const dup = new Set();
+    for (const [k, n] of counts) if (n > 1) dup.add(k);
+    return dup;
+  }, [users]);
+
+  const hasIssue = (u) => {
+    if (u.legacy_room_id && u.legacy_room_exists === false) return true;
+    if (duplicateEmails.has((u.email || '').toLowerCase())) return true;
+    return false;
+  };
+
   const filteredUsers = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(u =>
-      (u.email || '').toLowerCase().includes(q) ||
-      (u.name  || '').toLowerCase().includes(q));
-  }, [users, query]);
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+    let list = users.filter(u => {
+      // Search
+      if (q && !((u.email || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q))) {
+        return false;
+      }
+      // Filter chip
+      switch (filter) {
+        case 'admin':   return !!u.is_admin;
+        case 'issues':  return hasIssue(u);
+        case 'nogroup': return (u.group_count || 0) === 0;
+        case 'new':     return Number(u.created_at) >= sevenDaysAgo;
+        default:        return true;
+      }
+    });
+
+    // Sort
+    const cmp = {
+      recent:  (a, b) => Number(b.created_at || 0) - Number(a.created_at || 0),
+      name:    (a, b) => (a.name || '').localeCompare(b.name || '', 'it', { sensitivity: 'base' }),
+      bets:    (a, b) => (b.bets_created || 0) - (a.bets_created || 0),
+      credits: (a, b) => (b.credits || 0) - (a.credits || 0),
+    }[sortBy] || (() => 0);
+
+    return [...list].sort(cmp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [users, query, filter, sortBy, duplicateEmails]);
 
   // ── Actions ─────────────────────────────────────────────────────────
   const wrap = (fn, okMsg) => async (...args) => {
@@ -187,46 +234,156 @@ export default function AdminView({ isDesktop, meId }) {
       </div>
 
       {/* ── UTENTI ─────────────────────────────────────────── */}
-      {tab === 'users' && !selectedId && (
-        <>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '14px 2px', marginTop: 18, marginBottom: 4,
-            borderBottom: '1px solid var(--brd)',
-          }}>
-            <span style={{ color: 'var(--dim)', fontSize: 14 }}>🔍</span>
-            <input value={query} onChange={e => setQuery(e.target.value)}
-              placeholder="Cerca per email o nome…"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--txt)', fontFamily: "'Manrope',sans-serif", fontSize: 14, letterSpacing: '.01em' }}/>
-          </div>
+      {tab === 'users' && !selectedId && (() => {
+        const FILTERS = [
+          { id: 'all',     label: 'Tutti' },
+          { id: 'admin',   label: '★ Admin' },
+          { id: 'issues',  label: '⚠ Problemi' },
+          { id: 'nogroup', label: 'Senza gruppo' },
+          { id: 'new',     label: 'Nuovi 7gg' },
+        ];
+        const SORTS = [
+          { id: 'recent',  label: 'Recenti' },
+          { id: 'name',    label: 'Nome A→Z' },
+          { id: 'bets',    label: 'Più bet' },
+          { id: 'credits', label: 'Più crediti' },
+        ];
+        const filtersActive = query.trim() !== '' || filter !== 'all';
 
-          {filteredUsers.map(u => {
-            const flagged = u.legacy_room_id && u.legacy_room_exists === false;
-            return (
-              <div key={u.id} onClick={() => setSelectedId(u.id)}
-                style={{ ...S.card, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
-                <Avatar p={u} size={42}/>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {u.name} {u.is_admin && <span style={{ fontSize: 10, color: 'var(--gold)' }}>★ admin</span>}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {u.email}
-                  </div>
-                  <div style={{ fontSize: 10, color: 'var(--mut)', marginTop: 4, letterSpacing: 0.5 }}>
-                    👥{u.group_count} · 🎲{u.bets_created} · 🤝{u.friend_count} {u.friend_requests_in > 0 && `· in:${u.friend_requests_in}`} · {Math.round(u.credits ?? 0)}₡
-                  </div>
-                </div>
-                {flagged && (
-                  <span title="users.room_id punta a un gruppo cancellato"
-                    style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: 'var(--red)' }}>⚠ orfano</span>
-                )}
+        const chipBase = (active) => ({
+          padding: '6px 12px', borderRadius: 999, cursor: 'pointer',
+          background: active ? 'var(--gold)22' : 'transparent',
+          border: `1px solid ${active ? 'var(--gold)66' : 'var(--brd)'}`,
+          color: active ? 'var(--gold)' : 'var(--dim)',
+          fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
+          letterSpacing: '.06em', whiteSpace: 'nowrap',
+          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+        });
+
+        return (
+          <>
+            {/* Search + contatore */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 2px', marginTop: 18, marginBottom: 4,
+              borderBottom: '1px solid var(--brd)',
+            }}>
+              <span style={{ color: 'var(--dim)', fontSize: 14 }}>🔍</span>
+              <input value={query} onChange={e => setQuery(e.target.value)}
+                placeholder="Cerca per email o nome…"
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--txt)', fontFamily: "'Manrope',sans-serif", fontSize: 14, letterSpacing: '.01em' }}/>
+              <span style={{ fontSize: 10, color: 'var(--mut)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, flexShrink: 0 }}>
+                {filtersActive ? `${filteredUsers.length} / ${users.length}` : users.length}
+              </span>
+            </div>
+
+            {/* Filter chips */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '12px 0 4px' }}>
+              {FILTERS.map(f => (
+                <button key={f.id} onClick={() => setFilter(f.id)} style={chipBase(filter === f.id)}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort + density toggle */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: 10, padding: '8px 0 4px', flexWrap: 'wrap',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 9, color: 'var(--mut)', letterSpacing: '.3em', textTransform: 'uppercase', fontWeight: 700 }}>
+                  Ordina
+                </span>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                  style={{
+                    background: 'var(--inp)', color: 'var(--txt)',
+                    border: '1px solid var(--brd)', borderRadius: 6,
+                    padding: '4px 8px', fontSize: 11, fontFamily: "'Manrope',sans-serif",
+                    cursor: 'pointer',
+                  }}>
+                  {SORTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                </select>
               </div>
-            );
-          })}
-        </>
-      )}
+              <button onClick={() => setCompact(c => !c)} style={chipBase(false)}>
+                {compact ? '⊕ Espandi' : '⊖ Compatto'}
+              </button>
+            </div>
+
+            {filteredUsers.length === 0 && (
+              <div style={{ padding: 32, textAlign: 'center', color: 'var(--mut)', fontSize: 12 }}>
+                Nessun utente per i filtri scelti.
+              </div>
+            )}
+
+            {filteredUsers.map(u => {
+              const flagged = u.legacy_room_id && u.legacy_room_exists === false;
+              const dupEmail = duplicateEmails.has((u.email || '').toLowerCase());
+
+              if (compact) {
+                // One-line row — info density priority, dettagli su click.
+                return (
+                  <div key={u.id} onClick={() => setSelectedId(u.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 2px', borderBottom: '1px solid var(--rule)',
+                      cursor: 'pointer', position: 'relative',
+                    }}>
+                    {/* Pallino problema a sinistra (rimpiazza badge orfano testuale) */}
+                    {(flagged || dupEmail) && (
+                      <span title={flagged ? 'room_id orfano' : 'email duplicata'}
+                        style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--red)', flexShrink: 0 }}/>
+                    )}
+                    <Avatar p={u} size={28}/>
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{
+                        fontWeight: 700, fontSize: 13, flexShrink: 0, maxWidth: '40%',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>{u.name}</span>
+                      {u.is_admin && <span style={{ fontSize: 9, color: 'var(--gold)', flexShrink: 0 }}>★</span>}
+                      <span style={{
+                        fontSize: 11, color: 'var(--dim)', flex: 1, minWidth: 0,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>{u.email}</span>
+                    </div>
+                    <span style={{ fontSize: 10, color: 'var(--mut)', flexShrink: 0, letterSpacing: 0.3 }}>
+                      👥{u.group_count} · 🎲{u.bets_created} · {Math.round(u.credits ?? 0)}₡
+                    </span>
+                  </div>
+                );
+              }
+
+              // Detailed row (vecchio layout)
+              return (
+                <div key={u.id} onClick={() => setSelectedId(u.id)}
+                  style={{ ...S.card, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
+                  <Avatar p={u} size={42}/>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2,
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {u.name} {u.is_admin && <span style={{ fontSize: 10, color: 'var(--gold)' }}>★ admin</span>}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {u.email}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--mut)', marginTop: 4, letterSpacing: 0.5 }}>
+                      👥{u.group_count} · 🎲{u.bets_created} · 🤝{u.friend_count} {u.friend_requests_in > 0 && `· in:${u.friend_requests_in}`} · {Math.round(u.credits ?? 0)}₡
+                    </div>
+                  </div>
+                  {flagged && (
+                    <span title="users.room_id punta a un gruppo cancellato"
+                      style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: 'var(--red)' }}>⚠ orfano</span>
+                  )}
+                  {!flagged && dupEmail && (
+                    <span title="email duplicata su più account"
+                      style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: 'var(--red)' }}>⚠ email</span>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        );
+      })()}
 
       {/* User detail */}
       {tab === 'users' && selectedId && (() => {

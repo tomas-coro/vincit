@@ -614,7 +614,12 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
       <textarea
         value={title}
         onChange={e=>setTitle(e.target.value)}
-        placeholder={isSecret?t('create.bet_placeholder_sec'):t('create.bet_placeholder_pub')}
+        placeholder={t(
+          betType === 'vault'    ? 'create.bet_placeholder_sec' :
+          betType === 'targeted' ? 'create.bet_placeholder_targeted' :
+          betType === 'surprise' ? 'create.bet_placeholder_surprise' :
+                                   'create.bet_placeholder_pub'
+        )}
         rows={2}
         style={{
           width:'100%', resize:'none', overflow:'hidden',
@@ -911,7 +916,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
             <div style={{display:'flex', alignItems:'center', gap:6}}>
               {/* Always-available coachmark trigger — for users who skipped
                   the tutorial or forgot how something works. */}
-              <button onClick={() => setCoachOpen(true)} title={t('coach.help_tooltip')}
+              <button onClick={() => setCoachOpen(true)} data-coach="help" title={t('coach.help_tooltip')}
                 style={{
                   width: 30, height: 30, borderRadius: '50%',
                   background: 'transparent', border: '1px solid var(--gold)66',
@@ -1004,7 +1009,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
           </div>
           <div style={{display:'flex', alignItems:'center', gap:6}}>
             {/* Coachmark trigger — same as desktop */}
-            <button onClick={() => setCoachOpen(true)} title={t('coach.help_tooltip')}
+            <button onClick={() => setCoachOpen(true)} data-coach="help" title={t('coach.help_tooltip')}
               style={{
                 width: 30, height: 30, borderRadius: '50%',
                 background: 'transparent', border: '1px solid var(--gold)66',

@@ -33,7 +33,11 @@ const TRANSLATIONS = {
       no_others_hint:'Sei solo nel gruppo · invita qualcuno per usare Mirata/Sorpresa',
       preview:'Anteprima', summary:'Riepilogo', balance_win:'Saldo se vinci', balance_lose:'Saldo se perdi',
       below_threshold:'✓ Sotto soglia ({threshold} ₡) · accettata automaticamente',
-      bet_label:'Scommessa', bet_placeholder_sec:"es. Stasera facciamo l'amore...", bet_placeholder_pub:'es. Giulia arriverà in ritardo sabato',
+      bet_label:'Scommessa',
+      bet_placeholder_sec:"es. Smetto di fumare entro fine mese...",
+      bet_placeholder_pub:'es. Giulia arriverà in ritardo sabato',
+      bet_placeholder_targeted:'es. Marco mi batte a tennis domenica',
+      bet_placeholder_surprise:'es. Sara si addormenta prima della fine del film',
       quota_label:'Quota & Probabilità', prob_label:'Probabilità implicita', direct_quota:'Quota diretta:', no_label:'NO:',
       win_label:'Se vinco incasso', win_placeholder:"Quanto incassi se vinci...", win_short:'Vincita',
       impossible:'Impossibile', certain:'Certissimo', stake_label:'Stake', stake_max:'Max', stake_placeholder:'Importo libero...',
@@ -248,7 +252,7 @@ const TRANSLATIONS = {
       groups_hint:'Suggerimento: Cmd/Ctrl+K per la ricerca rapida tra i gruppi',
 
       bets_title:'Una bet è una scommessa tra amici.',
-      bets_body:'Uno propone qualcosa che può succedere o no — "stasera Marco arriva in ritardo", "Inter vince il derby", "domani piove". Si decide la posta in crediti virtuali (₡) e la quota (×2, ×3…). Chi indovina si porta a casa i crediti dell\'altro. Niente soldi veri: solo bragging rights e classifica.',
+      bets_body:'Uno propone qualcosa che può succedere o no — "stasera Marco arriva in ritardo", "il Milan vince il derby", "domani piove". Si decide la posta in crediti virtuali (₡) e la quota (×2, ×3…). Chi indovina si porta a casa i crediti dell\'altro. Niente soldi veri: solo bragging rights e classifica.',
       bets_hint:'Esempio: posta 10₡ a quota 2× → se vinci ne incassi 20',
 
       create_title:'Quattro modi per scommettere.',
@@ -268,15 +272,27 @@ const TRANSLATIONS = {
 
       intro_kicker:'Tutorial bet',
       intro_title:'Cos\'è una bet, in 30 secondi.',
-      intro_body:'Una bet è un patto: dichiari cosa pensi succederà nel gruppo, fissi una posta in crediti virtuali (₡) e quanto vorresti vincere. Se hai ragione incassi, altrimenti la posta sparisce. Ti accompagno passo dopo passo.',
+      intro_body:'Una bet è un patto: dichiari cosa pensi succederà nel gruppo, fissi una posta in crediti virtuali (₡) e quanto vorresti vincere. Se hai ragione incassi, altrimenti la posta sparisce.\n\nTi accompagno passo dopo passo.',
 
       title_kicker:'Il titolo',
       title_title:'Scrivi cosa pensi succederà.',
-      title_body:'Esempi: "Marco arriva in ritardo stasera", "Inter vince il derby", "Domani piove a Milano". Più la dichiarazione è chiara, meno discussioni dopo.',
+      title_body:'Esempi: "Marco arriva in ritardo stasera", "il Milan vince il derby", "Domani piove a Udine". Più la dichiarazione è chiara, meno discussioni dopo.',
 
-      type_kicker:'Tipo di bet',
-      type_title:'A chi è rivolta?',
-      type_body:'🔒 Vault = solo per te (privata). 👥 Aperta = chiunque nel gruppo può sfidarti. 🎯 Mirata = scegli tu chi sfidare. 🤫 Sorpresa = come Mirata, ma l\'altro lo scopre solo dopo.',
+      type_vault_kicker:'Tipo · Vault',
+      type_vault_title:'🔒 Vault — solo per te.',
+      type_vault_body:'Privata, visibile solo a te. Nessuno la vede, nessuno la sfida: la usi per gioco, per tracciare un proposito personale o per tenere il punto con te stesso.',
+
+      type_open_kicker:'Tipo · Aperta',
+      type_open_title:'👥 Aperta — sfida il gruppo.',
+      type_open_body:'Visibile a tutti i membri del gruppo. Chiunque può accettarla e prendere il lato opposto: prima arriva, prima blocca la sfida.',
+
+      type_targeted_kicker:'Tipo · Mirata',
+      type_targeted_title:'🎯 Mirata — uno contro uno.',
+      type_targeted_body:'Scegli tu chi sfidare. La bet è visibile al gruppo, ma solo la persona scelta può accettarla o rilanciare con una contro-offerta.',
+
+      type_surprise_kicker:'Tipo · Sorpresa',
+      type_surprise_title:'🤫 Sorpresa — colpo a sorpresa.',
+      type_surprise_body:'Come Mirata, ma nascosta al gruppo (e all\'avversario) finché non si risolve. Quando esce l\'esito, tutti scoprono cosa avevi in mente.',
 
       stake_kicker:'La posta',
       stake_title:'Quanto ci metti?',
@@ -284,11 +300,15 @@ const TRANSLATIONS = {
 
       win_kicker:'La vincita',
       win_title:'Quanto vuoi guadagnare?',
-      win_body:'Se hai ragione, questa è la cifra che ti torna in tasca (posta inclusa). Le scorciatoie ×2, ×4, ×8 fissano subito una vincita proporzionale alla posta — più alto il moltiplicatore, più audace la bet.',
+      win_body:'Quanto incassi se vinci (posta inclusa). Le scorciatoie ×2, ×4, ×8 fissano la vincita: più alto il moltiplicatore, più audace la giocata.',
 
       submit_kicker:'Ultimo passo',
       submit_title:'Crea la bet.',
       submit_body:'Quando hai compilato tutto, premi qui per metterla online. Resta visibile nel gruppo finché qualcuno la vince, la perde, o scade. Buona scommessa 🎲',
+
+      help_kicker:'Tutorial sempre a portata',
+      help_title:'Vedi questo "?"? È il tuo salvavita.',
+      help_body:'Cliccalo in qualsiasi momento per riaprire questo tutorial. Se ti dimentichi come funziona qualcosa, sai dove guardare.',
     },
     stats_group: { title:'🏆 Classifica gruppo', balance:'Saldo', win_rate:'WR', wins:'V', losses:'P', best_win:'Migliore', net:'Net', no_data:'Nessuna bet risolta nel gruppo' },
     h2h: { title:'⚔️ Testa a testa', you:'Tu', net_me:'Bilancio per me', bets:'Bet', no_data:'Nessuna bet diretta tra voi' },
@@ -596,7 +616,11 @@ const TRANSLATIONS = {
       no_others_hint:"You're alone in the group · invite someone to use Targeted/Surprise",
       preview:'Preview', summary:'Summary', balance_win:'Balance if you win', balance_lose:'Balance if you lose',
       below_threshold:'✓ Below threshold ({threshold} ₡) · auto-accepted',
-      bet_label:'Bet', bet_placeholder_sec:"e.g. Tonight we'll make love...", bet_placeholder_pub:'e.g. Giulia will be late on Saturday',
+      bet_label:'Bet',
+      bet_placeholder_sec:"e.g. I quit smoking by month-end...",
+      bet_placeholder_pub:'e.g. Giulia will be late on Saturday',
+      bet_placeholder_targeted:'e.g. Mark beats me at tennis on Sunday',
+      bet_placeholder_surprise:'e.g. Sara falls asleep before the movie ends',
       quota_label:'Odds & Probability', prob_label:'Implied probability', direct_quota:'Direct odds:', no_label:'NO:',
       win_label:'If I win I get', win_placeholder:'How much you cash if you win...', win_short:'Win',
       impossible:'Impossible', certain:'Certain', stake_label:'Stake', stake_max:'Max', stake_placeholder:'Custom amount...',
@@ -811,7 +835,7 @@ const TRANSLATIONS = {
       groups_hint:'Pro tip: Cmd/Ctrl+K for the quick group search',
 
       bets_title:'A bet is a friendly wager.',
-      bets_body:'Someone calls something that might happen — "Marco will be late tonight", "Inter wins the derby", "it rains tomorrow". You set a stake in virtual credits (₡) and the odds (×2, ×3…). Whoever calls it right takes the other\'s credits. No real money: just bragging rights and the leaderboard.',
+      bets_body:'Someone calls something that might happen — "Marco will be late tonight", "Milan wins the derby", "it rains tomorrow". You set a stake in virtual credits (₡) and the odds (×2, ×3…). Whoever calls it right takes the other\'s credits. No real money: just bragging rights and the leaderboard.',
       bets_hint:'Example: stake 10₡ at 2× odds → win returns 20',
 
       create_title:'Four ways to place a bet.',
@@ -831,15 +855,27 @@ const TRANSLATIONS = {
 
       intro_kicker:'Bet tutorial',
       intro_title:"What a bet is, in 30 seconds.",
-      intro_body:"A bet is a pact: you call what you think will happen in the group, set a stake in virtual credits (₡) and how much you'd like to win. If you call it right you cash in; otherwise the stake disappears. I'll walk you through it step by step.",
+      intro_body:"A bet is a pact: you call what you think will happen in the group, set a stake in virtual credits (₡) and how much you'd like to win. If you call it right you cash in; otherwise the stake disappears.\n\nI'll walk you through it step by step.",
 
       title_kicker:'The title',
       title_title:'Write what you think will happen.',
-      title_body:'Examples: "Marco will be late tonight", "Inter wins the derby", "It rains in Milan tomorrow". The clearer the statement, the fewer arguments later.',
+      title_body:'Examples: "Marco will be late tonight", "Milan wins the derby", "It rains in Udine tomorrow". The clearer the statement, the fewer arguments later.',
 
-      type_kicker:'Bet type',
-      type_title:'Who is it for?',
-      type_body:"🔒 Vault = just for you (private). 👥 Open = anyone in the group can challenge you. 🎯 Targeted = you pick who to challenge. 🤫 Surprise = like Targeted, but they only find out after.",
+      type_vault_kicker:'Type · Vault',
+      type_vault_title:'🔒 Vault — just for you.',
+      type_vault_body:"Private and only visible to you. No one sees it, no one challenges it: use it for fun, to track a personal goal, or to keep yourself honest.",
+
+      type_open_kicker:'Type · Open',
+      type_open_title:'👥 Open — challenge the group.',
+      type_open_body:'Visible to everyone in the group. Anyone can accept and take the other side: first come, first locked in.',
+
+      type_targeted_kicker:'Type · Targeted',
+      type_targeted_title:'🎯 Targeted — one on one.',
+      type_targeted_body:'You pick who to challenge. The bet is visible to the group, but only the chosen person can accept or come back with a counter-offer.',
+
+      type_surprise_kicker:'Type · Surprise',
+      type_surprise_title:'🤫 Surprise — sneak attack.',
+      type_surprise_body:"Like Targeted, but hidden from the group (and the opponent) until it resolves. When the outcome drops, everyone finds out what you had in mind.",
 
       stake_kicker:'The stake',
       stake_title:'How much do you put in?',
@@ -847,11 +883,15 @@ const TRANSLATIONS = {
 
       win_kicker:'The winnings',
       win_title:'How much do you want to earn?',
-      win_body:"If you're right, this is what comes back to your pocket (stake included). The ×2, ×4, ×8 shortcuts set winnings proportional to the stake — the higher the multiplier, the bolder the bet.",
+      win_body:"What you cash if you win (stake included). The ×2, ×4, ×8 shortcuts set winnings proportional: the higher the multiplier, the bolder the play.",
 
       submit_kicker:'Last step',
       submit_title:'Place the bet.',
       submit_body:'Once everything is filled in, press here to put it live. It stays visible in the group until someone wins, loses, or it expires. Good luck 🎲',
+
+      help_kicker:'Tutorial always at hand',
+      help_title:"See this \"?\" Your lifeline.",
+      help_body:"Tap it any time to re-open this tutorial. If you forget how something works, you know where to look.",
     },
     stats_group: { title:'🏆 Group leaderboard', balance:'Balance', win_rate:'WR', wins:'W', losses:'L', best_win:'Best', net:'Net', no_data:'No resolved bets in the group' },
     h2h: { title:'⚔️ Head to head', you:'You', net_me:'Net for me', bets:'Bets', no_data:'No direct bets between you' },
