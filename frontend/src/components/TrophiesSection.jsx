@@ -278,6 +278,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
         <TrophyDetailPopover
           key={detail.a.id}
           a={detail.a}
+          anchorRect={detail.rect}
           t={t}
           fmtDate={fmtDate}
           onClose={() => setDetail(null)}
@@ -294,7 +295,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
 // dismiss-on-outside. Closes on ESC, scroll, resize, or clicking another
 // tile (the popover's mousedown-outside handler fires before the new
 // tile's click, so switching trophies feels instant).
-function TrophyDetailPopover({ a, t, fmtDate, onClose }) {
+function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
   useBodyScrollLock();
   const masked = !!a.secret && !a.unlocked;
   const labelName = masked ? t('trophies.secret_locked')      : t('trophies.'+a.id);
@@ -311,33 +312,40 @@ function TrophyDetailPopover({ a, t, fmtDate, onClose }) {
   const [pos, setPos] = useState(null);
   const POPOVER_W = 260;
   const MARGIN = 12;
+  const GAP = 8; // gap between tile edge and popover
 
-  // Stable random seed — generated once per mount. key={a.id} on the parent
-  // forces a remount (and new seed) whenever a different trophy is opened.
-  const [randX] = useState(() => Math.random());
-  const [randY] = useState(() => Math.random());
-
-  // Run AFTER the browser has painted so offsetHeight is always the real
-  // measured value (not 0 or an estimate). Strategy: start from screen
-  // center, shift by a bounded random offset, then clamp hard to the
-  // viewport edges — guarantees 100% visibility on any screen size.
+  // Anchor near the clicked tile. Runs after paint so offsetHeight is real.
   useEffect(() => {
     if (!popoverRef.current) return;
-    const vw   = window.innerWidth;
-    const vh   = window.visualViewport?.height ?? window.innerHeight;
-    const h    = Math.min(popoverRef.current.offsetHeight || 260, vh - MARGIN * 2);
-    // Maximum swing from center that still keeps every edge inside MARGIN
-    const swing = Math.min(
-      Math.max(0, (vw - POPOVER_W) / 2 - MARGIN),
-      Math.max(0, (vh - h)         / 2 - MARGIN),
-      80
-    );
-    const cx   = (vw - POPOVER_W) / 2;
-    const cy   = (vh - h)         / 2;
-    const left = Math.max(MARGIN, Math.min(cx + (randX * 2 - 1) * swing, vw - POPOVER_W - MARGIN));
-    const top  = Math.max(MARGIN, Math.min(cy + (randY * 2 - 1) * swing, vh - h - MARGIN));
-    setPos({ left, top });
-  }, []); // randX/randY are mount-stable; runs once after first paint
+    const vw = window.innerWidth;
+    const vh = window.visualViewport?.height ?? window.innerHeight;
+    const h  = Math.min(popoverRef.current.offsetHeight || 280, vh - MARGIN * 2);
+
+    // Horizontal: align left with tile, clamp so it doesn't overflow right or left edge.
+    const left = anchorRect
+      ? Math.max(MARGIN, Math.min(anchorRect.left, vw - POPOVER_W - MARGIN))
+      : Math.max(MARGIN, (vw - POPOVER_W) / 2);
+
+    // Vertical: prefer below tile, fallback above, final clamp keeps it on-screen.
+    let top, origin;
+    if (anchorRect) {
+      const spaceBelow = vh - anchorRect.bottom - GAP;
+      const spaceAbove = anchorRect.top - GAP;
+      if (spaceBelow >= h || spaceBelow >= spaceAbove) {
+        top    = anchorRect.bottom + GAP;
+        origin = 'top center';
+      } else {
+        top    = anchorRect.top - GAP - h;
+        origin = 'bottom center';
+      }
+      top = Math.max(MARGIN, Math.min(top, vh - h - MARGIN));
+    } else {
+      top    = Math.max(MARGIN, (vh - h) / 2);
+      origin = 'center center';
+    }
+
+    setPos({ left, top, origin });
+  }, []); // anchorRect is mount-stable; runs once after first paint
 
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose?.(); };
@@ -401,7 +409,7 @@ function TrophyDetailPopover({ a, t, fmtDate, onClose }) {
           borderRadius:14,
           boxShadow:`0 18px 50px rgba(0,0,0,.55), 0 0 0 1px ${accent}22, 0 0 30px ${accent}1f`,
           padding:'14px 16px 12px',
-          transformOrigin: '50% 50%',
+          transformOrigin: pos?.origin ?? 'top center',
           animation: pos ? 'tdpIn 240ms cubic-bezier(.18,.9,.32,1.18) both' : 'none',
           visibility: pos ? 'visible' : 'hidden',
         }}
