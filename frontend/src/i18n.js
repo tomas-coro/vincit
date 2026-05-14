@@ -71,7 +71,7 @@ const TRANSLATIONS = {
     vault_view: {
       title:'🔒 Vault Segreto', subtitle:'Solo tu vedi queste bet',
       honesty:"✦ Il timestamp di creazione è la tua prova di onestà — non puoi creare una bet dopo che l'evento è già accaduto",
-      locked_title:'Vault Protetto', locked_sub:'Inserisci il PIN per accedere alle tue bet segrete', unlock_btn:'Sblocca Vault',
+      locked_title:'Vault Protetto', locked_sub:'Inserisci il PIN per accedere alle tue bet segrete', unlock_btn:'Sblocca Vault', forgot_pin:'Hai dimenticato il PIN?', forgot_pin_title:'Reimposta PIN', forgot_pin_desc:"Se non ricordi il PIN puoi rimuoverlo. Il Vault resterà accessibile e potrai impostarne uno nuovo dalle Impostazioni.", forgot_pin_reset:'Rimuovi PIN e sblocca',
       empty_title:'Vault vuoto', empty_sub:'Crea una bet segreta per iniziare',
       sealed:'🔒 Sigillata', reveal_btn:'🔓 Rivela Bet', resolved:'Risolte', stake:'Stake', win:'Win',
     },
@@ -777,7 +777,7 @@ const TRANSLATIONS = {
     vault_view: {
       title:'🔒 Secret Vault', subtitle:'Only you can see these bets',
       honesty:'✦ The creation timestamp is your proof of honesty — you cannot create a bet after the event has already happened',
-      locked_title:'Vault Locked', locked_sub:'Enter your PIN to access your secret bets', unlock_btn:'Unlock Vault',
+      locked_title:'Vault Locked', locked_sub:'Enter your PIN to access your secret bets', unlock_btn:'Unlock Vault', forgot_pin:'Forgot your PIN?', forgot_pin_title:'Reset PIN', forgot_pin_desc:'If you have forgotten the PIN you can remove it. The Vault will be accessible and you can set a new PIN from Settings.', forgot_pin_reset:'Remove PIN & unlock',
       empty_title:'Vault is empty', empty_sub:'Create a secret bet to get started',
       sealed:'🔒 Sealed', reveal_btn:'🔓 Reveal Bet', resolved:'Resolved', stake:'Stake', win:'Win',
     },

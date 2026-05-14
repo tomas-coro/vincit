@@ -201,16 +201,63 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
   );
 
   const expiredAlert=expiredBets.length>0&&(
-    <div style={{...S.card,marginBottom:12,background:"var(--red)18",border:"1px solid var(--red)44"}}>
-      <div style={{fontWeight:600,fontSize:13,color:"var(--red)",marginBottom:4}}>{t(expiredBets.length===1?'dashboard.expired_one':'dashboard.expired_many',{n:expiredBets.length})}</div>
-      {expiredBets.map(b=><div key={b.id} style={{fontSize:12,color:"var(--dim)",marginTop:2}}>· {b.title}</div>)}
+    <div style={{
+      ...S.card, marginBottom:12,
+      background:"var(--red)14",
+      border:"1px solid var(--red)66",
+      borderLeft:"4px solid var(--red)",
+      borderRadius:10, padding:'12px 14px',
+    }}>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+        <span style={{fontSize:16}}>⏱</span>
+        <div style={{fontWeight:700,fontSize:13,color:"var(--red)",letterSpacing:'.01em'}}>
+          {t(expiredBets.length===1?'dashboard.expired_one':'dashboard.expired_many',{n:expiredBets.length})}
+        </div>
+      </div>
+      {expiredBets.map(b=>(
+        <div key={b.id} style={{
+          display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
+          padding:'6px 0', borderTop:'1px solid var(--red)22',
+        }}>
+          <div style={{fontSize:12,color:"var(--txt)",fontWeight:500,flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+            {b.title}
+          </div>
+          {onResolve && (
+            <button onClick={()=>onResolve(b)} style={{
+              flexShrink:0, padding:'4px 10px', borderRadius:999,
+              background:'var(--red)22', border:'1px solid var(--red)55',
+              color:'var(--red)', fontSize:10, fontWeight:700,
+              letterSpacing:'.06em', textTransform:'uppercase',
+              cursor:'pointer', fontFamily:"'Manrope',sans-serif",
+              WebkitTapHighlightColor:'transparent',
+            }}>Dichiara</button>
+          )}
+        </div>
+      ))}
     </div>
   );
 
   const expiryAlert=expiring.length>0&&(
-    <div style={{...S.card,marginBottom:12,background:"var(--red)18",border:"1px solid var(--red)44"}}>
-      <div style={{fontWeight:600,fontSize:13,color:"var(--red)",marginBottom:4}}>{t('dashboard.expiry',{n:expiring.length})}</div>
-      {expiring.map(b=><div key={b.id} style={{fontSize:12,color:"var(--dim)",marginTop:2}}>· {b.title} — {tLeft(b.expiresAt,lang)}</div>)}
+    <div style={{
+      ...S.card, marginBottom:12,
+      background:"var(--gold)0e",
+      border:"1px solid var(--gold)55",
+      borderLeft:"4px solid var(--gold)",
+      borderRadius:10, padding:'12px 14px',
+    }}>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+        <span style={{fontSize:16}}>⚡</span>
+        <div style={{fontWeight:700,fontSize:13,color:"var(--gold)"}}>{t('dashboard.expiry',{n:expiring.length})}</div>
+      </div>
+      {expiring.map(b=>(
+        <div key={b.id} style={{
+          display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
+          padding:'5px 0', borderTop:'1px solid var(--gold)22',
+        }}>
+          <div style={{fontSize:12,color:"var(--txt)",fontWeight:500,flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.title}</div>
+          <div style={{fontSize:11,color:"var(--gold)",fontWeight:700,flexShrink:0}}>{tLeft(b.expiresAt,lang)}</div>
+        </div>
+      ))}
     </div>
   );
 

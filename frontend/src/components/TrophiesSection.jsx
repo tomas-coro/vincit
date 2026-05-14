@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { SecLabel } from './Atoms.jsx';
 import { useLang } from '../i18n.js';
 import * as api from '../api.js';
-import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 const CAT_ORDER = ['unique', 'positive', 'challenge', 'mission', 'shadow', 'social', 'secret', 'finale'];
 
@@ -168,9 +167,15 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
           {t('trophies.title')}
         </SecLabel>
         <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-          {['all','unlocked','max','locked'].map(f => (
-            <button key={f} style={pill(filter === f)} onClick={() => setFilter(f)}>
-              {t('trophies.filter_'+f)}
+          {[
+            { id:'all',      n: visibleList.length },
+            { id:'unlocked', n: visibleList.filter(a => a.unlocked).length },
+            { id:'max',      n: visibleList.filter(a => a.progress.level >= a.progress.max_level).length },
+            { id:'locked',   n: visibleList.filter(a => !a.unlocked).length },
+          ].map(({ id, n }) => (
+            <button key={id} style={pill(filter === id)} onClick={() => setFilter(id)}>
+              {t('trophies.filter_'+id)}
+              <span style={{ marginLeft:4, opacity:.65, fontWeight:500 }}>({n})</span>
             </button>
           ))}
         </div>
@@ -296,7 +301,10 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
 // tile (the popover's mousedown-outside handler fires before the new
 // tile's click, so switching trophies feels instant).
 function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
-  useBodyScrollLock();
+  // No useBodyScrollLock — this is a small anchored popover, not a full modal.
+  // Body-scroll lock sets touchAction:none which silently blocks tap propagation
+  // to trophy tiles, and triggers a spurious scroll event on mount that
+  // immediately fires onClose before the user even sees the popover.
   const masked = !!a.secret && !a.unlocked;
   const labelName = masked ? t('trophies.secret_locked')      : t('trophies.'+a.id);
   const labelDesc = masked ? t('trophies.secret_locked_desc') : t('trophies.'+a.id+'_desc');
@@ -309,24 +317,21 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
   const showFirstAndMax = max_level > 1 && a.firstUnlockedAt && a.unlockedAt && a.firstUnlockedAt !== a.unlockedAt;
 
   const popoverRef = useRef(null);
-  const [pos, setPos] = useState(null);
+  const touchStartY = useRef(null);
   const POPOVER_W = 260;
   const MARGIN = 12;
-  const GAP = 8; // gap between tile edge and popover
+  const GAP = 8;
 
-  // Anchor near the clicked tile. Runs after paint so offsetHeight is real.
-  useEffect(() => {
-    if (!popoverRef.current) return;
+  // Synchronous position — no useEffect needed, no "invisible then visible" flash.
+  // 300px is a safe height estimate; maxHeight + overflowY handle taller content.
+  const [pos] = useState(() => {
+    const APPROX_H = 300;
     const vw = window.innerWidth;
     const vh = window.visualViewport?.height ?? window.innerHeight;
-    const h  = Math.min(popoverRef.current.offsetHeight || 280, vh - MARGIN * 2);
-
-    // Horizontal: align left with tile, clamp so it doesn't overflow right or left edge.
+    const h  = Math.min(APPROX_H, vh - MARGIN * 2);
     const left = anchorRect
       ? Math.max(MARGIN, Math.min(anchorRect.left, vw - POPOVER_W - MARGIN))
       : Math.max(MARGIN, (vw - POPOVER_W) / 2);
-
-    // Vertical: prefer below tile, fallback above, final clamp keeps it on-screen.
     let top, origin;
     if (anchorRect) {
       const spaceBelow = vh - anchorRect.bottom - GAP;
@@ -343,29 +348,39 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
       top    = Math.max(MARGIN, (vh - h) / 2);
       origin = 'center center';
     }
+    return { left, top, origin };
+  });
 
-    setPos({ left, top, origin });
-  }, []); // anchorRect is mount-stable; runs once after first paint
+  // Swipe-down to dismiss on mobile.
+  const handleTouchStart = e => { touchStartY.current = e.touches[0].clientY; };
+  const handleTouchMove  = e => {
+    if (touchStartY.current === null) return;
+    if (e.touches[0].clientY - touchStartY.current > 60) onClose?.();
+  };
+  const handleTouchEnd   = () => { touchStartY.current = null; };
 
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose?.(); };
-    const onScroll = () => onClose?.();
     const onResize = () => onClose?.();
     const onPointerDown = e => {
       if (popoverRef.current && !popoverRef.current.contains(e.target)) onClose?.();
     };
     window.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', onResize);
-    // pointerdown fires before click so switching directly to another tile
-    // works in one motion: this popover closes, the new tile's onClick opens
-    // its own popover, no double-tap needed.
     window.addEventListener('pointerdown', onPointerDown, true);
+    // Delay scroll-to-close by one frame — avoids false positives from any
+    // layout reflow that fires a synthetic scroll event on initial mount.
+    let onScroll;
+    const tid = setTimeout(() => {
+      onScroll = () => onClose?.();
+      window.addEventListener('scroll', onScroll, true);
+    }, 120);
     return () => {
       window.removeEventListener('keydown', onKey);
-      window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onResize);
       window.removeEventListener('pointerdown', onPointerDown, true);
+      clearTimeout(tid);
+      if (onScroll) window.removeEventListener('scroll', onScroll, true);
     };
   }, [onClose]);
 
@@ -397,9 +412,12 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
         ref={popoverRef}
         role="dialog"
         aria-label={labelName}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
           position:'fixed',
-          left: pos ? pos.left : -9999, top: pos ? pos.top : -9999,
+          left: pos.left, top: pos.top,
           width: POPOVER_W, zIndex: 290,
           maxHeight: `calc(100dvh - ${MARGIN * 2}px)`,
           overflowY: 'auto',
@@ -409,9 +427,8 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
           borderRadius:14,
           boxShadow:`0 18px 50px rgba(0,0,0,.55), 0 0 0 1px ${accent}22, 0 0 30px ${accent}1f`,
           padding:'14px 16px 12px',
-          transformOrigin: pos?.origin ?? 'top center',
-          animation: pos ? 'tdpIn 240ms cubic-bezier(.18,.9,.32,1.18) both' : 'none',
-          visibility: pos ? 'visible' : 'hidden',
+          transformOrigin: pos.origin,
+          animation: 'tdpIn 240ms cubic-bezier(.18,.9,.32,1.18) both',
         }}
       >
         <div style={{display:'flex', alignItems:'flex-start', gap:12}}>
@@ -707,7 +724,7 @@ function TrophyTile({ a, t, fmtDate, onOpen }) {
               letterSpacing:1, padding:'2px 6px', borderRadius:8,
               border:`1px solid ${unlocked ? tierC + '55' : 'var(--brd)'}`,
               background: unlocked ? `${tierC}11` : 'transparent',
-            }}>{max_level === 1 ? (unlocked ? '✓' : '🔒') : (isMax ? 'MAX 👑' : `Lv ${level}`)}</div>
+            }}>{max_level === 1 ? (unlocked ? '✓' : '🔒') : (isMax ? 'MAX 👑' : `Lv ${level}/${max_level}`)}</div>
           </div>
         </div>
 

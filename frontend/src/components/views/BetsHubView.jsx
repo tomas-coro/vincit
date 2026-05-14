@@ -14,7 +14,7 @@ export default function BetsHubView({
   // Consensual-resolve
   onConfirmOutcome, onWithdrawResolve, onOvertime,
   // Vault-specific
-  onReveal, vaultUnlocked, onPinRequest, vaultPin,
+  onReveal, vaultUnlocked, onPinRequest, vaultPin, onSetVaultPin,
   // Empty-state CTA (passed through to BetsView/VaultView)
   onOpenCreate,
   pendingResolveIds,
@@ -85,7 +85,7 @@ export default function BetsHubView({
           user={user} profiles={profiles} bets={bets} cats={cats}
           isDesktop={isDesktop}
           onReveal={onReveal} onFlame={onFlame}
-          unlocked={vaultUnlocked} onPinRequest={onPinRequest} vaultPin={vaultPin}
+          unlocked={vaultUnlocked} onPinRequest={onPinRequest} vaultPin={vaultPin} onSetVaultPin={onSetVaultPin}
           onDelete={onDelete} onEdit={onEdit}
           onOpenCreate={onOpenCreate}
         />

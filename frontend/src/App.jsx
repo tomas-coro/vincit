@@ -1639,7 +1639,7 @@ export default function App() {
                 onResolve={b => setResolveBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame}
                 reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto}
                 onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can}
-                onReveal={b => setRevealBet(b)} vaultUnlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin}
+                onReveal={b => setRevealBet(b)} vaultUnlocked={vaultUnlocked} onPinRequest={() => setShowPin(true)} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin}
                 onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)}
                 onOpenCreate={() => setShowCreate(true)}
                 pendingResolveIds={pendingResolveIds}

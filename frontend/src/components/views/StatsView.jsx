@@ -18,6 +18,23 @@ const S = {
 
 const Bdg=({c,bg,children})=><span style={{...S.bdg,background:bg,color:c}}>{children}</span>;
 
+function useCountUp(target, duration = 650) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!target) { setVal(0); return; }
+    const start = Date.now();
+    let raf;
+    const tick = () => {
+      const p = Math.min((Date.now() - start) / duration, 1);
+      setVal(Math.round(target * (1 - Math.pow(1 - p, 3)))); // easeOutCubic
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return val;
+}
+
 export default function StatsView({user,profiles,groupMembers,credits,bets,cats,isDesktop,onOpenCreate}){
   const { t } = useLang();
   const toast = useToast();
@@ -107,12 +124,17 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
     ro.observe(sparkRef.current);
     return () => ro.disconnect();
   }, []);
+  const animBal  = useCountUp(Math.round(credits[user] ?? 0));
+  const animWon  = useCountUp(won.length);
+  const animLost = useCountUp(lost.length);
+  const animWr   = useCountUp(wr);
+
   // Editorial balance hero — single giant Playfair number, tracked meta above
   const balanceCard=(
     <div style={{padding:"4px 0 26px", borderBottom:"1px solid var(--rule)", marginBottom:0}}>
       <div className="bc-meta" style={{marginBottom:8}}>{t('stats_view.balance')}</div>
       <div className="bc-num" style={{fontSize: 88, color:"var(--gold)", lineHeight:.95}}>
-        {Math.round(credits[user] ?? 0)}<span style={{fontSize:'0.4em', color:'var(--dim)', marginLeft:10, fontWeight:400}}>₡</span>
+        {animBal}<span style={{fontSize:'0.4em', color:'var(--dim)', marginLeft:10, fontWeight:400}}>₡</span>
       </div>
       <div style={{fontSize:13,color:net>=0?"var(--grn)":"var(--red)",marginTop:10,fontWeight:600,letterSpacing:'.02em'}}>
         {net>=0?t('stats_view.net_pos',{n:Math.abs(net)}):t('stats_view.net_neg',{n:Math.abs(net)})}
@@ -139,9 +161,9 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
   const statsGrid=(
     <div style={{display:"flex", marginBottom:0, padding:"22px 0", borderBottom:"1px solid var(--rule)"}}>
       {[
-        {l:t('stats_view.won'), v:won.length, c:"var(--grn)"},
-        {l:t('stats_view.lost'), v:lost.length, c:"var(--red)"},
-        {l:t('stats_view.win_rate'), v:`${wr}%`, c:wr>=50?"var(--grn)":"var(--red)"},
+        {l:t('stats_view.won'), v:animWon, c:"var(--grn)"},
+        {l:t('stats_view.lost'), v:animLost, c:"var(--red)"},
+        {l:t('stats_view.win_rate'), v:`${animWr}%`, c:wr>=50?"var(--grn)":"var(--red)"},
       ].map((s,i) => (
         <div key={s.l} style={{flex:1, textAlign:i===0?'left':'center', borderLeft: i===0?'none':'1px solid var(--rule)', paddingLeft:i===0?0:14}}>
           <div className="bc-num" style={{fontSize:36, color:s.c}}>{s.v}</div>
