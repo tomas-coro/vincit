@@ -76,6 +76,8 @@ export const getFriendProfile   = (userId)       => req('GET',    `/friends/${us
 export const getMyFriendCode    = ()             => req('GET',    '/friends/code/mine');
 export const regenFriendCode    = ()             => req('POST',   '/friends/code/regenerate');
 export const redeemFriendCode   = (code)         => req('POST',   '/friends/code/redeem', { code });
+export const getPrivacy         = ()             => req('GET',    '/auth/privacy');
+export const setPrivacy         = (updates)      => req('POST',   '/auth/privacy', updates);
 
 // Bets
 export const createBet      = (data)         => req('POST',   '/bets', data);

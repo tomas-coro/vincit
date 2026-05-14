@@ -307,6 +307,18 @@ const pool = new Pool({
     ALTER TABLE users ADD COLUMN IF NOT EXISTS friend_code TEXT UNIQUE;
   `);
 
+  // Per-user privacy settings. Each section can be one of:
+  //   'public'  — visible to anyone sharing a group with the user
+  //   'friends' — visible only to confirmed friends
+  //   'private' — visible only to the user themself
+  // Default 'public' preserves the existing "same-group default
+  // visibility" behavior introduced when the discovery flow shipped.
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy_trophies TEXT NOT NULL DEFAULT 'public';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy_stats    TEXT NOT NULL DEFAULT 'public';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy_groups   TEXT NOT NULL DEFAULT 'public';
+  `);
+
   // Consensual-resolve fields. When a bet has an opponent, /resolve no longer
   // settles unilaterally — it parks a proposed outcome here, and the bet
   // only settles once the OTHER party confirms the same outcome. If they

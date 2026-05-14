@@ -232,8 +232,76 @@ router.get('/me', async (req, res) => {
       inviteCode = roomRes.rows[0]?.paired_at ? null : roomRes.rows[0]?.invite_code;
       paired     = partnerRes.rows.length > 0;
     }
-    res.json({ id:u.id, name:u.name, avatar:u.avatar, avatar_url:u.avatar_url, color_key:u.color_key, room_id:u.room_id, invite_code:inviteCode, paired, is_admin: u.is_admin === true, fresh_reset_at: u.fresh_reset_at == null ? null : Number(u.fresh_reset_at) });
+    res.json({
+      id:u.id, name:u.name, avatar:u.avatar, avatar_url:u.avatar_url, color_key:u.color_key,
+      room_id:u.room_id, invite_code:inviteCode, paired,
+      is_admin: u.is_admin === true,
+      fresh_reset_at: u.fresh_reset_at == null ? null : Number(u.fresh_reset_at),
+      privacy: {
+        trophies: u.privacy_trophies || 'public',
+        stats:    u.privacy_stats    || 'public',
+        groups:   u.privacy_groups   || 'public',
+      },
+    });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// GET/POST /api/auth/privacy — read or update the caller's privacy
+// settings. Both endpoints return the current settings so the client
+// can sync without an extra round-trip.
+const PRIVACY_VALUES = new Set(['public', 'friends', 'private']);
+router.get('/privacy', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    const { userId } = jwt.verify(authHeader.slice(7), SECRET);
+    const { rows } = await db.query(
+      'SELECT privacy_trophies, privacy_stats, privacy_groups FROM users WHERE id=$1',
+      [userId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'User not found' });
+    res.json({
+      trophies: rows[0].privacy_trophies || 'public',
+      stats:    rows[0].privacy_stats    || 'public',
+      groups:   rows[0].privacy_groups   || 'public',
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+router.post('/privacy', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    const { userId } = jwt.verify(authHeader.slice(7), SECRET);
+    const incoming = req.body || {};
+    // Validate any provided fields; reject unknown values to avoid
+    // accidentally widening visibility because of a typo.
+    const updates = {};
+    for (const key of ['trophies', 'stats', 'groups']) {
+      const v = incoming[key];
+      if (v == null) continue;
+      if (!PRIVACY_VALUES.has(v)) return res.status(400).json({ error: 'invalid_value' });
+      updates[key] = v;
+    }
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'no_fields' });
+    await db.query(
+      `UPDATE users SET
+         privacy_trophies = COALESCE($1, privacy_trophies),
+         privacy_stats    = COALESCE($2, privacy_stats),
+         privacy_groups   = COALESCE($3, privacy_groups)
+       WHERE id=$4`,
+      [updates.trophies ?? null, updates.stats ?? null, updates.groups ?? null, userId]
+    );
+    const { rows } = await db.query(
+      'SELECT privacy_trophies, privacy_stats, privacy_groups FROM users WHERE id=$1',
+      [userId]
+    );
+    res.json({
+      trophies: rows[0]?.privacy_trophies || 'public',
+      stats:    rows[0]?.privacy_stats    || 'public',
+      groups:   rows[0]?.privacy_groups   || 'public',
+    });
+  } catch (e) { console.error('[privacy:set]', e); res.status(500).json({ error: 'Server error' }); }
 });
 
 // POST /api/auth/avatar — upload custom avatar image (base64 data URL)

@@ -526,16 +526,32 @@ function makeRouter(broadcastUpdate) {
       }
 
       const { rows: userRows } = await db.query(
-        'SELECT id, name, avatar, avatar_url, color_key FROM users WHERE id=$1',
+        `SELECT id, name, avatar, avatar_url, color_key,
+                privacy_trophies, privacy_stats, privacy_groups
+           FROM users WHERE id=$1`,
         [them]
       );
       const profile = userRows[0];
       if (!profile) return res.status(404).json({ error: 'not_found' });
 
-      const [unlocked, progress] = await Promise.all([
-        listForUser(them),
-        computeProgressFor(them),
-      ]);
+      // Privacy resolver: takes the section's stored setting and the
+      // current viewer's relationship to the target, returns true if
+      // the section should be sent. Self always sees everything; the
+      // route already gated 'not_visible' upstream so by the time we
+      // get here viewer is at minimum a group-mate.
+      const canSee = (setting) => {
+        if (setting === 'public')  return true;            // shared-group OK
+        if (setting === 'friends') return isFriend;
+        if (setting === 'private') return false;           // even friends are blocked
+        return true;
+      };
+      const seeTrophies = canSee(profile.privacy_trophies);
+      const seeStats    = canSee(profile.privacy_stats);
+      const seeGroups   = canSee(profile.privacy_groups);
+
+      const [unlocked, progress] = seeTrophies
+        ? await Promise.all([listForUser(them), computeProgressFor(them)])
+        : [[], {}];
 
       // Joint stats vs me
       const { rows: jointRows } = await db.query(
@@ -577,27 +593,32 @@ function makeRouter(broadcastUpdate) {
 
       // Cross-app totals used by the "scout report" comparison card —
       // wins/losses across every group the friend is in, plus their
-      // global credit balance. Privacy: only exposed because the
-      // requester is already a confirmed friend (checked above).
-      const { rows: winLossRows } = await db.query(
-        `SELECT status, COUNT(*)::int AS n
-           FROM bets
-          WHERE creator = $1 AND status IN ('won','lost')
-          GROUP BY status`,
-        [them]
-      );
-      const friendWins   = winLossRows.find(r => r.status === 'won')?.n  || 0;
-      const friendLosses = winLossRows.find(r => r.status === 'lost')?.n || 0;
-      const { rows: credRows } = await db.query(
-        'SELECT amount FROM credits WHERE "user"=$1', [them]
-      );
-      const friendCredits = Math.round(credRows[0]?.amount ?? 100);
+      // global credit balance. Skipped entirely when the target's
+      // privacy_stats setting blocks the current viewer.
+      let friendWins = 0, friendLosses = 0, friendCredits = 100;
+      if (seeStats) {
+        const { rows: winLossRows } = await db.query(
+          `SELECT status, COUNT(*)::int AS n
+             FROM bets
+            WHERE creator = $1 AND status IN ('won','lost')
+            GROUP BY status`,
+          [them]
+        );
+        friendWins   = winLossRows.find(r => r.status === 'won')?.n  || 0;
+        friendLosses = winLossRows.find(r => r.status === 'lost')?.n || 0;
+        const { rows: credRows } = await db.query(
+          'SELECT amount FROM credits WHERE "user"=$1', [them]
+        );
+        friendCredits = Math.round(credRows[0]?.amount ?? 100);
+      }
 
-      // Groups list — if we're confirmed friends, return every group
-      // they're in. Otherwise (visible-only-because-of-shared-group),
-      // return just the groups we share, so we don't leak group
-      // memberships the viewer has no reason to know about.
-      const groupsSql = isFriend
+      // Groups list — privacy_groups gates the "all my groups" view; the
+      // shared-only view always slips through because the viewer already
+      // sees those rooms in their own list. So if the viewer is a friend
+      // AND privacy_groups allows, we return every group; otherwise we
+      // narrow to the intersection with the viewer's groups.
+      const showAllGroups = isFriend && seeGroups;
+      const groupsSql = showAllGroups
         ? `SELECT r.id, r.name, r.emoji
              FROM rooms r
              JOIN user_groups ug ON ug.group_id = r.id
@@ -612,7 +633,7 @@ function makeRouter(broadcastUpdate) {
                 WHERE my.user_id = $2 AND his.user_id = $1
              )
              ORDER BY r.name`;
-      const { rows: groupsRows } = await db.query(groupsSql, isFriend ? [them] : [them, me]);
+      const { rows: groupsRows } = await db.query(groupsSql, showAllGroups ? [them] : [them, me]);
 
       res.json({
         profile,
@@ -622,11 +643,14 @@ function makeRouter(broadcastUpdate) {
         trophyPoints,
         isFriend,
         groups: groupsRows,
-        stats: {
+        // Privacy flags echoed back so the client can render "Profilo
+        // riservato" placeholders where a section was withheld.
+        visibility: { trophies: seeTrophies, stats: seeStats, groups: seeGroups },
+        stats: seeStats ? {
           wins:    friendWins,
           losses:  friendLosses,
           credits: friendCredits,
-        },
+        } : null,
         vsMe: {
           iWon, iLost,
           total: iWon + iLost,

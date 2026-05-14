@@ -40,6 +40,24 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
     try { localStorage.setItem('bc_settings_intro_seen', '1'); } catch {}
     setIntroDismissed(true);
   };
+  // Privacy controls — fetched once, mutated optimistically on click.
+  const [privacy, setPrivacyState] = useState(null);
+  useEffect(() => {
+    api.getPrivacy().then(setPrivacyState).catch(() => {});
+  }, []);
+  const updatePrivacy = async (key, value) => {
+    const prev = privacy;
+    // Optimistic update so the segmented control feels instant.
+    setPrivacyState(p => ({ ...(p || {}), [key]: value }));
+    try {
+      const fresh = await api.setPrivacy({ [key]: value });
+      setPrivacyState(fresh);
+    } catch (e) {
+      console.error('[privacy:set]', e);
+      setPrivacyState(prev);
+      toast.error('Errore — riprova');
+    }
+  };
   // Backward-compat: if `can` is missing, fall back to isAdmin gating
   const allow = perm => typeof can === 'function' ? can(perm) : !!isAdmin;
   const canCats     = allow('manage_categories');
@@ -163,6 +181,58 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
             }}>×</button>
         </div>
       )}
+
+      {/* PRIVACY — 3 rows of segmented controls (trophies / stats / groups)
+          each can be Public / Friends / Private. Public means anyone
+          sharing a group can see; Private means even confirmed friends
+          can't. Updates fire on click; backend echoes back the canonical
+          state so we don't drift. */}
+      {privacy && (() => {
+        const SECTIONS = [
+          { key: 'trophies', label: t('settings.privacy_trophies'),  body: t('settings.privacy_trophies_desc') },
+          { key: 'stats',    label: t('settings.privacy_stats'),     body: t('settings.privacy_stats_desc') },
+          { key: 'groups',   label: t('settings.privacy_groups'),    body: t('settings.privacy_groups_desc') },
+        ];
+        const LEVELS = [
+          { value: 'public',  label: '🌍 ' + t('settings.privacy_public') },
+          { value: 'friends', label: '🤝 ' + t('settings.privacy_friends') },
+          { value: 'private', label: '🔒 ' + t('settings.privacy_private') },
+        ];
+        return (
+          <>
+            <SecLabel>{t('settings.privacy_title')}</SecLabel>
+            {SECTIONS.map(s => (
+              <div key={s.key} style={{ ...S.card, marginBottom: 4 }}>
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{s.label}</div>
+                  <div style={{ fontSize: 12, color: 'var(--dim)', lineHeight: 1.4, marginTop: 3 }}>
+                    {s.body}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {LEVELS.map(lv => {
+                    const active = privacy[s.key] === lv.value;
+                    return (
+                      <button key={lv.value}
+                        onClick={() => !active && updatePrivacy(s.key, lv.value)}
+                        aria-pressed={active}
+                        style={{
+                          padding: '7px 14px', borderRadius: 999, cursor: active ? 'default' : 'pointer',
+                          border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
+                          background: active ? 'var(--gold)1a' : 'transparent',
+                          color: active ? 'var(--gold)' : 'var(--dim)',
+                          fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
+                          letterSpacing: '.04em',
+                          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+                        }}>{lv.label}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </>
+        );
+      })()}
 
       {/* LANGUAGE */}
       <SecLabel>{t('settings.lang_label')}</SecLabel>
