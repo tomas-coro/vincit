@@ -321,7 +321,6 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
   const tierC = tierFor(level);
   const accent = a.unlocked ? tierC : 'var(--mut)';
 
-  const showFirstAndMax = max_level > 1 && a.firstUnlockedAt && a.unlockedAt && a.firstUnlockedAt !== a.unlockedAt;
 
   const popoverRef = useRef(null);
   const touchStartY = useRef(null);
@@ -479,19 +478,40 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
               fontSize:10, letterSpacing:'.16em', textTransform:'uppercase',
               color:'var(--mut)', fontFamily:"'Manrope',sans-serif", fontWeight:700,
             }}>🔒 {t('trophies.detail_locked')}</div>
-          ) : showFirstAndMax ? (
-            <>
-              <Row label={t('trophies.detail_first')} value={fmtDate(a.firstUnlockedAt)} />
-              <Row label={t('trophies.detail_max')}   value={fmtDate(a.unlockedAt)} kicker={`${t('trophies.detail_level')} ${level}/${max_level}`} />
-            </>
+          ) : max_level <= 1 ? (
+            <Row label={t('trophies.detail_unlocked')} value={fmtDate(a.unlockedAt || a.firstUnlockedAt)} />
           ) : (
-            <>
-              <Row label={t('trophies.detail_unlocked')} value={fmtDate(a.unlockedAt || a.firstUnlockedAt)} />
-              {max_level > 1 && (
-                <Row label={t('trophies.detail_level')}
-                  value={`${level}/${max_level}${isMax ? ' · MAX' : ''}`} />
-              )}
-            </>
+            Array.from({ length: max_level }, (_, i) => i + 1).map(lv => {
+              const entry = (a.levelHistory || []).find(h => h.level === lv);
+              const lvColor = tierFor(lv);
+              return (
+                <div key={lv} style={{
+                  display:'flex', justifyContent:'space-between', alignItems:'center',
+                  padding:'7px 0', borderTop:'1px solid var(--rule)',
+                }}>
+                  <div style={{display:'flex', alignItems:'center', gap:7}}>
+                    <div style={{
+                      width:6, height:6, borderRadius:'50%', flexShrink:0,
+                      background: entry ? lvColor : 'var(--brd)',
+                    }}/>
+                    <span style={{
+                      fontSize:11, fontFamily:"'Manrope',sans-serif", fontWeight:700,
+                      letterSpacing:'.04em',
+                      color: entry ? (lv === level ? lvColor : 'var(--txt)') : 'var(--mut)',
+                    }}>
+                      Liv. {lv}{lv === max_level ? ' · MAX' : ''}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize:12, fontWeight:700,
+                    color: entry ? 'var(--txt)' : 'var(--mut)',
+                    fontFamily:"'Manrope',sans-serif", fontVariantNumeric:'tabular-nums',
+                  }}>
+                    {entry ? fmtDate(entry.unlocked_at) : '—'}
+                  </span>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
