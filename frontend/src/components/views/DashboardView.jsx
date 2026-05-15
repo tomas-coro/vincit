@@ -33,6 +33,7 @@ import BetCard from '../BetCard.jsx';
 import { StreakInline } from '../StreakBadge.jsx';
 import DieFace from '../DieFace.jsx';
 import BetListModal from '../modals/BetListModal.jsx';
+import RankingModal from '../modals/RankingModal.jsx';
 
 // Returns trailing consecutive {winStreak, lossStreak} for a given user, based on their bets.
 function currentStreaks(bets, userId) {
@@ -65,6 +66,7 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
   // in the form trail — opens BetListModal scoped to just that one bet
   // so they can see "which bet was this".
   const [betListData, setBetListData] = useState(null);
+  const [rankingOpen, setRankingOpen] = useState(false);
   // 3-tap activation state for the streak-emoji easter eggs (ice / phoenix).
   // Each tap pulses the emoji + resets a 1.8s timeout; the 3rd tap inside
   // that window opens the matching overlay. Counter resets after firing.
@@ -262,6 +264,21 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
             <div style={{fontSize:12,color:'var(--dim)'}}>{t('dashboard.solo_hint')}</div>
           </div>
         )}
+
+        {/* Report CTA */}
+        <button
+          onClick={() => setRankingOpen(true)}
+          style={{
+            marginTop:12, width:'100%', padding:'7px 0',
+            background:'transparent', border:'1px solid var(--gold)33',
+            borderRadius:8, cursor:'pointer',
+            fontFamily:"'Manrope',sans-serif", fontSize:10, fontWeight:700,
+            letterSpacing:'.2em', textTransform:'uppercase', color:'var(--gold)',
+            WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
+          }}
+        >
+          Vedi report completo →
+        </button>
       </div>
     );
   })();
@@ -949,6 +966,15 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
         profiles={profiles}
         userId={user}
         onClose={() => setBetListData(null)}
+      />
+      <RankingModal
+        open={rankingOpen}
+        onClose={() => setRankingOpen(false)}
+        rankRows={rankRows}
+        bets={bets}
+        profiles={profiles}
+        credits={credits}
+        user={user}
       />
     </div>
   );
