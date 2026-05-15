@@ -48,6 +48,7 @@ const IceEggOverlay      = lazy(() => import('./components/IceEggOverlay.jsx'));
 const PhoenixEggOverlay  = lazy(() => import('./components/PhoenixEggOverlay.jsx'));
 const OnboardingTour     = lazy(() => import('./components/OnboardingTour.jsx'));
 const TrophyUnlockOverlay= lazy(() => import('./components/TrophyUnlockOverlay.jsx'));
+const NotifInbox         = lazy(() => import('./components/modals/NotifInbox.jsx'));
 const DieFace            = lazy(() => import('./components/DieFace.jsx'));
 const Coin3D             = lazy(() => import('./components/Coin.jsx'));
 
@@ -284,7 +285,7 @@ function DieRollOverlay({ open, onClose, onEggUnlock }) {
           if (l2JustEarned) {
             api.unlockSecretAchievement('egg_dice', 2)
               .then(r2 => {
-                if (!r2?.alreadyUnlocked) onEggUnlockRef.current?.('egg_dice');
+                if (!r2?.alreadyUnlocked) onEggUnlockRef.current?.('egg_dice', 2);
                 // Always set the local flag — even if alreadyUnlocked — so
                 // we don't re-call the API on every subsequent roll.
                 try { localStorage.setItem(DIE_L2_FIRED, '1'); } catch {}
@@ -891,6 +892,7 @@ export default function App() {
   const [dieRollOpen,     setDieRollOpen]     = useState(false); // easter egg #1 (dice)
   const [iceEggOpen,      setIceEggOpen]      = useState(false); // easter egg #4 (❄️ streak)
   const [phoenixEggOpen,  setPhoenixEggOpen]  = useState(false); // easter egg #5 (🔥 streak)
+  const [inboxOpen,       setInboxOpen]       = useState(false);
   const [eggTick,         setEggTick]         = useState(0);     // bumps after a secret unlock so trophy polling refreshes
   const [pendingFriendCount, setPendingFriendCount] = useState(0);
 
@@ -1033,6 +1035,92 @@ export default function App() {
     prevFriendCountRef.current = pendingFriendCount;
   }, [pendingFriendCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ─── In-app notification inbox ────────────────────────────────────
+  const [inboxItems, setInboxItems] = useState([]);
+  const inboxUserRef = useRef(user);
+  useEffect(() => { inboxUserRef.current = user; }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const stored = JSON.parse(localStorage.getItem(`bc_inbox_${user}`) || '[]');
+      setInboxItems(Array.isArray(stored) ? stored : []);
+    } catch { setInboxItems([]); }
+  }, [user]);
+
+  // Stable ref-based adder so callers with [] deps (onEggFired) can still write notifs.
+  const addInboxNotifRef = useRef(null);
+  const addInboxNotif = (notif) => {
+    const u = inboxUserRef.current;
+    if (!u) return;
+    const key = `bc_inbox_${u}`;
+    let prev = [];
+    try { prev = JSON.parse(localStorage.getItem(key) || '[]'); } catch {}
+    if (!Array.isArray(prev)) prev = [];
+    // Dedup: same betId+type within 5 min
+    if (notif.betId && prev.some(p => p.betId === notif.betId && p.type === notif.type && Date.now() - p.at < 300000)) return;
+    const item = { ...notif, id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, at: Date.now(), read: false };
+    const next = [item, ...prev].slice(0, 50);
+    localStorage.setItem(key, JSON.stringify(next));
+    setInboxItems(next);
+  };
+  addInboxNotifRef.current = addInboxNotif;
+
+  // Watch bets state for new partner bets and result changes
+  const prevBetsRef2 = useRef(null);
+  const betsInboxReadyRef = useRef(false);
+  useEffect(() => {
+    if (!user || !bets || !profiles) return;
+    if (!betsInboxReadyRef.current) {
+      betsInboxReadyRef.current = true;
+      prevBetsRef2.current = [...bets];
+      return;
+    }
+    const prev = prevBetsRef2.current || [];
+    for (const b of bets) {
+      const prevB = prev.find(p => p.id === b.id);
+      if (!prevB && b.creator !== user && !b.isSecret && ['active','pending'].includes(b.status)) {
+        addInboxNotifRef.current?.({
+          type: 'new_bet', icon: '🎯',
+          title: `${profiles[b.creator]?.name || 'Qualcuno'} ha fatto una bet`,
+          body: `"${b.title.slice(0,45)}" · ${b.stake} ₡`,
+          betId: b.id,
+        });
+      }
+      if (prevB && prevB.status === 'active' && b.status === 'won' && (b.creator === user || b.opponent === user)) {
+        addInboxNotifRef.current?.({
+          type: 'won', icon: '✦',
+          title: 'Bet vinta!',
+          body: `"${b.title.slice(0,40)}" · +${(b.potentialWin||0) - (b.stake||0)} ₡`,
+          betId: b.id,
+        });
+      }
+      if (prevB && prevB.status === 'active' && b.status === 'lost' && (b.creator === user || b.opponent === user)) {
+        addInboxNotifRef.current?.({
+          type: 'lost', icon: '✗',
+          title: 'Bet persa',
+          body: `"${b.title.slice(0,40)}" · −${b.stake} ₡`,
+          betId: b.id,
+        });
+      }
+    }
+    prevBetsRef2.current = [...bets];
+  }, [bets, user, profiles]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const markInboxRead = useCallback(() => {
+    if (!user) return;
+    const next = inboxItems.map(x => ({ ...x, read: true }));
+    localStorage.setItem(`bc_inbox_${user}`, JSON.stringify(next));
+    setInboxItems(next);
+  }, [user, inboxItems]);
+
+  const clearInbox = useCallback(() => {
+    if (!user) return;
+    localStorage.setItem(`bc_inbox_${user}`, '[]');
+    setInboxItems([]);
+  }, [user]);
+
+  const inboxUnread = inboxItems.filter(x => !x.read).length;
+
   // ─── Trophy unlock watcher ─────────────────────────────────────────
   // Detect new unlocked levels by polling /api/achievements whenever the
   // bets list changes (which happens on every SSE refresh) and queue an
@@ -1092,11 +1180,9 @@ export default function App() {
   // the trophy was already unlocked server-side (in which case the
   // baseline-diff path would silently skip it). We also pre-seed baseline
   // and bump eggTick so the legacy poll path stays consistent.
-  const onEggFired = useCallback((id) => {
+  const onEggFired = useCallback((id, level = 1) => {
     const meta = EGG_TROPHY_META[id];
     if (!meta) return;
-    // First-time tip for the 3-tap streak eggs (ice/phoenix). One LS flag
-    // covers both so the user reads it only once across the two eggs.
     let attachTip = false;
     if (id === 'egg_ice' || id === 'egg_phoenix') {
       try {
@@ -1107,19 +1193,19 @@ export default function App() {
       } catch {}
     }
     setTrophyQueue(q => {
-      // Dedup — never queue the same egg twice in a row.
-      if (q.some(t => t.id === id && t.level === 1)) return q;
-      return [...q, { id, icon: meta.icon, level: 1, max_level: 1, tip: attachTip ? 'egg_first_tip' : null }];
+      if (q.some(t => t.id === id && t.level === level)) return q;
+      return [...q, { id, icon: meta.icon, level, max_level: level, tip: attachTip ? 'egg_first_tip' : null }];
     });
     setTrophyBaseline(b => {
-      if (!b) return b; // baseline not initialized yet — nothing to keep in sync
-      const key = `${id}:1`;
+      if (!b) return b;
+      const key = `${id}:${level}`;
       if (b.has(key)) return b;
       const next = new Set(b);
       next.add(key);
       return next;
     });
     setEggTick(n => n + 1);
+    addInboxNotifRef.current?.({ type: 'trophy', icon: meta.icon, title: 'Trofeo sbloccato!', body: id });
   }, []);
 
   // notifVersion is bumped whenever the user marks the partner-notification
@@ -1129,6 +1215,14 @@ export default function App() {
   const handleNotifSeen = () => {
     if (user) { setNotifSince(user, Date.now()); setNotifVersion(v => v + 1); }
   };
+  // Initialize notifSince on first login to prevent ghost notifications
+  // from pre-existing bets appearing as "new" on a fresh device/session.
+  useEffect(() => {
+    if (user && !getNotifSince(user)) {
+      setNotifSince(user, Date.now());
+      setNotifVersion(v => v + 1);
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async data => {
     try {
@@ -1568,6 +1662,23 @@ export default function App() {
               {groupPickerEl}
             </div>
           )}
+          <div style={{ padding:'8px 20px 4px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <button onClick={() => { setInboxOpen(true); markInboxRead(); }}
+              style={{ position:'relative', background:'transparent', border:'none', cursor:'pointer',
+                display:'flex', alignItems:'center', gap:7, padding:'6px 0', fontSize:13,
+                fontFamily:"'Manrope',sans-serif", color:'var(--dim)', fontWeight:600,
+                letterSpacing:'.06em', WebkitTapHighlightColor:'transparent' }}>
+              <span style={{ fontSize:17, lineHeight:1 }}>🔔</span>
+              Notifiche
+              {inboxUnread > 0 && (
+                <span style={{ minWidth:18, height:18, padding:'0 5px', borderRadius:9,
+                  background:'var(--red)', color:'#fff',
+                  fontSize:10, fontWeight:800, fontFamily:"'Manrope',sans-serif",
+                  display:'inline-flex', alignItems:'center', justifyContent:'center',
+                }}>{inboxUnread > 9 ? '9+' : inboxUnread}</span>
+              )}
+            </button>
+          </div>
           {/* Broken-grid nav — each item lives at its own indent + font size,
               with a couple of items shifted vertically so the column zig-zags
               instead of stepping down on a perfect ladder.
@@ -1668,6 +1779,20 @@ export default function App() {
                   style={{display:'inline-block'}}
                 >₡</span></div>
               </div>
+              <button onClick={() => { setInboxOpen(true); markInboxRead(); }}
+                style={{ position:'relative', background:'transparent', border:'none', cursor:'pointer',
+                  padding:'6px 4px', fontSize:20, lineHeight:1, flexShrink:0,
+                  WebkitTapHighlightColor:'transparent' }}>
+                🔔
+                {inboxUnread > 0 && (
+                  <span style={{ position:'absolute', top:0, right:-2,
+                    minWidth:16, height:16, padding:'0 3px', borderRadius:8,
+                    background:'var(--red)', color:'#fff',
+                    fontSize:10, fontWeight:700, fontFamily:"'Manrope',sans-serif",
+                    display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1,
+                  }}>{inboxUnread > 9 ? '9+' : inboxUnread}</span>
+                )}
+              </button>
               <div
                 onClick={() => setProfileMenuOpen(true)}
                 title={t('profile.edit_title')}
@@ -1918,6 +2043,16 @@ export default function App() {
           })
           .catch(e => console.error('[egg_phoenix] unlock failed', e));
       }} />
+
+      {/* In-app notification inbox */}
+      <NotifInbox
+        open={inboxOpen}
+        onClose={() => setInboxOpen(false)}
+        items={inboxItems}
+        onMarkAllRead={markInboxRead}
+        onClearAll={clearInbox}
+        onGoToBet={() => { setView('bets'); setInboxOpen(false); }}
+      />
 
       {/* Trophy unlock animation — small banner top-center, ~3s per unlock */}
       <TrophyUnlockOverlay queue={trophyQueue} onDone={consumeTrophy} />

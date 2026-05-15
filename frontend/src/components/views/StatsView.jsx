@@ -603,6 +603,231 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
     </div>
   );
 
+  // ── Heatmap ───────────────────────────────────────────────────────
+  const heatmapCard = (() => {
+    const WEEKS = 16;
+    const today = new Date(); today.setHours(23,59,59,999);
+    const startDay = new Date(today);
+    // roll back to Monday WEEKS weeks ago
+    startDay.setDate(startDay.getDate() - (WEEKS * 7 - 1));
+    startDay.setHours(0,0,0,0);
+
+    // count bets (my own created) per day
+    const dayMap = {};
+    for (const b of bets) {
+      if (b.creator !== user) continue;
+      const d = new Date(Number(b.createdAt));
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      dayMap[key] = (dayMap[key] || 0) + 1;
+    }
+
+    // build week columns
+    const cols = [];
+    const cur = new Date(startDay);
+    while (cur <= today) {
+      const week = [];
+      for (let d = 0; d < 7; d++) {
+        const key = `${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
+        const count = dayMap[key] || 0;
+        const isFuture = cur > today;
+        week.push({ date: new Date(cur), count, isFuture });
+        cur.setDate(cur.getDate() + 1);
+      }
+      cols.push(week);
+    }
+
+    const cellColor = n => {
+      if (n === 0) return 'var(--surf)';
+      if (n === 1) return 'var(--gold)44';
+      if (n === 2) return 'var(--gold)77';
+      return 'var(--gold)';
+    };
+
+    const monthLabels = [];
+    let lastMonth = -1;
+    cols.forEach((week, wi) => {
+      const m = week[0].date.getMonth();
+      if (m !== lastMonth) {
+        monthLabels.push({ wi, label: week[0].date.toLocaleDateString('it-IT', { month: 'short' }) });
+        lastMonth = m;
+      }
+    });
+
+    return (
+      <div style={{...S.card}}>
+        <div className="bc-meta" style={{marginBottom:14}}>{t('stats_view.heatmap') || 'Attività'}</div>
+        <div style={{overflowX:'auto', paddingBottom:4}}>
+          <div style={{display:'inline-flex', flexDirection:'column', gap:0, minWidth: cols.length * 13}}>
+            {/* Month labels */}
+            <div style={{display:'flex', marginBottom:4, height:12}}>
+              {cols.map((_, wi) => {
+                const lbl = monthLabels.find(m => m.wi === wi);
+                return <div key={wi} style={{width:11, marginRight:2, fontSize:8, color:'var(--dim)',
+                  fontFamily:"'Manrope',sans-serif", letterSpacing:'.04em', overflow:'visible', whiteSpace:'nowrap'}}>
+                  {lbl ? lbl.label : ''}
+                </div>;
+              })}
+            </div>
+            {/* 7 day rows */}
+            {[0,1,2,3,4,5,6].map(di => (
+              <div key={di} style={{display:'flex', gap:2, marginBottom:2, alignItems:'center'}}>
+                {cols.map((week, wi) => {
+                  const cell = week[di];
+                  if (!cell) return <div key={wi} style={{width:11, height:11}}/>;
+                  return (
+                    <div key={wi} title={`${cell.date.toLocaleDateString('it-IT')}: ${cell.count} bet`}
+                      style={{
+                        width:11, height:11, borderRadius:2,
+                        background: cell.isFuture ? 'transparent' : cellColor(cell.count),
+                        border: cell.count > 0 ? 'none' : '1px solid var(--brd)',
+                        flexShrink:0,
+                      }}/>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{display:'flex', gap:8, marginTop:10, alignItems:'center'}}>
+          <span style={{fontSize:9, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>Meno</span>
+          {[0,1,2,3].map(n => <div key={n} style={{width:10, height:10, borderRadius:2, background:cellColor(n), border:n===0?'1px solid var(--brd)':'none'}}/>)}
+          <span style={{fontSize:9, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>Di più</span>
+        </div>
+      </div>
+    );
+  })();
+
+  // ── Season history ─────────────────────────────────────────────────
+  const [seasons, setSeasons] = useState(null);
+  const [seasonsLoading, setSeasonsLoading] = useState(false);
+  const [expandedSeason, setExpandedSeason] = useState(null);
+  useEffect(() => {
+    setSeasonsLoading(true);
+    api.getSeasons().then(rows => {
+      setSeasons(Array.isArray(rows) ? rows : []);
+    }).catch(() => setSeasons([])).finally(() => setSeasonsLoading(false));
+  }, []);
+
+  const computeSeasonLeaderboards = (betsArr, memberIds) => {
+    return memberIds.map(id => {
+      const won = betsArr.filter(b => b.creator === id && b.status === 'won');
+      const lost = betsArr.filter(b => b.creator === id && b.status === 'lost');
+      const sorted = [...betsArr.filter(b => b.creator === id && ['won','lost'].includes(b.status))]
+        .sort((a,b) => a.createdAt - b.createdAt);
+      let winStr = 0, lossStr = 0, curW = 0, curL = 0;
+      for (const b of sorted) {
+        if (b.status === 'won') { curW++; if (curW > winStr) winStr = curW; curL = 0; }
+        else { curL++; if (curL > lossStr) lossStr = curL; curW = 0; }
+      }
+      const netWon = won.reduce((s,b) => s + ((b.potentialWin||0) - (b.stake||0)), 0);
+      const netLost = lost.reduce((s,b) => s + (b.stake||0), 0);
+      const highestWin = won.length ? Math.max(...won.map(b => (b.potentialWin||0) - (b.stake||0))) : 0;
+      const biggestLoss = lost.length ? Math.max(...lost.map(b => b.stake||0)) : 0;
+      return { id, winsCount: won.length, lossCount: lost.length, netWon, netLost, highestWin, biggestLoss, winStr, lossStr };
+    });
+  };
+
+  const top5 = (arr, key, dir = 'desc') =>
+    [...arr].sort((a,b) => dir === 'desc' ? b[key] - a[key] : a[key] - b[key])
+      .filter(r => r[key] > 0).slice(0,5);
+
+  const seasonCard = (
+    <div style={{...S.card, paddingBottom:0, borderBottom:'none'}}>
+      <div className="bc-meta" style={{marginBottom:16}}>— Storico</div>
+      <div className="bc-hero" style={{fontSize: isDesktop ? 48 : 32, marginBottom:20}}>Stagioni</div>
+      {seasonsLoading && <div style={{fontSize:13, color:'var(--dim)', padding:'12px 0'}}>Caricamento…</div>}
+      {!seasonsLoading && seasons !== null && seasons.length === 0 && (
+        <div style={{fontSize:13, color:'var(--dim)', fontStyle:'italic', padding:'12px 0'}}>
+          Nessuna stagione archiviata. Il primo reset salverà automaticamente questa stagione.
+        </div>
+      )}
+      {!seasonsLoading && seasons !== null && seasons.length > 0 && (
+        <div style={{display:'flex', flexDirection:'column', gap:0}}>
+          {seasons.map(s => {
+            const betsArr = (() => { try { return Array.isArray(s.bets_json) ? s.bets_json : JSON.parse(s.bets_json||'[]'); } catch { return []; } })();
+            const creds = (() => { try { return typeof s.credits_snapshot === 'object' ? s.credits_snapshot : JSON.parse(s.credits_snapshot||'{}'); } catch { return {}; } })();
+            const isOpen = expandedSeason === s.id;
+            const totalBets = betsArr.length;
+            const wonBets = betsArr.filter(b => b.status === 'won').length;
+
+            return (
+              <div key={s.id} style={{borderBottom:'1px solid var(--rule)'}}>
+                <div onClick={() => setExpandedSeason(isOpen ? null : s.id)}
+                  style={{display:'flex', alignItems:'center', justifyContent:'space-between',
+                    padding:'16px 0', cursor:'pointer', WebkitTapHighlightColor:'transparent'}}>
+                  <div>
+                    <div style={{fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+                      fontSize:22, fontWeight:600, color:'var(--txt)', lineHeight:1}}>{s.label}</div>
+                    <div style={{fontSize:10, color:'var(--dim)', marginTop:4, letterSpacing:'.12em',
+                      fontFamily:"'Manrope',sans-serif"}}>
+                      {new Date(Number(s.archived_at)).toLocaleDateString('it-IT', {day:'numeric',month:'long',year:'numeric'})}
+                      {' · '}{totalBets} bet · {wonBets} vinte
+                    </div>
+                  </div>
+                  <span style={{fontSize:16, color:'var(--dim)', transition:'transform .2s',
+                    transform: isOpen ? 'rotate(180deg)' : 'none'}}>▾</span>
+                </div>
+
+                {isOpen && (() => {
+                  const allIds = [...new Set(betsArr.map(b => b.creator))];
+                  const rows = computeSeasonLeaderboards(betsArr, allIds);
+                  const cats = [
+                    { key:'winsCount',   label:'Bet vinte',           icon:'✦', unit:'',  dir:'desc' },
+                    { key:'lossCount',   label:'Bet perse',           icon:'✗', unit:'',  dir:'desc' },
+                    { key:'netWon',      label:'Crediti vinti',       icon:'↑', unit:'₡', dir:'desc' },
+                    { key:'netLost',     label:'Crediti persi',       icon:'↓', unit:'₡', dir:'desc' },
+                    { key:'highestWin',  label:'Vincita più alta',    icon:'★', unit:'₡', dir:'desc' },
+                    { key:'biggestLoss', label:'Perdita più pesante', icon:'▼', unit:'₡', dir:'desc' },
+                    { key:'winStr',      label:'Streak vittorie',     icon:'🔥', unit:'', dir:'desc' },
+                    { key:'lossStr',     label:'Streak sconfitte',    icon:'❄', unit:'',  dir:'desc' },
+                  ];
+                  return (
+                    <div style={{paddingBottom:20}}>
+                      <div style={{display:'grid', gridTemplateColumns: isDesktop ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)', gap:12, marginBottom:16}}>
+                        {cats.map(cat => {
+                          const board = top5(rows, cat.key, cat.dir);
+                          if (board.length === 0) return null;
+                          return (
+                            <div key={cat.key} style={{background:'var(--surf)', border:'1px solid var(--brd)', borderRadius:10, padding:'12px 14px'}}>
+                              <div style={{fontSize:9, letterSpacing:'.18em', textTransform:'uppercase',
+                                fontFamily:"'Manrope',sans-serif", color:'var(--dim)', marginBottom:10}}>
+                                {cat.icon} {cat.label}
+                              </div>
+                              {board.map((r, i) => (
+                                <div key={r.id} style={{display:'flex', alignItems:'baseline', justifyContent:'space-between',
+                                  padding:'3px 0', borderTop: i>0?'1px solid var(--rule)':'none'}}>
+                                  <div style={{display:'flex', alignItems:'baseline', gap:6, minWidth:0}}>
+                                    <span style={{fontSize:9, color:'var(--dim)', fontFamily:"'Manrope',sans-serif",
+                                      fontWeight:700, letterSpacing:'.06em', flexShrink:0}}>
+                                      {i+1}.
+                                    </span>
+                                    <span style={{fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+                                      fontSize:14, color:i===0?'var(--gold)':'var(--txt)',
+                                      whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                                      {profiles[r.id]?.name || r.id}
+                                    </span>
+                                  </div>
+                                  <span style={{fontFamily:"'Playfair Display',serif", fontSize:14,
+                                    color:i===0?'var(--gold)':'var(--dim)', flexShrink:0, marginLeft:4}}>
+                                    {r[cat.key]}{cat.unit}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   return(
     <div className="sUp">
       <div style={{marginBottom:32, paddingTop: isDesktop ? 16 : 8}}>
@@ -617,6 +842,8 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
       ):(
         <>{balanceCard}{statsGrid}{bestCard}{leaderboardCard}{h2hCard}{catCard}{hofCard}{emptyMsg}</>
       )}
+      {heatmapCard}
+      {seasonCard}
     </div>
   );
 }

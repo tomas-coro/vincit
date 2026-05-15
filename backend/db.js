@@ -459,6 +459,20 @@ const pool = new Pool({
     CREATE INDEX IF NOT EXISTS idx_bet_messages_author ON bet_messages(author_id);
   `);
 
+  // Season archives — snapshot of bets + credits taken at each /reset
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS season_archives (
+      id          SERIAL PRIMARY KEY,
+      room_id     TEXT NOT NULL,
+      season_num  INT NOT NULL DEFAULT 1,
+      archived_at BIGINT NOT NULL,
+      label       TEXT,
+      bets_json   JSONB NOT NULL,
+      credits_snapshot JSONB NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_season_archives_room ON season_archives(room_id, season_num DESC);
+  `);
+
   // Push pref for new comments under bets the user has interacted with
   // (created, opponent, target, counter-bet). Default true so people
   // discover the feature.

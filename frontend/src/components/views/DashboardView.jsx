@@ -931,14 +931,19 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
       )}
 
       {/* Partner notification — click to see those bets, ✕ to dismiss */}
-      {newPart>0&&(
+      {newPart>0&&(()=>{
+        const creators=[...new Set(newPartBets.map(b=>b.creator))];
+        const singleCreator=creators.length===1?creators[0]:null;
+        const displayName=singleCreator?profiles[singleCreator]?.name:`${newPart} ${t('dashboard.notif_many',{n:newPart})}`;
+        const displayAvatar=singleCreator?profiles[singleCreator]?.avatar:'🎯';
+        return(
         <div
-          onClick={() => { setBetListData({ title: `${profiles[other]?.name} — ${newPart===1?t('dashboard.notif_one'):t('dashboard.notif_many',{n:newPart})}`, accentColor:'var(--gold)', bets:newPartBets }); onNotifSeen?.(); }}
+          onClick={() => { setBetListData({ title: `${singleCreator?profiles[singleCreator]?.name:'Nuove bet'} — ${newPart===1?t('dashboard.notif_one'):t('dashboard.notif_many',{n:newPart})}`, accentColor:'var(--gold)', bets:newPartBets }); onNotifSeen?.(); }}
           style={{...S.card,marginBottom:12,background:`var(--gold)14`,border:"1px solid var(--gold)44",display:"flex",alignItems:"center",gap:10,cursor:"pointer",position:"relative",WebkitTapHighlightColor:"transparent"}}
         >
-          <span style={{fontSize:22}}>{profiles[other]?.avatar}</span>
+          <span style={{fontSize:22}}>{displayAvatar}</span>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontWeight:600,fontSize:13,color:"var(--gold)"}}>{profiles[other]?.name} {newPart===1?t('dashboard.notif_one'):t('dashboard.notif_many',{n:newPart})}</div>
+            <div style={{fontWeight:600,fontSize:13,color:"var(--gold)"}}>{displayName} {newPart===1?t('dashboard.notif_one'):''}</div>
             <div style={{fontSize:11,color:"var(--dim)"}}>{t('dashboard.notif_sub')} · <span style={{color:'var(--gold)',fontWeight:600}}>Vedi →</span></div>
           </div>
           <button
@@ -947,7 +952,8 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
             style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--dim)",fontSize:16,padding:"4px 6px",flexShrink:0,lineHeight:1}}
           >✕</button>
         </div>
-      )}
+        );
+      })()}
 
       {isDesktop?(
         <div style={{display:"grid",gridTemplateColumns:"minmax(0, 1.6fr) minmax(280px, 1fr)",gap:14,alignItems:"start"}}>

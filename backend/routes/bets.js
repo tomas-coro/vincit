@@ -704,13 +704,52 @@ module.exports = function(broadcastUpdate) {
   router.post('/reset', async (req, res) => {
     try {
       if (!(await requirePermission(req, res, 'reset_season'))) return;
-      await db.query('DELETE FROM bets WHERE room_id=$1', [req.activeRoomId]);
+      const roomId = req.activeRoomId;
+
+      // Archive current season before wiping
+      const { rows: betsRows } = await db.query(
+        'SELECT * FROM bets WHERE room_id=$1', [roomId]
+      );
+      if (betsRows.length > 0) {
+        const { rows: credRows } = await db.query(
+          `SELECT c."user", c.amount FROM credits c
+           JOIN users u ON c."user"=u.id WHERE u.room_id=$1`, [roomId]
+        );
+        const { rows: [maxRow] } = await db.query(
+          'SELECT COALESCE(MAX(season_num),0) AS n FROM season_archives WHERE room_id=$1', [roomId]
+        );
+        const seasonNum = (maxRow?.n || 0) + 1;
+        const credMap = {};
+        credRows.forEach(r => { credMap[r.user] = r.amount; });
+        await db.query(
+          `INSERT INTO season_archives(room_id,season_num,archived_at,label,bets_json,credits_snapshot)
+           VALUES($1,$2,$3,$4,$5,$6)`,
+          [roomId, seasonNum, Date.now(), `Stagione ${seasonNum}`,
+           JSON.stringify(betsRows), JSON.stringify(credMap)]
+        );
+      }
+
+      await db.query('DELETE FROM bets WHERE room_id=$1', [roomId]);
       await db.query(
         'UPDATE credits SET amount=100 WHERE "user" IN (SELECT id FROM users WHERE room_id=$1)',
+        [roomId]
+      );
+      broadcastUpdate(roomId);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+
+  router.get('/seasons', async (req, res) => {
+    try {
+      const { rows } = await db.query(
+        `SELECT id, season_num, archived_at, label, bets_json, credits_snapshot
+         FROM season_archives WHERE room_id=$1 ORDER BY season_num DESC`,
         [req.activeRoomId]
       );
-      broadcastUpdate(req.activeRoomId);
-      res.json({ ok: true });
+      res.json(rows);
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Server error' });
