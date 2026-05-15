@@ -189,6 +189,8 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   const sheetRef    = useRef(null);
   const backdropRef = useRef(null);
   const swipeState  = useRef({ startY: null, dragging: false });
+  // Velocity tracking: rolling window of last 5 touch points (y, t) → px/ms
+  const velRef = useRef({ points: [], velocity: 0 });
   const { t } = useLang();
   const toast = useToast();
   const isDesktop = useBreakpoint(768);
@@ -1127,6 +1129,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   // scrolls normally so it doesn't conflict with form interaction.
   const handleDragStart = e => {
     swipeState.current = { startY: e.touches[0].clientY, dragging: true };
+    velRef.current = { points: [], velocity: 0 };
     const sheet = sheetRef.current;
     if (sheet) {
       // Cancel the .sUp CSS animation — its fill-mode:both freezes
@@ -1140,11 +1143,24 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   const handleDragMove = e => {
     const { startY, dragging } = swipeState.current;
     if (!dragging) return;
-    const dy = Math.max(0, e.touches[0].clientY - startY);
+    const currentY = e.touches[0].clientY;
+    const dy = Math.max(0, currentY - startY);
+
+    // Rolling 5-point velocity window (px/ms, positive = downward)
+    const now = performance.now();
+    const pts = velRef.current.points;
+    pts.push({ y: currentY, t: now });
+    if (pts.length > 5) pts.shift();
+    if (pts.length >= 2) {
+      const first = pts[0], last = pts[pts.length - 1];
+      const dt = last.t - first.t;
+      velRef.current.velocity = dt > 0 ? (last.y - first.y) / dt : 0;
+    }
+
     const sheet = sheetRef.current;
     if (sheet) sheet.style.transform = `translateY(${dy}px)`;
     if (backdropRef.current) {
-      const op = Math.max(0, 0.78 - (dy / 280) * 0.78);
+      const op = Math.max(0, 0.78 - (dy / 300) * 0.78);
       backdropRef.current.style.background = `rgba(15,11,35,${op.toFixed(2)})`;
     }
   };
@@ -1152,22 +1168,34 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     const { startY, dragging } = swipeState.current;
     if (!dragging) return;
     swipeState.current = { startY: null, dragging: false };
-    const dy = Math.max(0, (e.changedTouches[0]?.clientY ?? startY) - startY);
+    const endY = e.changedTouches[0]?.clientY ?? startY;
+    const dy = Math.max(0, endY - startY);
+    const vel = velRef.current.velocity; // px/ms
+    velRef.current = { points: [], velocity: 0 };
+
     const sheet = sheetRef.current;
     if (!sheet) return;
-    if (dy > 100) {
-      sheet.style.transition = 'transform .26s cubic-bezier(.4,0,1,1)';
+
+    // Dismiss: drag > 80px, OR fast flick (> 0.4 px/ms) con anche solo 10px
+    const shouldDismiss = dy > 80 || (vel > 0.4 && dy > 10);
+
+    if (shouldDismiss) {
+      // Durata adattiva: flick veloce → animazione più breve (inerzia naturale)
+      const dur = vel > 1.0 ? 160 : vel > 0.5 ? 210 : 260;
+      // ease-in = accelera verso il basso, come se cadesse per gravità
+      sheet.style.transition = `transform ${dur}ms ease-in`;
       sheet.style.transform  = 'translateY(110%)';
       if (backdropRef.current) {
-        backdropRef.current.style.transition = 'background .26s ease';
+        backdropRef.current.style.transition = `background ${dur}ms ease`;
         backdropRef.current.style.background = 'rgba(15,11,35,0)';
       }
-      setTimeout(onClose, 260);
+      setTimeout(onClose, dur);
     } else {
-      sheet.style.transition = 'transform .32s cubic-bezier(.34,1.56,.64,1)';
+      // ease-out smooth senza rimbalzo — ritorno morbido
+      sheet.style.transition = 'transform .3s cubic-bezier(.25,.46,.45,.94)';
       sheet.style.transform  = 'translateY(0)';
       if (backdropRef.current) {
-        backdropRef.current.style.transition = 'background .32s ease';
+        backdropRef.current.style.transition = 'background .3s ease';
         backdropRef.current.style.background = 'rgba(15,11,35,0.78)';
       }
     }
