@@ -349,7 +349,7 @@ function DieRollOverlay({ open, onClose, onEggUnlock }) {
                   fontSize:18, opacity: seen.includes(f) ? 1 : 0.2,
                   filter: seen.includes(f) ? 'drop-shadow(0 0 6px var(--gold)88)' : 'none',
                   transition:'opacity .3s, filter .3s',
-                }}>⚄</span>
+                }}>{['⚀','⚁','⚂','⚃','⚄','⚅'][f-1]}</span>
               ))}
             </div>
             <div style={{

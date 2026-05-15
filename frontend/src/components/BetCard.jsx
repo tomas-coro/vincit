@@ -26,6 +26,20 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const [editSubsetOpen, setEditSubsetOpen] = useState(false);
   const [inviteesPeekOpen, setInviteesPeekOpen] = useState(false);
 
+  const SAVED_KEY = `bc_saved_bets_${user}`;
+  const [isSaved, setIsSaved] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`bc_saved_bets_${user}`) || '[]').includes(bet.id); }
+    catch { return false; }
+  });
+  const toggleSave = e => {
+    e.stopPropagation();
+    const prev = (() => { try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); } catch { return []; } })();
+    const next = prev.includes(bet.id) ? prev.filter(x => x !== bet.id) : [...prev, bet.id];
+    localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+    setIsSaved(!isSaved);
+    window.dispatchEvent(new Event('bc_saved_change'));
+  };
+
   const handlePhotoCapture = async dataUrl => {
     if (!onReactionPhoto) return;
     setPhotoBusy(true);
@@ -143,7 +157,6 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             : <Btn variant="grn" sm style={isDesktop?{}:{flex:1}} onClick={()=>onResolve(bet)}>{hasOpponent?t('bet_card.propose_resolve'):t('bet_card.declare')}</Btn>
           :null
       )}
-      <button onClick={()=>onFlame(bet.id)} style={{...S.btn,padding:"7px 10px",background:"transparent",border:"1px solid var(--brd)",color:bet.flamed?"#f97316":"var(--dim)",fontSize:12}}>{bet.flamed?"🔥":"🤍"}</button>
       {canEditBet&&(
         <button onClick={()=>onEdit(bet)} style={{...S.btn,padding:"7px 10px",background:"transparent",border:"1px solid var(--gold)44",color:"var(--gold)",fontSize:11}}>✏️ {t('bet_card.edit_btn')}{!isOwner && canModerate ? ' 🛡' : ''}</button>
       )}
@@ -254,15 +267,23 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                 {!isOwner&&<span style={{color:getC(profiles,bet.creator)}}> · {profiles[bet.creator]?.name}</span>}
               </div>
             </div>
-            {/* Win amount top-right: mobile only — green, no quota label.
-                Quota is now hidden everywhere; the visible primary number
-                is "what you cash in" instead of an abstract multiplier. */}
-            {!isDesktop&&!bet.isSecret&&<div style={{textAlign:"right",flexShrink:0,paddingTop:2}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:"var(--grn)",lineHeight:1,letterSpacing:'-0.02em'}}>
-                {bet.potentialWin}<span style={{fontSize:13,opacity:.7,marginLeft:3}}>₡</span>
-              </div>
-              <div className="bc-meta" style={{fontSize:7,marginTop:3}}>{t('bet_card.win')}</div>
-            </div>}
+            {/* Right column: star bookmark + win amount (mobile non-secret) */}
+            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',flexShrink:0,gap:2}}>
+              <button onClick={toggleSave} title={isSaved ? 'Rimuovi dai preferiti' : 'Salva bet'} style={{
+                background:'transparent', border:'none', cursor:'pointer',
+                padding:'2px 4px', fontSize:18, lineHeight:1,
+                color: isSaved ? 'var(--gold)' : 'var(--dim)',
+                opacity: isSaved ? 1 : 0.4,
+                WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
+                transition:'color .15s, opacity .15s',
+              }}>{isSaved ? '★' : '☆'}</button>
+              {!isDesktop&&!bet.isSecret&&<div style={{textAlign:"right",paddingTop:2}}>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:"var(--grn)",lineHeight:1,letterSpacing:'-0.02em'}}>
+                  {bet.potentialWin}<span style={{fontSize:13,opacity:.7,marginLeft:3}}>₡</span>
+                </div>
+                <div className="bc-meta" style={{fontSize:7,marginTop:3}}>{t('bet_card.win')}</div>
+              </div>}
+            </div>
           </div>
 
           {/* Badges — stake on the left, win on the right. No more

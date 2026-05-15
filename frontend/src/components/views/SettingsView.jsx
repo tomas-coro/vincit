@@ -96,6 +96,20 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
     api.getNotifPrefs(user).then(setNotifPrefs).catch(console.error);
   },[user]);
 
+  // Saved bets — stored per-user in localStorage, updated via custom event
+  const [savedIds, setSavedIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`bc_saved_bets_${user}`) || '[]'); } catch { return []; }
+  });
+  const [savedOpen, setSavedOpen] = useState(false);
+  useEffect(() => {
+    const handler = () => {
+      try { setSavedIds(JSON.parse(localStorage.getItem(`bc_saved_bets_${user}`) || '[]')); }
+      catch { setSavedIds([]); }
+    };
+    window.addEventListener('bc_saved_change', handler);
+    return () => window.removeEventListener('bc_saved_change', handler);
+  }, [user]);
+
   // Templates management
   const toast = useToast();
   const [templates, setTemplates] = useState([]);
@@ -557,6 +571,65 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
             ))}
           </div>
         )}
+      </div>
+
+      {/* SAVED BETS */}
+      <SecLabel mt={16}>★ Bet preferite</SecLabel>
+      <div style={{...S.card, marginBottom:12}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <div>
+            <div style={{fontSize:14, fontWeight:600}}>
+              {savedIds.length === 0 ? 'Nessuna bet salvata' : `${savedIds.length} bet salvat${savedIds.length === 1 ? 'a' : 'e'}`}
+            </div>
+            <div style={{fontSize:12, color:'var(--dim)', marginTop:2}}>
+              Usa ★ su ogni bet per aggiungerla qui
+            </div>
+          </div>
+          {savedIds.length > 0 && (
+            <button onClick={() => setSavedOpen(o => !o)} style={{
+              ...S.btn, padding:'6px 14px', fontSize:11,
+              background:'transparent', border:'1px solid var(--gold)44', color:'var(--gold)',
+            }}>{savedOpen ? 'Nascondi' : 'Mostra'}</button>
+          )}
+        </div>
+        {savedOpen && savedIds.length > 0 && (() => {
+          const saved = (bets || []).filter(b => savedIds.includes(b.id));
+          if (saved.length === 0) return (
+            <div style={{fontSize:12, color:'var(--dim)', marginTop:12, fontStyle:'italic'}}>
+              Le bet salvate non sono più disponibili in questo gruppo.
+            </div>
+          );
+          return (
+            <div style={{marginTop:12, display:'flex', flexDirection:'column', gap:8}}>
+              {saved.map(b => {
+                const isDone = ['won','lost','rejected'].includes(b.status);
+                const statusColor = b.status==='won' ? 'var(--grn)' : b.status==='lost' ? 'var(--red)' : 'var(--dim)';
+                return (
+                  <div key={b.id} style={{
+                    display:'flex', alignItems:'center', gap:10,
+                    padding:'10px 12px', borderRadius:10,
+                    border:'1px solid var(--brd)', background:'var(--surf)',
+                  }}>
+                    <span style={{fontSize:20, flexShrink:0, color:'var(--gold)'}}>★</span>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{
+                        fontSize:13, fontWeight:700,
+                        fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+                        whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                      }}>{b.title}</div>
+                      <div style={{fontSize:10, color:'var(--dim)', marginTop:2, letterSpacing:'.08em'}}>
+                        {b.stake} ₡ · {b.potentialWin} ₡ win
+                        {isDone && <span style={{marginLeft:6, color:statusColor, fontWeight:700}}>
+                          {b.status==='won'?'✦ Vinta':b.status==='lost'?'✗ Persa':'✕ Annullata'}
+                        </span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* VAULT PIN */}

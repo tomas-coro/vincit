@@ -745,7 +745,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
         <label style={{...S.lbl, marginBottom:0}}>{t('create.subset_label')}</label>
         <span className="bc-meta" style={{fontSize:8}}>
-          {t('create.subset_cap', { current: allowedSet.size, max: maxOthers })}
+          {allowedSet.size > 0 && t('create.subset_cap', { current: allowedSet.size, max: Math.min(maxOthers, others.length) })}
         </span>
       </div>
       <SearchInput visible={others.length >= SEARCH_THRESHOLD} />
