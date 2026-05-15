@@ -184,16 +184,124 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   // "?" button in the header for users who skipped it or forgot.
   const [coachOpen, setCoachOpen] = useState(noviceMode);
   const scrollAreaRef = useRef(null);
-  // Swipe-to-dismiss refs — must be declared here (before any conditional
-  // return) to satisfy React's rules of hooks. Used only by the mobile layout.
+  // Swipe-to-dismiss refs — declared before any conditional return (hooks rules).
   const sheetRef    = useRef(null);
   const backdropRef = useRef(null);
-  const swipeState  = useRef({ startY: null, dragging: false });
+  const scrollRef   = useRef(null); // inner scroll area — needed to detect scrollTop
+  // Stable ref for onClose so the gesture useEffect doesn't re-register on every render
+  const onCloseRef  = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   // Velocity tracking: rolling window of last 5 touch points (y, t) → px/ms
   const velRef = useRef({ points: [], velocity: 0 });
   const { t } = useLang();
   const toast = useToast();
   const isDesktop = useBreakpoint(768);
+
+  // ─── Sheet-wide swipe-to-dismiss (mobile only) ────────────────────────────
+  // Registers non-passive touchmove so we can preventDefault during dismiss.
+  // Logic: touch starts anywhere on sheet → if at scroll top + dragging down
+  // → dismiss mode; otherwise → normal scroll, no interference.
+  useEffect(() => {
+    if (isDesktop) return;
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    let startY = null;
+    let startScrollTop = 0;
+    let mode = null; // 'dismiss' | 'scroll' | null
+
+    const onStart = e => {
+      // Don't intercept touches on text inputs / selects
+      const tag = e.target?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      startY = e.touches[0].clientY;
+      startScrollTop = scrollRef.current?.scrollTop ?? 0;
+      mode = null;
+      velRef.current = { points: [], velocity: 0 };
+    };
+
+    const onMove = e => {
+      if (startY === null) return;
+      const dy = e.touches[0].clientY - startY;
+
+      // Commit to a mode after the first 6px of movement
+      if (mode === null) {
+        if (Math.abs(dy) < 6) return;
+        mode = (dy > 0 && startScrollTop <= 0) ? 'dismiss' : 'scroll';
+        if (mode === 'dismiss') {
+          const s = sheetRef.current;
+          if (s) { s.style.animation = 'none'; s.style.transition = 'none'; }
+          if (backdropRef.current) backdropRef.current.style.transition = 'none';
+        }
+      }
+      if (mode !== 'dismiss') return;
+
+      e.preventDefault(); // block native scroll during dismiss drag
+
+      const clampedDy = Math.max(0, dy);
+      const now = performance.now();
+      const pts = velRef.current.points;
+      pts.push({ y: e.touches[0].clientY, t: now });
+      if (pts.length > 5) pts.shift();
+      if (pts.length >= 2) {
+        const first = pts[0], last = pts[pts.length - 1];
+        const dt = last.t - first.t;
+        velRef.current.velocity = dt > 0 ? (last.y - first.y) / dt : 0;
+      }
+
+      const s = sheetRef.current;
+      if (s) s.style.transform = `translateY(${clampedDy}px)`;
+      if (backdropRef.current) {
+        const op = Math.max(0, 0.78 - (clampedDy / 300) * 0.78);
+        backdropRef.current.style.background = `rgba(15,11,35,${op.toFixed(2)})`;
+      }
+    };
+
+    const onEnd = e => {
+      if (startY === null) return;
+      const savedMode = mode;
+      const savedStartY = startY;
+      startY = null; startScrollTop = 0; mode = null;
+
+      if (savedMode !== 'dismiss') return;
+
+      const endY = e.changedTouches[0]?.clientY ?? savedStartY;
+      const dy = Math.max(0, endY - savedStartY);
+      const vel = velRef.current.velocity;
+      velRef.current = { points: [], velocity: 0 };
+
+      const s = sheetRef.current;
+      if (!s) return;
+
+      const shouldDismiss = dy > 80 || (vel > 0.4 && dy > 10);
+      if (shouldDismiss) {
+        const dur = vel > 1.0 ? 160 : vel > 0.5 ? 210 : 260;
+        s.style.transition = `transform ${dur}ms ease-in`;
+        s.style.transform = 'translateY(110%)';
+        if (backdropRef.current) {
+          backdropRef.current.style.transition = `background ${dur}ms ease`;
+          backdropRef.current.style.background = 'rgba(15,11,35,0)';
+        }
+        setTimeout(() => onCloseRef.current(), dur);
+      } else {
+        s.style.transition = 'transform .3s cubic-bezier(.25,.46,.45,.94)';
+        s.style.transform = 'translateY(0)';
+        if (backdropRef.current) {
+          backdropRef.current.style.transition = 'background .3s ease';
+          backdropRef.current.style.background = 'rgba(15,11,35,0.78)';
+        }
+      }
+    };
+
+    sheet.addEventListener('touchstart', onStart, { passive: true });
+    sheet.addEventListener('touchmove',  onMove,  { passive: false });
+    sheet.addEventListener('touchend',   onEnd,   { passive: true });
+    return () => {
+      sheet.removeEventListener('touchstart', onStart);
+      sheet.removeEventListener('touchmove',  onMove);
+      sheet.removeEventListener('touchend',   onEnd);
+    };
+  }, [isDesktop]);
   const catLabel = c => c && (DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label);
 
   // Other members of the group (excluding self). Falls back to "profiles minus self" if not provided yet.
@@ -1123,84 +1231,6 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
   }
 
   // ─── Mobile layout (bottom sheet) ────────────────────────────────────────
-  // Drag handlers are plain functions — refs (sheetRef, backdropRef, swipeState)
-  // are declared at the top of the component before any conditional return.
-  // Drag is captured only by the handle zone at the top; the rest of the sheet
-  // scrolls normally so it doesn't conflict with form interaction.
-  const handleDragStart = e => {
-    swipeState.current = { startY: e.touches[0].clientY, dragging: true };
-    velRef.current = { points: [], velocity: 0 };
-    const sheet = sheetRef.current;
-    if (sheet) {
-      // Cancel the .sUp CSS animation — its fill-mode:both freezes
-      // transform:translateY(0) on the element, overriding any inline
-      // style.transform we set during the drag, so the sheet won't move.
-      sheet.style.animation = 'none';
-      sheet.style.transition = 'none';
-    }
-    if (backdropRef.current) backdropRef.current.style.transition = 'none';
-  };
-  const handleDragMove = e => {
-    const { startY, dragging } = swipeState.current;
-    if (!dragging) return;
-    const currentY = e.touches[0].clientY;
-    const dy = Math.max(0, currentY - startY);
-
-    // Rolling 5-point velocity window (px/ms, positive = downward)
-    const now = performance.now();
-    const pts = velRef.current.points;
-    pts.push({ y: currentY, t: now });
-    if (pts.length > 5) pts.shift();
-    if (pts.length >= 2) {
-      const first = pts[0], last = pts[pts.length - 1];
-      const dt = last.t - first.t;
-      velRef.current.velocity = dt > 0 ? (last.y - first.y) / dt : 0;
-    }
-
-    const sheet = sheetRef.current;
-    if (sheet) sheet.style.transform = `translateY(${dy}px)`;
-    if (backdropRef.current) {
-      const op = Math.max(0, 0.78 - (dy / 300) * 0.78);
-      backdropRef.current.style.background = `rgba(15,11,35,${op.toFixed(2)})`;
-    }
-  };
-  const handleDragEnd = e => {
-    const { startY, dragging } = swipeState.current;
-    if (!dragging) return;
-    swipeState.current = { startY: null, dragging: false };
-    const endY = e.changedTouches[0]?.clientY ?? startY;
-    const dy = Math.max(0, endY - startY);
-    const vel = velRef.current.velocity; // px/ms
-    velRef.current = { points: [], velocity: 0 };
-
-    const sheet = sheetRef.current;
-    if (!sheet) return;
-
-    // Dismiss: drag > 80px, OR fast flick (> 0.4 px/ms) con anche solo 10px
-    const shouldDismiss = dy > 80 || (vel > 0.4 && dy > 10);
-
-    if (shouldDismiss) {
-      // Durata adattiva: flick veloce → animazione più breve (inerzia naturale)
-      const dur = vel > 1.0 ? 160 : vel > 0.5 ? 210 : 260;
-      // ease-in = accelera verso il basso, come se cadesse per gravità
-      sheet.style.transition = `transform ${dur}ms ease-in`;
-      sheet.style.transform  = 'translateY(110%)';
-      if (backdropRef.current) {
-        backdropRef.current.style.transition = `background ${dur}ms ease`;
-        backdropRef.current.style.background = 'rgba(15,11,35,0)';
-      }
-      setTimeout(onClose, dur);
-    } else {
-      // ease-out smooth senza rimbalzo — ritorno morbido
-      sheet.style.transition = 'transform .3s cubic-bezier(.25,.46,.45,.94)';
-      sheet.style.transform  = 'translateY(0)';
-      if (backdropRef.current) {
-        backdropRef.current.style.transition = 'background .3s ease';
-        backdropRef.current.style.background = 'rgba(15,11,35,0.78)';
-      }
-    }
-  };
-
   return (<>
     {SlotMachine}
     <div ref={backdropRef} style={{position:"fixed",inset:0,background:"rgba(15,11,35,.78)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}}>
@@ -1209,20 +1239,8 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         className="sUp"
         style={{position:'relative',background:"var(--surf)",borderRadius:"12px 12px 0 0",width:"100%",maxWidth:480,maxHeight:"92vh",display:'flex',flexDirection:'column',borderTop:"1px solid var(--rule)",boxShadow:"0 -20px 60px rgba(0,0,0,.4)"}}
       >
-        {/* Drag zone: pill + full header row — large surface, easy to grab.
-            Lives outside the scroll area so the browser doesn't fight it.
-            touchAction:'none' lets our JS handlers receive every touch. */}
-        <div
-          onTouchStart={handleDragStart}
-          onTouchMove={handleDragMove}
-          onTouchEnd={handleDragEnd}
-          style={{
-            flexShrink:0,
-            borderRadius:'12px 12px 0 0',
-            background:'var(--surf)',
-            touchAction:'none',
-          }}
-        >
+        {/* Pill + header — visual handle, gesture handled by sheet-level useEffect */}
+        <div style={{flexShrink:0, borderRadius:'12px 12px 0 0', background:'var(--surf)'}}>
           {/* Visual pill */}
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:28}}>
             <div style={{width:36,height:4,borderRadius:2,background:'var(--mut)',opacity:.5}}/>
@@ -1245,7 +1263,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
             </div>
           </div>
         </div>
-        <div style={{flex:1,overflowY:'auto',minHeight:0}}>
+        <div ref={scrollRef} style={{flex:1,overflowY:'auto',minHeight:0}}>
         <div style={{padding:"0 26px 40px"}}>
 
         {TemplatesBlock}
