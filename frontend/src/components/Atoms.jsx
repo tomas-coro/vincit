@@ -165,23 +165,23 @@ export function Avatar({profile,size=36}){
 
 // V icon + "incit" wordmark. Adapts to all themes via CSS vars.
 export function VincitWordmark({ size = 28 }) {
-  const dim = Math.round(size * 1.05);
   return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:Math.round(size*0.14), lineHeight:1 }}>
-      <svg width={dim} height={dim} viewBox="0 0 512 512" fill="none"
-           xmlns="http://www.w3.org/2000/svg" style={{ display:'block', flexShrink:0 }} aria-hidden="true">
-        <polyline points="108,88 256,388 404,88" fill="none" stroke="var(--gold)"
-          strokeWidth="72" strokeLinecap="round" strokeLinejoin="round"/>
-        <text x="182" y="238" dominantBaseline="central" textAnchor="middle"
-          fontFamily="Georgia, serif" fontSize="80" fontWeight="700"
-          fill="var(--bg)" opacity="0.7" transform="rotate(27, 182, 238)">₡</text>
-        <text x="330" y="238" dominantBaseline="central" textAnchor="middle"
-          fontFamily="Georgia, serif" fontSize="80" fontWeight="700"
-          fill="var(--bg)" opacity="0.7" transform="rotate(-27, 330, 238)">₡</text>
-      </svg>
+    <span style={{ display:'inline-flex', alignItems:'baseline', lineHeight:1 }}>
+      <span style={{
+        fontFamily:"'Cinzel', serif",
+        fontWeight: 700,
+        fontSize: size,
+        color: 'var(--gold)',
+        lineHeight: 1,
+      }}>V</span>
       <span className="shim" style={{
-        fontFamily:"'Cormorant Garamond', serif", fontStyle:'italic',
-        fontWeight:600, fontSize:size, letterSpacing:-0.5,
+        fontFamily:"'Cormorant Garamond', serif",
+        fontStyle: 'italic',
+        fontWeight: 500,
+        fontSize: Math.round(size * 0.64),
+        letterSpacing: '0.5px',
+        marginLeft: -Math.round(size * 0.107),
+        lineHeight: 1,
       }}>incit</span>
     </span>
   );
