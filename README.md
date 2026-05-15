@@ -1,4 +1,4 @@
-# BetCouple — mappa del codice
+# Vincit — mappa del codice
 
 Guida per orientarsi nel repo senza dover aprire tutti i file. Una riga per ogni file: a cosa serve, quando aprirlo, cosa non aspettarti di trovarci.
 
@@ -79,9 +79,9 @@ React 18 + Vite 5, **niente styling lib**: tutto inline-style + un blocco CSS gl
 
 | File | A cosa serve |
 |---|---|
-| `index.html` | Entry HTML. Title (placeholder "BetCouple"), apple-touch icon, theme-color, manifest link. |
+| `index.html` | Entry HTML. Title "Vincit", apple-touch icon, theme-color, manifest link. |
 | `vite.config.js` | Config Vite, proxy `/api` → `localhost:3001` in dev. |
-| `public/manifest.json` | PWA manifest. Cambia qui `name`/`short_name` al rebrand. |
+| `public/manifest.json` | PWA manifest. Nome app: "Vincit". |
 | `public/sw.js` | Service worker: cache shell + ricezione push notifications. |
 | `public/icons/` | Icone PWA generate da `scripts/gen-icons.mjs`. |
 | `scripts/gen-icons.mjs` | Genera tutte le size di icone da una SVG sorgente. |
@@ -207,7 +207,7 @@ In `backend/.env` (locale) e dashboard Render (produzione):
 
 ## 6. Deploy
 
-- **Render Web Service** a `https://betcouple-1.onrender.com` — un solo servizio serve API + frontend buildato (`frontend/dist`)
+- **Render Web Service** a `https://vincit.onrender.com` — un solo servizio serve API + frontend buildato (`frontend/dist`)
 - **Branch `main`** → push auto → redeploy in 30-60s
 - **Neon Postgres** Frankfurt, SSL required
 - **Cold start**: Render free dorme dopo 15min, Neon pausa dopo 5min → primo caricamento ~20-30s
@@ -216,7 +216,7 @@ In `backend/.env` (locale) e dashboard Render (produzione):
 
 ## 7. Pattern ricorrenti (quando li vedi, sai cosa significano)
 
-- **Bordo sinistro 3px colorato** sulle card → pattern visivo BetCouple (BetCard, trophy tile, mini-preview)
+- **Bordo sinistro 3px colorato** sulle card → pattern visivo Vincit (BetCard, trophy tile, mini-preview)
 - **`var(--gold)22` bg + gold text + gold border** → chip "attiva"
 - **Animazioni**: `sUp` slide-up, `bIn` bounce-in modali, `fIn` fade, `spinC` moneta 3D, `shimmer` testo dorato. Tutte in `App.jsx` CSS_BASE
 - **Factory router** `require('./routes/x.js')(broadcastUpdate)` → router che triggera SSE
@@ -241,4 +241,4 @@ In `backend/.env` (locale) e dashboard Render (produzione):
 
 ---
 
-*Mappa generata 2026-05-14. Se aggiungi un nuovo file in `routes/`, `views/` o `modals/`, aggiungi una riga qui sotto la tabella relativa.*
+*Mappa generata 2026-05-15. Se aggiungi un nuovo file in `routes/`, `views/` o `modals/`, aggiungi una riga qui sotto la tabella relativa.*
