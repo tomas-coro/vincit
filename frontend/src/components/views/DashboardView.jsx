@@ -231,16 +231,25 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
           >
             {b.title}
           </div>
-          {onResolve && (
-            <button onClick={()=>onResolve(b)} style={{
-              flexShrink:0, padding:'4px 10px', borderRadius:999,
-              background:'var(--red)22', border:'1px solid var(--red)55',
-              color:'var(--red)', fontSize:10, fontWeight:700,
-              letterSpacing:'.06em', textTransform:'uppercase',
-              cursor:'pointer', fontFamily:"'Manrope',sans-serif",
-              WebkitTapHighlightColor:'transparent',
-            }}>Dichiara</button>
-          )}
+          {onResolve && (() => {
+            const isPendingResolve = pendingResolveIds?.has(b.id);
+            return isPendingResolve
+              ? <span style={{
+                  flexShrink:0, padding:'4px 10px', borderRadius:999,
+                  background:'var(--mut)22', border:'1px solid var(--mut)44',
+                  color:'var(--mut)', fontSize:10, fontWeight:700,
+                  letterSpacing:'.06em', textTransform:'uppercase',
+                  fontFamily:"'Manrope',sans-serif", opacity:.55,
+                }}>⏳ In invio…</span>
+              : <button onClick={()=>onResolve(b)} style={{
+                  flexShrink:0, padding:'4px 10px', borderRadius:999,
+                  background:'var(--red)22', border:'1px solid var(--red)55',
+                  color:'var(--red)', fontSize:10, fontWeight:700,
+                  letterSpacing:'.06em', textTransform:'uppercase',
+                  cursor:'pointer', fontFamily:"'Manrope',sans-serif",
+                  WebkitTapHighlightColor:'transparent',
+                }}>Dichiara</button>;
+          })()}
         </div>
       ))}
     </div>

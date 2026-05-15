@@ -65,11 +65,11 @@ export function ResolveModal({bet,cats,profiles,onResolve,onClose}){
             stays in BetCard, but only appears when creator and
             opponent have actually proposed conflicting outcomes (true
             dispute). That's where the coin earns its keep as a tiebreaker. */}
-        <Btn variant="grn" full style={{marginBottom:10}} disabled={done} onClick={()=>go("won")}>
-          {t('resolve.yes_btn',{net:bet.potentialWin-bet.stake})}
+        <Btn variant="grn" full style={{marginBottom:10, opacity: done ? .55 : 1}} disabled={done} onClick={()=>go("won")}>
+          {done ? '⏳ In invio…' : t('resolve.yes_btn',{net:bet.potentialWin-bet.stake})}
         </Btn>
-        <Btn variant="red" full style={{marginBottom:18}} disabled={done} onClick={()=>go("lost")}>
-          {t('resolve.no_btn',{stake:bet.stake})}
+        <Btn variant="red" full style={{marginBottom:18, opacity: done ? .55 : 1}} disabled={done} onClick={()=>go("lost")}>
+          {done ? '⏳ In invio…' : t('resolve.no_btn',{stake:bet.stake})}
         </Btn>
 
         <button onClick={onClose} style={{
