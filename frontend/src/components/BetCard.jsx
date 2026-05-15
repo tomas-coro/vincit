@@ -177,28 +177,68 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
     <div ref={cardRef} className="sUp" style={{
       position:"relative", overflow:"hidden",
       padding:"22px 0 24px 22px", marginBottom:0,
-      borderTop: isResolved ? `3px solid ${resolveColor}` : 'none',
+      borderTop: isResolved ? `4px solid ${resolveColor}` : 'none',
       borderBottom:`1px solid ${deltaX > 40 ? 'var(--grn)55' : deltaX < -40 ? 'var(--red)55' : 'var(--rule)'}`,
-      background: isResolved ? (bet.status==='won' ? 'var(--grn)0f' : 'var(--red)0f') : 'transparent',
-      opacity: done ? 0.82 : 1,
+      background: isResolved
+        ? (bet.status==='won'
+            ? 'linear-gradient(160deg, var(--grn)20 0%, var(--grn)0a 42%, transparent 72%)'
+            : 'linear-gradient(160deg, var(--red)1c 0%, var(--red)09 42%, transparent 72%)')
+        : 'transparent',
+      boxShadow: isResolved
+        ? (bet.status==='won'
+            ? 'inset 0 0 0 1px var(--grn)2a, inset 0 52px 44px -22px var(--grn)14'
+            : 'inset 0 0 0 1px var(--red)22, inset 0 52px 44px -22px var(--red)0f')
+        : 'none',
+      opacity: done ? (bet.status==='won' ? 1 : 0.86) : 1,
       transform: deltaX !== 0 ? `translateX(${Math.max(-60, Math.min(60, deltaX))}px)` : 'none',
       transition: deltaX === 0 ? 'transform .3s ease, border-color .2s, opacity .2s' : 'border-color .1s',
     }}>
       {/* Vertical accent rule — gold for vault, category color otherwise. */}
       <div style={{position:"absolute",left:0,top:22,bottom:24,width:2,background:bet.isSecret?'var(--gold)':sideColor}}/>
-      {/* Won/lost stamp watermark */}
-      {isResolved && (
+
+      {/* CR-style outcome treatment: ribbon + stamp */}
+      {isResolved && (<>
+        {/* Full-width ribbon — bleeds to left/top edge */}
         <div style={{
-          position:'absolute', right:14, top:20,
+          marginLeft:-22, marginTop:-22, marginBottom:12,
+          padding:'7px 16px 7px 22px',
+          background: bet.status==='won'
+            ? 'linear-gradient(90deg, var(--grn)3a 0%, var(--grn)1a 55%, transparent 100%)'
+            : 'linear-gradient(90deg, var(--red)30 0%, var(--red)14 55%, transparent 100%)',
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+        }}>
+          <span style={{
+            fontFamily:"'Manrope',sans-serif", fontWeight:800,
+            fontSize:9, letterSpacing:'.32em', textTransform:'uppercase',
+            color: resolveColor,
+            textShadow: bet.status==='won' ? '0 0 14px var(--grn)99' : '0 0 10px var(--red)77',
+          }}>
+            {bet.status==='won' ? '✦ Vittoria' : '✗ Sconfitta'}
+          </span>
+          {bet.status==='won' && (
+            <span style={{
+              fontSize:12, letterSpacing:3,
+              color:'#f4c430',
+              textShadow:'0 0 10px #f4c43099',
+              flexShrink:0,
+            }}>★★★</span>
+          )}
+        </div>
+
+        {/* Diagonal stamp watermark */}
+        <div style={{
+          position:'absolute', right:12, top:44,
           fontFamily:"'Playfair Display',serif", fontWeight:900,
-          fontSize:34, lineHeight:1, letterSpacing:'0.04em',
+          fontSize:44, lineHeight:1, letterSpacing:'0.05em',
           color: resolveColor,
-          opacity: 0.11, pointerEvents:'none', userSelect:'none',
+          opacity:0.13, pointerEvents:'none', userSelect:'none',
           transform:'rotate(-18deg)',
+          textShadow: bet.status==='won' ? '0 0 24px var(--grn)' : '0 0 18px var(--red)',
         }}>
           {bet.status==='won' ? 'VINTO' : 'PERSO'}
         </div>
-      )}
+      </>)}
+
       <div style={{...(isDesktop?{display:"flex",alignItems:"flex-start",gap:24}:{})}}>
         {/* Main content */}
         <div style={{flex:isDesktop?1:undefined,minWidth:0}}>
