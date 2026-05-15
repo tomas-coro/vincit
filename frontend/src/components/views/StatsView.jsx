@@ -606,22 +606,25 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
   // ── Heatmap ───────────────────────────────────────────────────────
   const heatmapCard = (() => {
     const WEEKS = 16;
+    const CELL = 13;
+    const GAP  = 3;
+    const DAY_LABELS = ['L','M','M','G','V','S','D'];
+
     const today = new Date(); today.setHours(23,59,59,999);
     const startDay = new Date(today);
-    // roll back to Monday WEEKS weeks ago
     startDay.setDate(startDay.getDate() - (WEEKS * 7 - 1));
     startDay.setHours(0,0,0,0);
 
-    // count bets (my own created) per day
     const dayMap = {};
+    let totalBets = 0;
     for (const b of bets) {
       if (b.creator !== user) continue;
       const d = new Date(Number(b.createdAt));
       const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
       dayMap[key] = (dayMap[key] || 0) + 1;
+      totalBets++;
     }
 
-    // build week columns
     const cols = [];
     const cur = new Date(startDay);
     while (cur <= today) {
@@ -629,19 +632,20 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
       for (let d = 0; d < 7; d++) {
         const key = `${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
         const count = dayMap[key] || 0;
-        const isFuture = cur > today;
-        week.push({ date: new Date(cur), count, isFuture });
+        week.push({ date: new Date(cur), count, isFuture: cur > today });
         cur.setDate(cur.getDate() + 1);
       }
       cols.push(week);
     }
 
-    const cellColor = n => {
-      if (n === 0) return 'var(--surf)';
-      if (n === 1) return 'var(--gold)44';
-      if (n === 2) return 'var(--gold)77';
-      return 'var(--gold)';
-    };
+    const LEVELS = [
+      { bg: 'transparent',           border: '1px solid var(--rule)', shadow: 'none'                           },
+      { bg: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.25)', shadow: 'none'                 },
+      { bg: 'rgba(212,175,55,0.38)', border: 'none', shadow: '0 0 5px rgba(212,175,55,0.20)'                  },
+      { bg: 'rgba(212,175,55,0.65)', border: 'none', shadow: '0 0 7px rgba(212,175,55,0.35)'                  },
+      { bg: 'var(--gold)',           border: 'none', shadow: '0 0 10px rgba(212,175,55,0.55)'                 },
+    ];
+    const cellLvl = n => LEVELS[Math.min(n, 4)];
 
     const monthLabels = [];
     let lastMonth = -1;
@@ -653,45 +657,86 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
       }
     });
 
+    const colW = CELL + GAP;
+
     return (
       <div style={{...S.card}}>
-        <div className="bc-meta" style={{marginBottom:14}}>{t('stats_view.heatmap') || 'Attività'}</div>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+          <span className="bc-meta">{t('stats_view.heatmap') || 'Attività'}</span>
+          <span style={{fontSize:11, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>
+            {totalBets} bet · 16 sett.
+          </span>
+        </div>
         <div style={{overflowX:'auto', paddingBottom:4}}>
-          <div style={{display:'inline-flex', flexDirection:'column', gap:0, minWidth: cols.length * 13}}>
-            {/* Month labels */}
-            <div style={{display:'flex', marginBottom:4, height:12}}>
-              {cols.map((_, wi) => {
-                const lbl = monthLabels.find(m => m.wi === wi);
-                return <div key={wi} style={{width:11, marginRight:2, fontSize:8, color:'var(--dim)',
-                  fontFamily:"'Manrope',sans-serif", letterSpacing:'.04em', overflow:'visible', whiteSpace:'nowrap'}}>
-                  {lbl ? lbl.label : ''}
-                </div>;
-              })}
+          <div style={{display:'inline-flex', flexDirection:'row'}}>
+            {/* Day labels column */}
+            <div style={{display:'flex', flexDirection:'column', paddingTop:16, marginRight:5}}>
+              {DAY_LABELS.map((lbl, di) => (
+                <div key={di} style={{
+                  height:CELL, marginBottom:GAP,
+                  fontSize:9, color:'var(--dim)',
+                  fontFamily:"'Manrope',sans-serif", fontWeight:600, letterSpacing:'.04em',
+                  display:'flex', alignItems:'center', justifyContent:'flex-end',
+                  width:12,
+                  opacity: di % 2 === 0 ? 1 : 0,
+                }}>
+                  {lbl}
+                </div>
+              ))}
             </div>
-            {/* 7 day rows */}
-            {[0,1,2,3,4,5,6].map(di => (
-              <div key={di} style={{display:'flex', gap:2, marginBottom:2, alignItems:'center'}}>
-                {cols.map((week, wi) => {
-                  const cell = week[di];
-                  if (!cell) return <div key={wi} style={{width:11, height:11}}/>;
+            {/* Grid */}
+            <div style={{display:'inline-flex', flexDirection:'column'}}>
+              {/* Month labels */}
+              <div style={{display:'flex', height:12, marginBottom:4}}>
+                {cols.map((_, wi) => {
+                  const lbl = monthLabels.find(m => m.wi === wi);
                   return (
-                    <div key={wi} title={`${cell.date.toLocaleDateString('it-IT')}: ${cell.count} bet`}
-                      style={{
-                        width:11, height:11, borderRadius:2,
-                        background: cell.isFuture ? 'transparent' : cellColor(cell.count),
-                        border: cell.count > 0 ? 'none' : '1px solid var(--brd)',
-                        flexShrink:0,
-                      }}/>
+                    <div key={wi} style={{
+                      width:colW, fontSize:10, color:'var(--txt)',
+                      fontFamily:"'Manrope',sans-serif", fontWeight:600, letterSpacing:'.03em',
+                      overflow:'visible', whiteSpace:'nowrap',
+                    }}>
+                      {lbl ? lbl.label : ''}
+                    </div>
                   );
                 })}
               </div>
-            ))}
+              {/* 7 day rows */}
+              {[0,1,2,3,4,5,6].map(di => (
+                <div key={di} style={{display:'flex', marginBottom:GAP}}>
+                  {cols.map((week, wi) => {
+                    const cell = week[di];
+                    if (!cell) return <div key={wi} style={{width:CELL, height:CELL, marginRight:GAP}}/>;
+                    const lvl = cell.isFuture ? LEVELS[0] : cellLvl(cell.count);
+                    return (
+                      <div key={wi}
+                        title={`${cell.date.toLocaleDateString('it-IT')}: ${cell.count} bet`}
+                        style={{
+                          width:CELL, height:CELL, borderRadius:3, marginRight:GAP, flexShrink:0,
+                          background: lvl.bg,
+                          border: lvl.border,
+                          boxShadow: lvl.shadow,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-        <div style={{display:'flex', gap:8, marginTop:10, alignItems:'center'}}>
-          <span style={{fontSize:9, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>Meno</span>
-          {[0,1,2,3].map(n => <div key={n} style={{width:10, height:10, borderRadius:2, background:cellColor(n), border:n===0?'1px solid var(--brd)':'none'}}/>)}
-          <span style={{fontSize:9, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>Di più</span>
+        {/* Legend */}
+        <div style={{display:'flex', gap:6, marginTop:12, alignItems:'center'}}>
+          <span style={{fontSize:10, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>Meno</span>
+          {LEVELS.map((lvl, i) => (
+            <div key={i} style={{
+              width:CELL, height:CELL, borderRadius:3,
+              background: lvl.bg,
+              border: lvl.border,
+              boxShadow: lvl.shadow,
+            }}/>
+          ))}
+          <span style={{fontSize:10, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>Di più</span>
         </div>
       </div>
     );
