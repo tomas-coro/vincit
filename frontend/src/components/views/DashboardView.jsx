@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
 
+function getISOWeek(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
 function computeStreak(bets, user) {
   const days = new Set();
   for (const b of bets) {
@@ -82,6 +90,22 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
   const expiring=bets.filter(b=>b.creator===user&&b.status==="active"&&isSoon(b.expiresAt));
   const expiredBets=bets.filter(b=>b.creator===user&&b.status==="expired");
   const wr=(myWon.length+myLost.length)?Math.round(myWon.length/(myWon.length+myLost.length)*100):0;
+
+  // Weekly highlights — won bets in the last 7 days (group-wide)
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const weeklyWon = bets.filter(b =>
+    b.status === 'won' &&
+    Number(b.resolvedAt || b.updatedAt || b.createdAt || 0) > oneWeekAgo
+  );
+  // Top win: highest net gain (potentialWin − stake)
+  const topWinBet = weeklyWon.reduce((best, b) => {
+    const gain = (b.potentialWin || 0) - (b.stake || 0);
+    return (!best || gain > (best.potentialWin || 0) - (best.stake || 0)) ? b : best;
+  }, null);
+  // Craziest odds: won bet with highest quota (lowest implied probability)
+  const craziestBet = weeklyWon.reduce((best, b) => {
+    return (!best || (b.quota || 1) > (best.quota || 1)) ? b : best;
+  }, null);
 
   // Build ranking rows for all members
   const rankRows = allMemberIds.map(id => {
@@ -410,6 +434,57 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
           </button>
         )}
       </>
+    );
+  })();
+
+  // Weekly ticker — compact two-row banner, shown only when ≥1 won bet this week
+  const weeklyTicker = (topWinBet || craziestBet) && (() => {
+    const weekNum = getISOWeek(new Date());
+    const gain = topWinBet ? (topWinBet.potentialWin || 0) - (topWinBet.stake || 0) : 0;
+    const prob = craziestBet ? Math.round(100 / Math.max(1, craziestBet.quota || 1)) : 0;
+    const isDifferent = craziestBet && topWinBet && craziestBet.id !== topWinBet.id;
+    const highlights = [topWinBet, isDifferent ? craziestBet : null].filter(Boolean);
+    return (
+      <div
+        onClick={() => setBetListData({
+          title: `🏅 Sett. ${weekNum} — Best of the week`,
+          accentColor: 'var(--gold)',
+          bets: highlights,
+        })}
+        style={{
+          ...S.card, marginBottom: 12,
+          background: 'var(--gold)0a', border: '1px solid var(--gold)33',
+          borderLeft: '3px solid var(--gold)', borderRadius: 10, padding: '10px 12px',
+          cursor: 'pointer', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 8, color: 'var(--gold)', letterSpacing: '.22em', fontWeight: 700, marginBottom: 6, fontFamily: "'Manrope',sans-serif" }}>
+              SETT. {weekNum} · BET HIGHLIGHTS
+            </div>
+            {topWinBet && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: isDifferent ? 4 : 0 }}>
+                <span style={{ fontSize: 12 }}>🏆</span>
+                <span style={{ fontSize: 10, color: 'var(--grn)', fontWeight: 700, flexShrink: 0, fontFamily: "'Manrope',sans-serif" }}>+{gain} ₡</span>
+                <span style={{ fontSize: 12, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontStyle: 'italic', fontFamily: "'Cormorant Garamond',serif" }}>
+                  "{topWinBet.title}"
+                </span>
+              </div>
+            )}
+            {isDifferent && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 12 }}>💀</span>
+                <span style={{ fontSize: 10, color: 'var(--red)', fontWeight: 700, flexShrink: 0, fontFamily: "'Manrope',sans-serif" }}>{prob}% win</span>
+                <span style={{ fontSize: 12, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontStyle: 'italic', fontFamily: "'Cormorant Garamond',serif" }}>
+                  "{craziestBet.title}"
+                </span>
+              </div>
+            )}
+          </div>
+          <span style={{ fontSize: 13, color: 'var(--gold)', flexShrink: 0, opacity: .8 }}>▸</span>
+        </div>
+      </div>
     );
   })();
 
@@ -798,10 +873,10 @@ export default function DashboardView({user,profiles,groupMembers,credits,bets,c
       {isDesktop?(
         <div style={{display:"grid",gridTemplateColumns:"minmax(0, 1.6fr) minmax(280px, 1fr)",gap:14,alignItems:"start"}}>
           <div style={{display:'flex', flexDirection:'column', gap:10}}>{pendingSection}{activeBets}{emptyState}{recentResolved}</div>
-          <div style={{display:'flex', flexDirection:'column', gap:10, position:'sticky', top:14}}>{scoreCard}{vaultTeaser}{expiredAlert}{expiryAlert}</div>
+          <div style={{display:'flex', flexDirection:'column', gap:10, position:'sticky', top:14}}>{scoreCard}{vaultTeaser}{weeklyTicker}{expiredAlert}{expiryAlert}</div>
         </div>
       ):(
-        <>{expiredAlert}{expiryAlert}{scoreCard}{vaultTeaser}{pendingSection}{activeBets}{emptyState}{recentResolved}</>
+        <>{weeklyTicker}{expiredAlert}{expiryAlert}{scoreCard}{vaultTeaser}{pendingSection}{activeBets}{emptyState}{recentResolved}</>
       )}
 
       <BetListModal
