@@ -366,10 +366,12 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
   const handleTouchEnd   = () => { touchStartY.current = null; };
 
   useEffect(() => {
-    const onKey = e => { if (e.key === 'Escape') onClose?.(); };
+    const onKey  = e => { if (e.key === 'Escape') onClose?.(); };
+    const onBack = () => onClose?.();
     const onResize = () => onClose?.();
     window.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResize);
+    document.addEventListener('backgesture', onBack);
     let onScroll;
     const tid = setTimeout(() => {
       onScroll = () => onClose?.();
@@ -378,6 +380,7 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
+      document.removeEventListener('backgesture', onBack);
       clearTimeout(tid);
       if (onScroll) window.removeEventListener('scroll', onScroll, true);
     };

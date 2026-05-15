@@ -881,6 +881,10 @@ export default function App() {
   // capture zero bets, and every already-resolved bet in the real
   // response would be celebrated as a fresh win on page load.
   const stateLoadedRef = useRef(false);
+  // Kept fresh by the closeTopModal effect below; read by the back-gesture
+  // handler without needing to re-register the touch listeners on every
+  // modal state change.
+  const closeTopModalRef = useRef(null);
   const [editingBet, setEditingBet]       = useState(null);
   const [acceptingBet, setAcceptingBet]   = useState(null);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -895,6 +899,38 @@ export default function App() {
   const [inboxOpen,       setInboxOpen]       = useState(false);
   const [eggTick,         setEggTick]         = useState(0);     // bumps after a secret unlock so trophy polling refreshes
   const [pendingFriendCount, setPendingFriendCount] = useState(0);
+
+  // Keeps closeTopModalRef pointing at the close function for the
+  // topmost open modal so the back-gesture handler can call it without
+  // stale-closure problems.
+  useEffect(() => {
+    const handler = (
+      (phoenixEggOpen  && (() => setPhoenixEggOpen(false)))  ||
+      (iceEggOpen      && (() => setIceEggOpen(false)))      ||
+      (coinFlipOpen    && (() => setCoinFlipOpen(false)))    ||
+      (dieRollOpen     && (() => setDieRollOpen(false)))     ||
+      (inboxOpen       && (() => setInboxOpen(false)))       ||
+      (commentBetModal && (() => setCommentBetQueue([])))    ||
+      (showCreate      && (() => setShowCreate(false)))      ||
+      (acceptingBet    && (() => setAcceptingBet(null)))     ||
+      (editingBet      && (() => setEditingBet(null)))       ||
+      (revealBet       && (() => setRevealBet(null)))        ||
+      (resolveBet      && (() => setResolveBet(null)))       ||
+      (overtimeBet     && (() => setOvertimeBet(null)))      ||
+      (counterTarget   && (() => setCounterTarget(null)))    ||
+      (showGroupInfo   && (() => setShowGroupInfo(false)))   ||
+      (showGroupModal  && (() => setShowGroupModal(false)))  ||
+      (showProfileEdit && (() => setShowProfileEdit(false))) ||
+      (profileMenuOpen && (() => setProfileMenuOpen(false))) ||
+      null
+    );
+    closeTopModalRef.current = handler;
+  }, [
+    phoenixEggOpen, iceEggOpen, coinFlipOpen, dieRollOpen, inboxOpen,
+    commentBetModal, showCreate, acceptingBet, editingBet,
+    revealBet, resolveBet, overtimeBet, counterTarget,
+    showGroupInfo, showGroupModal, showProfileEdit, profileMenuOpen,
+  ]);
 
   // Silent push re-subscribe on login: only refreshes the subscription when
   // permission is *already* granted. The actual prompt is deferred to
@@ -1506,6 +1542,55 @@ export default function App() {
       el.removeEventListener('touchend',   onEnd);
     };
   }, [isDesktop, navBarEl]);
+
+  // Back gesture: swipe right from the left edge of the screen to close the
+  // topmost open modal — mirrors the native iOS/Android back swipe.
+  // Registered on document (not the nav bar) so it fires regardless of what
+  // is on screen. Non-passive touchmove lets us preventDefault once we have
+  // committed to a horizontal direction, preventing scroll during the swipe.
+  // closeTopModalRef is kept fresh by the effect above; reading it here avoids
+  // re-registering these listeners on every modal state change.
+  // On sub-component popovers (e.g. TrophyDetailPopover) the 'backgesture'
+  // CustomEvent lets them close themselves without prop-drilling.
+  useEffect(() => {
+    if (isDesktop) return;
+    const EDGE   = 22;   // px from left edge required to start the gesture
+    const THRESH = 80;   // px rightward travel needed to trigger close
+    const VERT   = 40;   // px vertical drift that cancels the gesture
+    const s = { startX: null, startY: null, locked: false };
+
+    const onStart = e => {
+      const x = e.touches[0].clientX;
+      if (x > EDGE) return;
+      s.startX = x;
+      s.startY = e.touches[0].clientY;
+      s.locked = false;
+    };
+    const onMove = e => {
+      if (s.startX === null) return;
+      const dx = e.touches[0].clientX - s.startX;
+      const dy = Math.abs(e.touches[0].clientY - s.startY);
+      if (dy > VERT) { s.startX = null; return; }
+      if (dx > 8)    { s.locked = true; e.preventDefault(); }
+    };
+    const onEnd = e => {
+      if (!s.locked) return;
+      const dx = e.changedTouches[0].clientX - s.startX;
+      s.startX = null; s.locked = false;
+      if (dx < THRESH) return;
+      document.dispatchEvent(new CustomEvent('backgesture'));
+      closeTopModalRef.current?.();
+    };
+
+    document.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchmove',  onMove,  { passive: false });
+    document.addEventListener('touchend',   onEnd,   { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onStart);
+      document.removeEventListener('touchmove',  onMove);
+      document.removeEventListener('touchend',   onEnd);
+    };
+  }, [isDesktop]);
 
   // Splash screen (runs in parallel with auth check; stays until both done)
   if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
