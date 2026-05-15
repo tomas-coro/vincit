@@ -116,8 +116,8 @@ router.post('/forgot-password', async (req, res) => {
       try {
         await sendMail({
           to: email,
-          subject: 'BetCouple · Reset password',
-          text: `Ciao ${user.name},\n\nHai chiesto di reimpostare la password.\nApri questo link entro 1 ora:\n${link}\n\nSe non sei stato tu, ignora questa email.\n— BetCouple`,
+          subject: 'Vincit · Reset password',
+          text: `Ciao ${user.name},\n\nHai chiesto di reimpostare la password.\nApri questo link entro 1 ora:\n${link}\n\nSe non sei stato tu, ignora questa email.\n— Vincit`,
           html: `<p>Ciao <b>${user.name}</b>,</p>
                  <p>Hai chiesto di reimpostare la password. Tocca il bottone qui sotto entro 1 ora:</p>
                  <p><a href="${link}" style="display:inline-block;padding:12px 22px;background:#c8973f;color:#07060f;border-radius:10px;text-decoration:none;font-weight:700;font-family:sans-serif">Reimposta password</a></p>

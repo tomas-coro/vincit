@@ -165,7 +165,7 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`BetCouple running on http://0.0.0.0:${PORT}`);
+  console.log(`Vincit running on http://0.0.0.0:${PORT}`);
 });
 
 setInterval(async () => {
@@ -179,7 +179,7 @@ setInterval(async () => {
       for (const b of result.rows) {
         broadcastUpdate(b.room_id);
         if (await isPrefEnabled(b.creator, 'on_expiry'))
-          sendPushToUser(b.creator, { title:'BetCouple ⏱', body:`"${b.title}" è scaduta — dichiara l'esito!`, url:'/' });
+          sendPushToUser(b.creator, { title:'Vincit ⏱', body:`"${b.title}" è scaduta — dichiara l'esito!`, url:'/' });
       }
     }
   } catch (err) {

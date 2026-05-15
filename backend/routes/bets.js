@@ -117,7 +117,7 @@ module.exports = function(broadcastUpdate) {
           for (const m of members) {
             if (await isPrefEnabled(m.id, 'on_group_bet')) {
               sendPushToUser(m.id, {
-                title: 'BetCouple 🎲',
+                title: 'Vincit 🎲',
                 body:  `Nuova bet nel gruppo: "${title}"`,
                 url:   '/',
               });

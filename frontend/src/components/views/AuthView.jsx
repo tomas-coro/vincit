@@ -109,7 +109,7 @@ export default function AuthView({ onAuth }) {
             fontSize:64, fontWeight:600, lineHeight:0.95, letterSpacing:'-0.03em',
             marginBottom:10,
           }}>
-            <span className="shim">BetCouple</span>
+            <span className="shim">Vincit</span>
           </div>
           <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6 }}>{t('welcome.subtitle')}</div>
         </div>

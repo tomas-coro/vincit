@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">BetCouple</string>
-    <string name="title_activity_main">BetCouple</string>
+    <string name="app_name">Vincit</string>
+    <string name="title_activity_main">Vincit</string>
     <string name="package_name">com.betcouple.app</string>
     <string name="custom_url_scheme">com.betcouple.app</string>
 </resources>

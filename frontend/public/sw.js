@@ -1,6 +1,6 @@
 self.addEventListener('push', e => {
   const d = e.data?.json() ?? {};
-  e.waitUntil(self.registration.showNotification(d.title || 'BetCouple 🎲', {
+  e.waitUntil(self.registration.showNotification(d.title || 'Vincit 🎲', {
     body: d.body || '', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', data: { url: d.url || '/' }
   }));
 });

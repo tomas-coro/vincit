@@ -1734,7 +1734,7 @@ export default function App() {
               transform: 'rotate(-2deg)', transformOrigin: 'left center',
               display: 'inline-block',
             }}>
-              <span className="shim">BetCouple</span>
+              <span className="shim">Vincit</span>
             </div>
             <div
               onClick={() => setProfileMenuOpen(true)}
@@ -1874,7 +1874,7 @@ export default function App() {
         }}>
           <div style={{ padding: '14px 20px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap:10 }}>
             <div style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize: 22, fontWeight: 600, letterSpacing: -0.5 }}>
-              <span className="shim">BetCouple</span>
+              <span className="shim">Vincit</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ textAlign:'right', lineHeight:1.1 }}>

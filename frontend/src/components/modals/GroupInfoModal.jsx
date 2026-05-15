@@ -62,7 +62,7 @@ export default function GroupInfoModal({ group, userId, onClose, onLeft, onDelet
     });
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
-        await navigator.share({ title: group.name || 'BetCouple', text, url });
+        await navigator.share({ title: group.name || 'Vincit', text, url });
         return;
       }
     } catch { /* user cancelled share — fall through to copy */ }

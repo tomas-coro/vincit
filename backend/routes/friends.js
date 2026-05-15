@@ -208,7 +208,7 @@ function makeRouter(broadcastUpdate) {
         });
         try {
           if (await isPrefEnabled(them, 'on_friend_accept'))
-            sendPushToUser(them, { title: '✓ Richiesta accettata', body: 'Avete ora un\'amicizia BetCouple', url: '/' });
+            sendPushToUser(them, { title: '✓ Richiesta accettata', body: 'Avete ora un\'amicizia Vincit', url: '/' });
         } catch {}
         return res.json({ ok: true, autoAccepted: true, friend: target });
       }

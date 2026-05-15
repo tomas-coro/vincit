@@ -35,7 +35,7 @@ export async function renderH2HCard({
   myName, myColor, opponentName, opponentColor,
   myWins, theirWins, netMe, totalBets,
   streak = 0,            // signed: positive = my wins in a row, negative = theirs
-  brand = 'BetCouple',
+  brand = 'Vincit',
 }) {
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -188,7 +188,7 @@ export async function renderH2HCard({
   ctx.fillStyle = 'rgba(200,151,63,.55)';
   ctx.font = '700 22px "Manrope", "Helvetica Neue", Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`${brand.toUpperCase()}  ·  betcouple-1.onrender.com`, W / 2, H - 70);
+  ctx.fillText(`${brand.toUpperCase()}`, W / 2, H - 70);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob-failed')), 'image/png');
@@ -202,13 +202,13 @@ export async function shareH2HCard(params) {
   try { blob = await renderH2HCard(params); }
   catch (e) { console.error('[h2h-image]', e); return false; }
 
-  const file = new File([blob], 'betcouple-h2h.png', { type: 'image/png' });
+  const file = new File([blob], 'vincit-h2h.png', { type: 'image/png' });
   const shareData = {
     files: [file],
     title: 'Head-to-head',
     text: params?.opponentName
-      ? `Io vs ${params.opponentName}: ${params.myWins ?? 0}-${params.theirWins ?? 0} · BetCouple`
-      : 'BetCouple head-to-head',
+      ? `Io vs ${params.opponentName}: ${params.myWins ?? 0}-${params.theirWins ?? 0} · Vincit`
+      : 'Vincit head-to-head',
   };
 
   try {
@@ -222,7 +222,7 @@ export async function shareH2HCard(params) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'betcouple-h2h.png';
+  a.download = 'vincit-h2h.png';
   document.body.appendChild(a);
   a.click();
   a.remove();

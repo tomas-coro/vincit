@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 80">
+  <!-- Icon tile -->
+  <rect width="80" height="80" rx="18" fill="#1a1530"/>
+  <polyline
+    points="18,18 40,59 62,18"
+    fill="none"
+    stroke="#c8973f"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="40" cy="10" r="4.5" fill="#c8973f"/>
+  <!-- Wordmark -->
+  <text
+    x="100" y="54"
+    font-family="'Playfair Display', 'Georgia', serif"
+    font-size="40"
+    font-weight="700"
+    letter-spacing="4"
+    fill="#c8973f"
+  >VINCIT</text>
+</svg>

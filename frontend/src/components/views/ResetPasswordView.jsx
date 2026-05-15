@@ -44,7 +44,7 @@ export default function ResetPasswordView({ token, onDone }) {
       <div style={S.card}>
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
           <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 28, fontWeight: 900, marginBottom: 6 }}>
-            <span className="shim">BetCouple</span>
+            <span className="shim">Vincit</span>
           </div>
           <div style={{ fontSize: 13, color: 'var(--dim)' }}>{t('reset.subtitle')}</div>
         </div>

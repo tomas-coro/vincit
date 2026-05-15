@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.betcouple.app',
-  appName: 'BetCouple',
+  appName: 'Vincit',
   webDir: 'dist',
   android: {
     backgroundColor: '#1a1530',

@@ -82,7 +82,7 @@ function buildConfetti() {
   return out;
 }
 
-export default function SplashScreen({ onDone, brand = 'BetCouple' }) {
+export default function SplashScreen({ onDone, brand = 'Vincit' }) {
   const { t } = useLang();
   // 0 = sparkles + coin drop, 1 = dissolve + confetti, 2 = wordmark,
   // 3 = rule + tagline, 4 = fade out
