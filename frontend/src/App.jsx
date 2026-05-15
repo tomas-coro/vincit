@@ -1592,6 +1592,26 @@ export default function App() {
     };
   }, [isDesktop]);
 
+  // Android / PWA system back gesture: intercepts the browser's popstate event
+  // (fired by the Android back swipe / back button) so it closes the topmost
+  // open modal rather than navigating away from the app.
+  // Strategy: push a "guard" history entry on mount. Each time the user presses
+  // back and a modal is open, we close the modal and immediately re-push the
+  // guard so the next back press is also captured. If no modal is open we let
+  // the navigation proceed naturally (app closes / returns to launcher).
+  useEffect(() => {
+    if (isDesktop) return;
+    history.pushState({ backGuard: true }, '');
+    const onPop = () => {
+      if (closeTopModalRef.current) {
+        closeTopModalRef.current();
+        history.pushState({ backGuard: true }, '');
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [isDesktop]);
+
   // Splash screen (runs in parallel with auth check; stays until both done)
   if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
 
