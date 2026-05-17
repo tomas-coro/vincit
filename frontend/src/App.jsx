@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, lazy, Suspense } from 
 import { useSync } from './useSync.js';
 import * as api from './api.js';
 
-import { DARK, LIGHT, AMBER, SELVA, SAKURA, PECE, rootVars, DEF_CATS, COLORS, VincitWordmark } from './components/Atoms.jsx';
+import { ARDESIA, CARTA, AMBER, CASINO, SAKURA, PECE, rootVars, DEF_CATS, COLORS, VincitWordmark } from './components/Atoms.jsx';
 import { useLang } from './i18n.js';
 import SplashScreen from './components/SplashScreen.jsx';
 import { SkeletonDashboard, SkeletonList } from './components/Skeleton.jsx';
@@ -623,16 +623,16 @@ export default function App() {
   const [theme, setTheme] = useState(() => {
     try {
       const v = localStorage.getItem('bc_theme');
-      if (['dark','light','amber','selva','sakura','pece'].includes(v)) return v;
+      if (['ardesia','carta','amber','casino','sakura','pece'].includes(v)) return v;
     } catch {}
-    return 'dark';
+    return 'ardesia';
   });
   useEffect(() => {
     try { localStorage.setItem('bc_theme', theme); } catch {}
   }, [theme]);
-  const isDark = theme === 'dark';
-  const setIsDark = (v) => setTheme(v ? 'dark' : 'light');
-  const C = theme === 'light' ? LIGHT : theme === 'amber' ? AMBER : theme === 'selva' ? SELVA : theme === 'sakura' ? SAKURA : theme === 'pece' ? PECE : DARK;
+  const isDark = theme !== 'carta';
+  const setIsDark = (v) => setTheme(v ? 'ardesia' : 'carta');
+  const C = theme === 'carta' ? CARTA : theme === 'amber' ? AMBER : theme === 'casino' ? CASINO : theme === 'sakura' ? SAKURA : theme === 'pece' ? PECE : ARDESIA;
   const isDesktop = useBreakpoint(768);
   const { t } = useLang();
 
@@ -808,6 +808,7 @@ export default function App() {
   const [reactions,  setReactions]  = useState([]);
   const [settings,   setSettings]   = useState({ acceptance_threshold: 20, max_stake: 100 });
   const [syncError,  setSyncError]  = useState(null);
+  const [feedEvents, setFeedEvents] = useState([]);
 
   const refresh = useSync(useCallback(data => {
     if (data.profiles)   setProfiles(data.profiles);
@@ -816,6 +817,7 @@ export default function App() {
     if (data.categories) setCustomCats(data.categories);
     if (data.reactions)  setReactions(data.reactions);
     if (data.settings)   setSettings(data.settings);
+    if (data.feedEvents) setFeedEvents(data.feedEvents);
     stateLoadedRef.current = true;
   }, []), activeGroupId, token, setSyncError);
 
@@ -1939,7 +1941,7 @@ export default function App() {
             : (view === 'stats' || view === 'trophies') ? <SkeletonList count={3} />
             :                                              <SkeletonList count={3} />;
           return (<Suspense fallback={ViewFallback}><>
-            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onGoToBets={goToAllBets} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={onEggFired} onOpenDie={() => setDieRollOpen(true)} onOpenIceEgg={() => setIceEggOpen(true)} onOpenPhoenixEgg={() => setPhoenixEggOpen(true)} pendingResolveIds={pendingResolveIds} onNotifSeen={handleNotifSeen} />}
+            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onGoToBets={goToAllBets} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={onEggFired} onOpenDie={() => setDieRollOpen(true)} onOpenIceEgg={() => setIceEggOpen(true)} onOpenPhoenixEgg={() => setPhoenixEggOpen(true)} pendingResolveIds={pendingResolveIds} onNotifSeen={handleNotifSeen} feedEvents={feedEvents} />}
             {view === 'bets'      && <BetsHubView
                 tab={betsTab} setTab={setBetsTab}
                 user={user} profiles={profiles} bets={bets} cats={cats} isDesktop={isDesktop}
