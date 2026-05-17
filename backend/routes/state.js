@@ -137,7 +137,21 @@ async function buildState(roomId, viewerId) {
     ? { acceptance_threshold: roomRows[0].acceptance_threshold ?? 20, max_stake: roomRows[0].max_stake ?? 100 }
     : { acceptance_threshold: 20, max_stake: 100 };
 
-  return { profiles, credits, bets, categories, reactions, settings };
+  const { rows: feedRows } = await db.query(
+    `SELECT * FROM events
+     WHERE room_id=$1 AND feed_visible=true
+       AND (
+         event_type IN ('bet_created','bet_resolved_group')
+         OR (event_type IN ('bet_won','bet_lost') AND feed_actor_id=$2)
+         OR (event_type = 'challenge_received'    AND feed_target_id=$2)
+         OR (event_type = 'bet_accepted'          AND feed_target_id=$2)
+         OR (event_type IN ('trophy_unlocked','streak_milestone') AND feed_actor_id=$2)
+       )
+     ORDER BY created_at DESC LIMIT 50`,
+    [roomId, viewerId]
+  );
+
+  return { profiles, credits, bets, categories, reactions, settings, feedEvents: feedRows };
 }
 
 router.get('/', async (req, res) => {
