@@ -186,73 +186,112 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
   const isResolved = done && bet.status !== 'rejected';
   const resolveColor = bet.status === 'won' ? 'var(--grn)' : 'var(--red)';
 
+  const b3BorderColor = bet.status === 'won' ? 'var(--grn)'
+    : bet.status === 'lost' ? 'var(--red)'
+    : bet.isSecret ? 'var(--gold)'
+    : sideColor;
+
   return(
     <div ref={cardRef} className="sUp" style={{
       position:"relative", overflow:"hidden",
-      padding:"22px 0 24px 22px", marginBottom:0,
-      borderTop: isResolved ? `4px solid ${resolveColor}` : 'none',
-      borderBottom:`1px solid ${deltaX > 40 ? 'var(--grn)55' : deltaX < -40 ? 'var(--red)55' : 'var(--rule)'}`,
-      background: isResolved
-        ? (bet.status==='won'
-            ? 'linear-gradient(160deg, var(--grn)20 0%, var(--grn)0a 42%, transparent 72%)'
-            : 'linear-gradient(160deg, var(--red)1c 0%, var(--red)09 42%, transparent 72%)')
-        : 'transparent',
-      boxShadow: isResolved
-        ? (bet.status==='won'
-            ? 'inset 0 0 0 1px var(--grn)2a, inset 0 52px 44px -22px var(--grn)14'
-            : 'inset 0 0 0 1px var(--red)22, inset 0 52px 44px -22px var(--red)0f')
-        : 'none',
+      marginBottom:10,
+      borderLeft:`3px solid ${b3BorderColor}`,
+      borderRadius:12,
+      background:"var(--card)",
       opacity: done ? (bet.status==='won' ? 1 : 0.86) : 1,
       transform: deltaX !== 0 ? `translateX(${Math.max(-60, Math.min(60, deltaX))}px)` : 'none',
-      transition: deltaX === 0 ? 'transform .3s ease, border-color .2s, opacity .2s' : 'border-color .1s',
+      transition: deltaX === 0 ? 'transform .3s ease, opacity .2s' : 'none',
     }}>
-      {/* Vertical accent rule — gold for vault, category color otherwise. */}
-      <div style={{position:"absolute",left:0,top:22,bottom:24,width:2,background:bet.isSecret?'var(--gold)':sideColor}}/>
 
-      {/* CR-style outcome treatment: ribbon + stamp */}
-      {isResolved && (<>
-        {/* Full-width ribbon — bleeds to left/top edge */}
-        <div style={{
-          marginLeft:-22, marginTop:-22, marginBottom:12,
-          padding:'7px 16px 7px 22px',
-          background: bet.status==='won'
-            ? 'linear-gradient(90deg, var(--grn)3a 0%, var(--grn)1a 55%, transparent 100%)'
-            : 'linear-gradient(90deg, var(--red)30 0%, var(--red)14 55%, transparent 100%)',
-          display:'flex', alignItems:'center', justifyContent:'space-between',
-        }}>
+      {/* B3 header: category chip + title + quota/result */}
+      <div style={{padding:'12px 14px 10px'}}>
+        {/* Category chip */}
+        <div style={{marginBottom:7}}>
           <span style={{
-            fontFamily:"'Manrope',sans-serif", fontWeight:800,
-            fontSize:9, letterSpacing:'.32em', textTransform:'uppercase',
-            color: resolveColor,
-            textShadow: bet.status==='won' ? '0 0 14px var(--grn)99' : '0 0 10px var(--red)77',
+            display:'inline-block',
+            background:`${cat.color}1a`, color:cat.color,
+            fontSize:9, fontWeight:600,
+            padding:'2px 7px', borderRadius:4,
+            letterSpacing:'.04em', textTransform:'uppercase',
           }}>
-            {bet.status==='won' ? '✦ Vittoria' : '✗ Sconfitta'}
+            {cat.e} {catLabel(cat)}
           </span>
-          {bet.status==='won' && (
+          {bet.isSecret && !done && (
             <span style={{
-              fontSize:12, letterSpacing:3,
-              color:'#f4c430',
-              textShadow:'0 0 10px #f4c43099',
-              flexShrink:0,
-            }}>★★★</span>
+              marginLeft:4, display:'inline-block',
+              background:'var(--gold)1a', color:'var(--gold)',
+              fontSize:9, fontWeight:600,
+              padding:'2px 7px', borderRadius:4,
+              letterSpacing:'.04em', textTransform:'uppercase',
+            }}>🔒 Vault</span>
           )}
         </div>
 
-        {/* Diagonal stamp watermark */}
-        <div style={{
-          position:'absolute', right:12, top:44,
-          fontFamily:"'Playfair Display',serif", fontWeight:900,
-          fontSize:44, lineHeight:1, letterSpacing:'0.05em',
-          color: resolveColor,
-          opacity:0.13, pointerEvents:'none', userSelect:'none',
-          transform:'rotate(-18deg)',
-          textShadow: bet.status==='won' ? '0 0 24px var(--grn)' : '0 0 18px var(--red)',
-        }}>
-          {bet.status==='won' ? 'VINTO' : 'PERSO'}
+        {/* Title + quota/result */}
+        <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:10}}>
+          <div style={{flex:1,minWidth:0}}>
+            {bet.isSecret && !done
+              ? <div style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontWeight:600,fontSize:16,color:"var(--gold)"}}>Scommessa privata</div>
+              : <div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:16,lineHeight:1.3,color:"var(--txt)"}}>{bet.title}</div>
+            }
+          </div>
+          {!bet.isSecret && (
+            <div style={{flexShrink:0,textAlign:'right',lineHeight:1}}>
+              {done ? (
+                <div style={{
+                  fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,
+                  color: bet.status==='won' ? 'var(--grn)' : 'var(--red)',
+                  letterSpacing:'-0.02em',
+                }}>
+                  {bet.status==='won' ? `+₡ ${bet.potentialWin}` : `-₡ ${bet.stake}`}
+                </div>
+              ) : (
+                <div style={{
+                  fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,
+                  color:'var(--gold)', letterSpacing:'-0.02em',
+                }}>
+                  {parseFloat(bet.quota).toFixed(2)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </>)}
 
-      <div style={{...(isDesktop?{display:"flex",alignItems:"flex-start",gap:24}:{})}}>
+        {/* Hairline */}
+        <div style={{height:1,background:'var(--rule)',marginBottom:8}}/>
+
+        {/* Meta row */}
+        <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+          <div style={{display:'flex'}}>
+            {[bet.creator,bet.opponent].filter(Boolean).slice(0,2).map((uid,i) => (
+              <div key={uid} style={{
+                width:22,height:22,borderRadius:'50%',
+                background:`${getC(profiles,uid)}33`,
+                border:'2px solid var(--card)',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                fontSize:11, marginLeft: i>0 ? -6 : 0, zIndex:2-i, flexShrink:0,
+                overflow:'hidden',
+              }}>
+                {profiles[uid]?.avatarUrl
+                  ? <img src={profiles[uid].avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  : profiles[uid]?.avatar}
+              </div>
+            ))}
+          </div>
+          <span style={{fontSize:10,color:'var(--dim)',fontFamily:"'Playfair Display',serif"}}>₡ {bet.stake}</span>
+          {bet.expiresAt && isSoon(bet.expiresAt) && (
+            <span style={{fontSize:10,color:'var(--red)',fontWeight:700}}>⚠ {tLeft(bet.expiresAt,lang)}</span>
+          )}
+          {!done && !bet.isSecret && (
+            <span style={{marginLeft:'auto',fontSize:11,color:'var(--grn)',fontFamily:"'Playfair Display',serif",fontWeight:600}}>
+              → ₡ {bet.potentialWin}
+            </span>
+          )}
+        </div>
+      </div>
+      {/* End B3 header */}
+
+      <div style={{...(isDesktop?{display:"flex",alignItems:"flex-start",gap:24}:{}), padding:'0 14px'}}>
         {/* Main content */}
         <div style={{flex:isDesktop?1:undefined,minWidth:0}}>
           {/* Title row */}
@@ -597,6 +636,44 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
         {/* Actions column: desktop right side */}
         {isDesktop&&actions}
       </div>
+
+      {/* B3 inline footer */}
+      {!done && !bet.isSecret && (
+        <div style={{display:'flex',borderTop:'1px solid var(--rule)'}}>
+          {isPending && bet.opponent === user ? (
+            <>
+              <button onClick={() => onAccept?.(bet.id)} style={{
+                flex:1,padding:8,background:'transparent',border:'none',
+                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--grn)',letterSpacing:'.03em',
+              }}>✓ Accetta</button>
+              <button onClick={() => onCounter?.(bet)} style={{
+                flex:1,padding:8,background:'transparent',border:'none',borderLeft:'1px solid var(--rule)',
+                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--pur)',letterSpacing:'.03em',
+              }}>↩ Countra</button>
+              <button onClick={() => onReject?.(bet.id)} style={{
+                flex:1,padding:8,background:'transparent',border:'none',borderLeft:'1px solid var(--rule)',
+                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--red)',letterSpacing:'.03em',
+              }}>✕ Rifiuta</button>
+            </>
+          ) : bet.status === 'active' && (isParty || (typeof can === 'function' && can('moderate_bets'))) ? (
+            <>
+              <button onClick={() => onResolve?.(bet)} style={{
+                flex:1,padding:8,background:'transparent',border:'none',
+                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--grn)',letterSpacing:'.03em',
+              }}>✓ Risolvi</button>
+              <div style={{
+                flex:1,padding:8,borderLeft:'1px solid var(--rule)',
+                fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:600,color:'var(--dim)',
+                textAlign:'center',
+              }}>💬 {bet.messageCount || ''}</div>
+              <button style={{
+                flex:1,padding:8,background:'transparent',border:'none',borderLeft:'1px solid var(--rule)',
+                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--dim)',letterSpacing:'.03em',
+              }}>⋯</button>
+            </>
+          ) : null}
+        </div>
+      )}
 
       {photoCaptureOpen && (
         <CameraModal
