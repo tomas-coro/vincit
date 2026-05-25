@@ -14,6 +14,9 @@ export const SELVA = {bg:"#0d1b10",surf:"#152416",card:"#1d2f1e",brd:"#2e4a30",r
 export const SAKURA= {bg:"#1e1018",surf:"#2d1828",card:"#3d2038",brd:"#5a3050",rule:"rgba(224,160,192,0.16)",soft:"rgba(224,160,192,0.06)",gold:"#e8b0b0",goldL:"#f0c8c8",glow:"rgba(232,176,176,0.24)",grn:"#a0d888",red:"#ff7070",blu:"#90a8e8",pur:"#c078c0",txt:"#f0d8e8",dim:"#c090a8",mut:"#5a3050",inp:"#190e18"};
 // "Pece" — pitch-black editorial: no tint, near-absolute black, ivory accent, ultra-minimal glow.
 export const PECE  = {bg:"#0c0c0e",surf:"#141417",card:"#1c1c20",brd:"#2c2c32",rule:"rgba(240,238,232,0.08)",soft:"rgba(240,238,232,0.03)",gold:"#c8b896",goldL:"#ddd0b8",glow:"rgba(200,184,150,0.18)",grn:"#4ec87a",red:"#e05555",blu:"#7a9ae0",pur:"#a898c8",txt:"#f0eee8",dim:"#888882",mut:"#2c2c32",inp:"#0a0a0c"};
+// "Brass & Velvet" — déco caldo, velluto bruno-rame, oro pallido. Tema default V3.
+// `pur` riusato come slot accento RAME (era viola); `blu` resta freddo per varietà.
+export const BRASS = {bg:"#1c1210",surf:"#2a1a16",card:"#35211b",brd:"#45302a",rule:"rgba(218,188,122,0.16)",soft:"rgba(218,188,122,0.05)",gold:"#dabc7a",goldL:"#efd9a8",glow:"rgba(197,119,47,0.22)",grn:"#5fb390",red:"#d85a47",blu:"#8fa8c8",pur:"#c5772f",txt:"#f3eadb",dim:"#b59e90",mut:"#5a4035",inp:"#1f130f"};
 
 export const rootVars = C => ({
   "--bg":C.bg,"--surf":C.surf,"--card":C.card,"--brd":C.brd,
@@ -21,15 +24,14 @@ export const rootVars = C => ({
   "--gold":C.gold,"--goldL":C.goldL,"--glow":C.glow,
   "--grn":C.grn,"--red":C.red,"--blu":C.blu,"--pur":C.pur,
   "--txt":C.txt,"--dim":C.dim,"--mut":C.mut,"--inp":C.inp,
-  // Font roles. Numbers stay Playfair (editorial weight on the credit
-  // counters & quotas), headings move to Cormorant Garamond, UI body is
-  // Manrope so the dashboard reads as a clean modern app rather than a
-  // shiny casino skin.
+  // Font roles (V3 — 2 famiglie). Playfair Display per numeri ₡ E titoli
+  // (lusso editoriale déco), Inter per tutta la UI/body. Niente Cormorant
+  // né Manrope: brief vincola max 2 famiglie tipografiche.
   "--f-num":  "'Playfair Display', serif",
-  "--f-head": "'Cormorant Garamond', serif",
-  "--f-ui":   "'Manrope', sans-serif",
+  "--f-head": "'Playfair Display', serif",
+  "--f-ui":   "'Inter', sans-serif",
   background:C.bg, color:C.txt,
-  fontFamily:"'Manrope',sans-serif", minHeight:"100vh",
+  fontFamily:"'Inter',sans-serif", minHeight:"100vh",
 });
 
 // Avatar emojis grouped by category. Order matters: items appear in this exact order in the picker.

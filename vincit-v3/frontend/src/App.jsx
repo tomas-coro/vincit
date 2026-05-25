@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, lazy, Suspense } from 
 import { useSync } from './useSync.js';
 import * as api from './api.js';
 
-import { DARK, LIGHT, AMBER, SELVA, SAKURA, PECE, rootVars, DEF_CATS, COLORS, VincitWordmark } from './components/Atoms.jsx';
+import { BRASS, DARK, LIGHT, AMBER, SELVA, SAKURA, PECE, rootVars, DEF_CATS, COLORS, VincitWordmark } from './components/Atoms.jsx';
 import { useLang } from './i18n.js';
 import SplashScreen from './components/SplashScreen.jsx';
 import { SkeletonDashboard, SkeletonList } from './components/Skeleton.jsx';
@@ -623,16 +623,16 @@ export default function App() {
   const [theme, setTheme] = useState(() => {
     try {
       const v = localStorage.getItem('bc_theme');
-      if (['dark','light','amber','selva','sakura','pece'].includes(v)) return v;
+      if (['brass','dark','light','amber','selva','sakura','pece'].includes(v)) return v;
     } catch {}
-    return 'dark';
+    return 'brass';
   });
   useEffect(() => {
     try { localStorage.setItem('bc_theme', theme); } catch {}
   }, [theme]);
-  const isDark = theme === 'dark';
-  const setIsDark = (v) => setTheme(v ? 'dark' : 'light');
-  const C = theme === 'light' ? LIGHT : theme === 'amber' ? AMBER : theme === 'selva' ? SELVA : theme === 'sakura' ? SAKURA : theme === 'pece' ? PECE : DARK;
+  const isDark = theme !== 'light';
+  const setIsDark = (v) => setTheme(v ? 'brass' : 'light');
+  const C = theme === 'light' ? LIGHT : theme === 'amber' ? AMBER : theme === 'selva' ? SELVA : theme === 'sakura' ? SAKURA : theme === 'pece' ? PECE : theme === 'dark' ? DARK : BRASS;
   const isDesktop = useBreakpoint(768);
   const { t } = useLang();
 
