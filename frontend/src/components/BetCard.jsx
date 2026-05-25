@@ -235,24 +235,16 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
               : <div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:16,lineHeight:1.3,color:"var(--txt)"}}>{bet.title}</div>
             }
           </div>
-          {!bet.isSecret && (
+          {/* Active bets show the quota here; resolved outcome is shown by
+              the result badge in the badges section below. */}
+          {!bet.isSecret && !done && (
             <div style={{flexShrink:0,textAlign:'right',lineHeight:1}}>
-              {done ? (
-                <div style={{
-                  fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,
-                  color: bet.status==='won' ? 'var(--grn)' : 'var(--red)',
-                  letterSpacing:'-0.02em',
-                }}>
-                  {bet.status==='won' ? `+₡ ${bet.potentialWin}` : `-₡ ${bet.stake}`}
-                </div>
-              ) : (
-                <div style={{
-                  fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,
-                  color:'var(--gold)', letterSpacing:'-0.02em',
-                }}>
-                  {parseFloat(bet.quota).toFixed(2)}
-                </div>
-              )}
+              <div style={{
+                fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,
+                color:'var(--gold)', letterSpacing:'-0.02em',
+              }}>
+                {parseFloat(bet.quota).toFixed(2)}
+              </div>
             </div>
           )}
         </div>
@@ -279,9 +271,6 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
             ))}
           </div>
           <span style={{fontSize:10,color:'var(--dim)',fontFamily:"'Playfair Display',serif"}}>₡ {bet.stake}</span>
-          {bet.expiresAt && isSoon(bet.expiresAt) && (
-            <span style={{fontSize:10,color:'var(--red)',fontWeight:700}}>⚠ {tLeft(bet.expiresAt,lang)}</span>
-          )}
           {!done && !bet.isSecret && (
             <span style={{marginLeft:'auto',fontSize:11,color:'var(--grn)',fontFamily:"'Playfair Display',serif",fontWeight:600}}>
               → ₡ {bet.potentialWin}
@@ -294,19 +283,15 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
       <div style={{...(isDesktop?{display:"flex",alignItems:"flex-start",gap:24}:{}), padding:'0 14px'}}>
         {/* Main content */}
         <div style={{flex:isDesktop?1:undefined,minWidth:0}}>
-          {/* Title row */}
+          {/* Title row — title/category/win now live in the B3 header above;
+              keep only the date · creator line and the star bookmark. */}
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10}}>
             <div style={{flex:1,minWidth:0}}>
-              {bet.isSecret&&!done
-                ?<div style={{...S.row,gap:8}}><span style={{fontSize:18}}>🔒</span><span style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontWeight:600,fontSize:22,color:"var(--gold)"}}>{t('bet_card.secret_label')}</span></div>
-                :<div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:22,lineHeight:1.18,letterSpacing:'-0.005em'}}>{bet.title}</div>
-              }
-              <div style={{fontSize:9,color:"var(--dim)",marginTop:8,letterSpacing:'.22em',textTransform:'uppercase',fontWeight:600}}>
-                <span style={{color:cat.color}}>{cat.e}</span> {catLabel(cat)} · {fmtD(bet.createdAt,lang)}
+              <div style={{fontSize:9,color:"var(--dim)",letterSpacing:'.22em',textTransform:'uppercase',fontWeight:600}}>
+                {fmtD(bet.createdAt,lang)}
                 {!isOwner&&<span style={{color:getC(profiles,bet.creator)}}> · {profiles[bet.creator]?.name}</span>}
               </div>
             </div>
-            {/* Right column: star bookmark + win amount (mobile non-secret) */}
             <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',flexShrink:0,gap:2}}>
               <button onClick={toggleSave} title={isSaved ? 'Rimuovi dai preferiti' : 'Salva bet'} style={{
                 background:'transparent', border:'none', cursor:'pointer',
@@ -316,19 +301,12 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                 WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
                 transition:'color .15s, opacity .15s',
               }}>{isSaved ? '★' : '☆'}</button>
-              {!isDesktop&&!bet.isSecret&&<div style={{textAlign:"right",paddingTop:2}}>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:"var(--grn)",lineHeight:1,letterSpacing:'-0.02em'}}>
-                  {bet.potentialWin}<span style={{fontSize:13,opacity:.7,marginLeft:3}}>₡</span>
-                </div>
-                <div className="bc-meta" style={{fontSize:7,marginTop:3}}>{t('bet_card.win')}</div>
-              </div>}
             </div>
           </div>
 
-          {/* Badges — stake on the left, win on the right. No more
-              quota multiplier badge (users don't think in 1.5×). */}
+          {/* Secondary badges (pegno, surprise, targeted, subset, pot,
+              resolved result). Stake/win moved to the B3 header meta row. */}
           <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8}}>
-            {!bet.isSecret&&<><Bdg bg="var(--mut)44" c="var(--dim)">{t('bet_card.stake')} {bet.stake} ₡</Bdg><Bdg bg="var(--grn)22" c="var(--grn)">{t('bet_card.win')} {bet.potentialWin} ₡</Bdg></>}
             {bet.pegno&&<Bdg bg="var(--gold)22" c="var(--gold)">🎁 {bet.pegno}</Bdg>}
             {bet.isSurprise && (isOwner || user === bet.opponent) && !done && <Bdg bg="var(--pur)22" c="var(--pur)">{t('bet_card.surprise_label')}</Bdg>}
             {bet.opponent && !bet.isSecret && !bet.isCounterable && profiles[bet.opponent] && (
@@ -636,44 +614,6 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
         {/* Actions column: desktop right side */}
         {isDesktop&&actions}
       </div>
-
-      {/* B3 inline footer */}
-      {!done && !bet.isSecret && (
-        <div style={{display:'flex',borderTop:'1px solid var(--rule)'}}>
-          {isPending && bet.opponent === user ? (
-            <>
-              <button onClick={() => onAccept?.(bet.id)} style={{
-                flex:1,padding:8,background:'transparent',border:'none',
-                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--grn)',letterSpacing:'.03em',
-              }}>✓ Accetta</button>
-              <button onClick={() => onCounter?.(bet)} style={{
-                flex:1,padding:8,background:'transparent',border:'none',borderLeft:'1px solid var(--rule)',
-                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--pur)',letterSpacing:'.03em',
-              }}>↩ Countra</button>
-              <button onClick={() => onReject?.(bet.id)} style={{
-                flex:1,padding:8,background:'transparent',border:'none',borderLeft:'1px solid var(--rule)',
-                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--red)',letterSpacing:'.03em',
-              }}>✕ Rifiuta</button>
-            </>
-          ) : bet.status === 'active' && (isParty || (typeof can === 'function' && can('moderate_bets'))) ? (
-            <>
-              <button onClick={() => onResolve?.(bet)} style={{
-                flex:1,padding:8,background:'transparent',border:'none',
-                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--grn)',letterSpacing:'.03em',
-              }}>✓ Risolvi</button>
-              <div style={{
-                flex:1,padding:8,borderLeft:'1px solid var(--rule)',
-                fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:600,color:'var(--dim)',
-                textAlign:'center',
-              }}>💬 {bet.messageCount || ''}</div>
-              <button style={{
-                flex:1,padding:8,background:'transparent',border:'none',borderLeft:'1px solid var(--rule)',
-                cursor:'pointer',fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:700,color:'var(--dim)',letterSpacing:'.03em',
-              }}>⋯</button>
-            </>
-          ) : null}
-        </div>
-      )}
 
       {photoCaptureOpen && (
         <CameraModal

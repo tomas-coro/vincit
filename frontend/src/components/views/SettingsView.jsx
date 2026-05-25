@@ -28,7 +28,7 @@ const S = {
   raised: {background:"var(--card)",border:"1px solid var(--rule)",borderRadius:14,padding:16},
 };
 
-export default function SettingsView({user,profiles,groupMembers,isDark,setIsDark,theme,setTheme,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onTestReset,onLogout,onOpenProfileEdit,isAdmin=false,can}){
+export default function SettingsView({user,profiles,groupMembers,isDark,setIsDark,theme,setTheme,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onTestReset,onLogout,onOpenProfileEdit,isAdmin=false,can,onNavigate,pendingFriendCount=0,canAccessAdmin=false}){
   const { t, lang, setLang } = useLang();
   // Two-step logout: first tap arms the button ("Conferma uscita" in red),
   // second tap actually fires onLogout. Auto-resets after 4s so a forgotten
@@ -218,6 +218,37 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
               flexShrink: 0,
             }}>×</button>
         </div>
+      )}
+
+      {/* QUICK NAV — Amici / Admin live here because the bottom nav was
+          trimmed to 5 items and no longer carries them. */}
+      {onNavigate && (
+        <>
+          <SecLabel>{t('settings.nav_section')}</SecLabel>
+          <div
+            onClick={() => onNavigate('friends')}
+            role="button" tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('friends'); } }}
+            style={{...S.card, marginBottom:0, display:'flex', alignItems:'center', gap:12, cursor:'pointer', WebkitTapHighlightColor:'transparent'}}>
+            <span style={{fontSize:20,flexShrink:0}} aria-hidden>👥</span>
+            <span style={{flex:1,fontSize:15,fontWeight:600,color:'var(--txt)'}}>{t('settings.nav_friends')}</span>
+            {pendingFriendCount > 0 && (
+              <span style={{background:'var(--red)',color:'#fff',borderRadius:999,fontSize:10,fontWeight:700,padding:'1px 7px',minWidth:18,textAlign:'center'}}>{pendingFriendCount}</span>
+            )}
+            <span style={{color:'var(--dim)',fontSize:16}} aria-hidden>›</span>
+          </div>
+          {canAccessAdmin && (
+            <div
+              onClick={() => onNavigate('admin')}
+              role="button" tabIndex={0}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('admin'); } }}
+              style={{...S.card, display:'flex', alignItems:'center', gap:12, cursor:'pointer', WebkitTapHighlightColor:'transparent'}}>
+              <span style={{fontSize:20,flexShrink:0}} aria-hidden>🛠️</span>
+              <span style={{flex:1,fontSize:15,fontWeight:600,color:'var(--txt)'}}>{t('settings.nav_admin')}</span>
+              <span style={{color:'var(--dim)',fontSize:16}} aria-hidden>›</span>
+            </div>
+          )}
+        </>
       )}
 
       {/* LANGUAGE */}

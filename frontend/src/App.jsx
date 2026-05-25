@@ -1604,12 +1604,23 @@ export default function App() {
     const s = { startX: null, startY: null, locked: false };
 
     const onStart = e => {
+      // A modal is open → its close function is parked here. Don't let a
+      // horizontal swipe change the view behind the modal.
+      if (closeTopModalRef.current) return;
       const x = e.touches[0].clientX;
       if (x <= EDGE) return;
+      // Don't hijack swipes that begin inside a horizontally scrollable
+      // element (e.g. the BetsView filter-pill row) — let it scroll.
+      for (let el = e.target; el && el !== document.body; el = el.parentElement) {
+        if (!(el instanceof Element)) break;
+        const ov = getComputedStyle(el).overflowX;
+        if ((ov === 'auto' || ov === 'scroll') && el.scrollWidth > el.clientWidth) return;
+      }
       s.startX = x; s.startY = e.touches[0].clientY; s.locked = false;
     };
     const onMove = e => {
       if (s.startX === null) return;
+      if (closeTopModalRef.current) { s.startX = null; s.locked = false; return; }
       const dx = e.touches[0].clientX - s.startX;
       const dy = Math.abs(e.touches[0].clientY - s.startY);
       if (dy > VERT) { s.startX = null; return; }
@@ -1617,6 +1628,7 @@ export default function App() {
     };
     const onEnd = e => {
       if (!s.locked || s.startX === null) return;
+      if (closeTopModalRef.current) { s.startX = null; s.locked = false; return; }
       const dx = e.changedTouches[0].clientX - s.startX;
       s.startX = null; s.locked = false;
       if (Math.abs(dx) < THRESH) return;
@@ -1999,7 +2011,7 @@ export default function App() {
             {view === 'trophies'  && <TrophiesView bets={bets} isDesktop={isDesktop} />}
             {view === 'friends'   && <FriendsView groups={groups} user={user} myBets={bets} myCredits={credits[user] ?? 0} onSwitchToGroup={switchGroup} isDesktop={isDesktop} />}
             {view === 'admin' && authUser?.is_admin && <AdminView isDesktop={isDesktop} meId={authUser?.id} />}
-            {view === 'settings'  && <SettingsView user={user} profiles={profiles} groupMembers={groupMembers} isDark={isDark} setIsDark={setIsDark} theme={theme} setTheme={setTheme} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onTestReset={handleTestReset} onLogout={handleLogout} onOpenProfileEdit={() => setShowProfileEdit(true)} isAdmin={isAdmin} can={can} />}
+            {view === 'settings'  && <SettingsView user={user} profiles={profiles} groupMembers={groupMembers} isDark={isDark} setIsDark={setIsDark} theme={theme} setTheme={setTheme} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onTestReset={handleTestReset} onLogout={handleLogout} onOpenProfileEdit={() => setShowProfileEdit(true)} isAdmin={isAdmin} can={can} onNavigate={setView} pendingFriendCount={pendingFriendCount} canAccessAdmin={!!authUser?.is_admin} />}
           </></Suspense>);
         })()}
       </div>
