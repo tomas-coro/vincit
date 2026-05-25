@@ -123,13 +123,12 @@ export const Btn=({variant="ghost",sm,full,onClick,disabled,children,style={}})=
   if(sm){base.padding="8px 16px";base.fontSize=12;}
   if(full){base.width="100%";base.padding="15px 0";base.fontSize=14;}
   if(disabled){base.opacity=.4;base.pointerEvents="none";}
-  // Primary CTA = solid lavender pill with a soft colored shadow that
-  // belongs to the brand (not a generic black drop-shadow). "gold" remains
-  // the variant name for compatibility but visually it's now lavender —
-  // gold is reserved for typographic accents and rules.
+  // Primary CTA = déco gold→copper gradient pill (firma Brass & Velvet) con
+  // ombra calda di brand. "gold" e "pur" restano i nomi-variante per
+  // compatibilità; visivamente sono entrambi il gradiente oro→rame.
   const vars = {
-    gold:  {background:"var(--pur)",  color:"#1a1530", boxShadow:"0 10px 28px -10px var(--pur), 0 1px 0 rgba(255,255,255,.12) inset"},
-    pur:   {background:"var(--pur)",  color:"#1a1530", boxShadow:"0 10px 28px -10px var(--pur), 0 1px 0 rgba(255,255,255,.12) inset"},
+    gold:  {background:"linear-gradient(135deg, var(--gold), var(--pur))", color:"#2a1812", boxShadow:"0 8px 24px -10px var(--pur), 0 1px 0 rgba(255,255,255,.18) inset"},
+    pur:   {background:"linear-gradient(135deg, var(--gold), var(--pur))", color:"#2a1812", boxShadow:"0 8px 24px -10px var(--pur), 0 1px 0 rgba(255,255,255,.18) inset"},
     grn:   {background:"var(--grn)",  color:"#0a1f15", boxShadow:"0 10px 28px -12px var(--grn)"},
     red:   {background:"var(--red)",  color:"#fff",    boxShadow:"0 10px 28px -12px var(--red)"},
     accent:{background:"transparent", color:"var(--gold)", border:"1px solid var(--gold)44"},

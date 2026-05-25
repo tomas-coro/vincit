@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vincit — Prima / Dopo (V1 → V3 Brass &amp; Velvet)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1c1210; --surf:#2a1a16; --card:#35211b; --line:#45302a;
+    --gold:#dabc7a; --goldL:#efd9a8; --copper:#c5772f;
+    --txt:#f3eadb; --dim:#b59e90;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Inter',sans-serif; color:var(--txt);
+    background:radial-gradient(130% 85% at 50% -12%, #4a2418 0%, #2e1712 38%, var(--bg) 70%), var(--bg);
+    min-height:100vh; padding:48px 20px 80px;
+  }
+  .wrap{max-width:1180px; margin:0 auto;}
+  h1{font-family:'Playfair Display',serif; font-weight:700; font-size:38px; letter-spacing:.01em; margin-bottom:6px;}
+  h1 .it{font-style:italic; color:var(--goldL);}
+  .sub{color:var(--dim); font-size:15px; margin-bottom:40px; max-width:680px; line-height:1.5;}
+  .row{margin-bottom:54px;}
+  .row > h2{
+    font-family:'Playfair Display',serif; font-weight:700; font-size:22px;
+    margin-bottom:4px;
+  }
+  .row > .desc{color:var(--dim); font-size:13px; margin-bottom:20px; line-height:1.5;}
+  .pair{display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start;}
+  .col{background:var(--surf); border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,.4); position:relative;}
+  .col::after{content:''; position:absolute; top:12px; right:12px; width:40px; height:40px; border-top:1.5px solid var(--gold); border-right:1.5px solid var(--gold); opacity:.45; border-radius:0 5px 0 0; pointer-events:none;}
+  .tag{
+    display:flex; align-items:center; gap:8px;
+    padding:13px 18px; font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+    border-bottom:1px solid var(--line);
+  }
+  .tag.before{color:var(--dim);} .tag.before .dot{background:var(--dim);}
+  .tag.after{color:var(--gold);} .tag.after .dot{background:linear-gradient(135deg,var(--gold),var(--copper));}
+  .dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .col img{display:block; width:100%; height:auto;}
+  .note{font-size:11px; color:var(--dim); padding:11px 18px; border-top:1px solid var(--line); line-height:1.5;}
+  .legend{
+    margin-top:30px; padding:22px; background:var(--surf); border:1px solid var(--line); border-radius:18px;
+  }
+  .legend h3{font-family:'Playfair Display',serif; font-size:18px; margin-bottom:14px;}
+  .legend ul{list-style:none; display:grid; gap:10px;}
+  .legend li{font-size:13px; color:var(--txt); padding-left:22px; position:relative; line-height:1.5;}
+  .legend li::before{content:'◆'; position:absolute; left:0; color:var(--gold); font-size:10px; top:3px;}
+  .legend b{color:var(--goldL); font-weight:600;}
+  @media(max-width:760px){ .pair{grid-template-columns:1fr;} h1{font-size:28px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Vincit — <span class="it">prima / dopo</span></h1>
+  <div class="sub">Confronto del restyle: la V1 originale (palette "Lavanda &amp; Ottone" viola) → la V3 <b>Brass &amp; Velvet</b> (velluto bruno-rame caldo, Playfair + Inter, accenti oro/rame). Stesso backend, stesse funzioni, stessa PWA.</div>
+
+  <div class="row">
+    <h2>1 · Accesso</h2>
+    <div class="desc">Da fondo viola lavanda + bottone viola → fondo velluto bruno-rame + CTA gradiente oro→rame. Wordmark e label in tono caldo.</div>
+    <div class="pair">
+      <div class="col">
+        <div class="tag before"><span class="dot"></span> Prima · V1 Lavanda</div>
+        <img src="shots/login-before.png" alt="Login V1">
+        <div class="note">Viola dominante, ottone come accento. Bottone tinta piatta.</div>
+      </div>
+      <div class="col">
+        <div class="tag after"><span class="dot"></span> Dopo · V3 Brass</div>
+        <img src="shots/login-after.png" alt="Login V3">
+        <div class="note">Velluto bruno-rame, CTA gradiente oro→rame, glow caldo.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <h2>2 · Dashboard + navigazione</h2>
+    <div class="desc">Stessa schermata in tema Brass: il "prima" ha ancora la nav a emoji multicolore + CTA piatta; il "dopo" introduce le icone-linea monocrome (oro quando attive), il gradiente sulle CTA e i titoli Playfair.</div>
+    <div class="pair">
+      <div class="col">
+        <div class="tag before"><span class="dot"></span> Prima · pre-déco</div>
+        <img src="shots/dash-before.png" alt="Dashboard pre-deco">
+        <div class="note">Nav a emoji (🏠🎯📊👥🏆⚙️) — stonano col lusso brass.</div>
+      </div>
+      <div class="col">
+        <div class="tag after"><span class="dot"></span> Dopo · déco</div>
+        <img src="shots/dash-after.png" alt="Dashboard deco">
+        <div class="note">Icone-linea monocrome oro/rame, HOME attiva in oro.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h3>Cosa è cambiato nel restyle V3</h3>
+    <ul>
+      <li><b>Palette</b> — da viola "Lavanda &amp; Ottone" a velluto bruno-rame caldo (tema BRASS).</li>
+      <li><b>Tipografia</b> — ridotta a 2 famiglie: Playfair Display (titoli + numeri ₡) + Inter (UI). Rimossi Cormorant e Manrope.</li>
+      <li><b>Nav</b> — icone-linea monocrome al posto delle emoji multicolore; oro quando attive.</li>
+      <li><b>CTA</b> — gradiente oro→rame al posto della tinta piatta.</li>
+      <li><b>Coin easter-egg</b> — diventerà una fiche (prossimo step).</li>
+      <li><b>Invariati</b> — backend, funzioni, PWA, struttura. Solo il look cambia.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

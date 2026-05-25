@@ -95,7 +95,7 @@ export async function registerPush(user, { prompt = true } = {}) {
 }
 
 const CSS_BASE = `
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,700&family=Playfair+Display:wght@700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap');
 @keyframes sUp{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes fIn{from{opacity:0}to{opacity:1}}
 @keyframes bIn{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.1)}80%{transform:scale(.95)}100%{transform:scale(1);opacity:1}}
@@ -106,7 +106,7 @@ const CSS_BASE = `
 @keyframes confB{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1}100%{transform:translate(var(--ex),var(--ey)) rotate(var(--rot,720deg)) scale(.4);opacity:0}}
 @keyframes bcStreakTap{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-8deg)}100%{transform:scale(1) rotate(0deg)}}
 .bc *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-.bc{font-family:'Manrope',sans-serif;transition:background .25s,color .25s}
+.bc{font-family:'Inter',sans-serif;transition:background .25s,color .25s}
 /* Kill every default focus/click outline app-wide — user reported the lavender
    focus ring and the mobile tap-highlight both reading as a "blue box" they
    never want to see. Anything that needs explicit keyboard focus styling
@@ -116,13 +116,13 @@ const CSS_BASE = `
 
 /* ─── Editorial type scale ────────────────────────────────────────── */
 /* Hero italic display (60–96px depending on viewport).               */
-.bc-hero{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;letter-spacing:-0.03em;line-height:.92;color:var(--txt)}
-/* Section heading: large italic serif.                                */
-.bc-head{font-family:'Cormorant Garamond',serif;font-weight:600;letter-spacing:-0.01em;line-height:1.05}
+.bc-hero{font-family:'Playfair Display',serif;font-style:italic;font-weight:600;letter-spacing:-0.01em;line-height:.96;color:var(--txt)}
+/* Section heading: Playfair display.                                  */
+.bc-head{font-family:'Playfair Display',serif;font-weight:700;letter-spacing:0;line-height:1.1}
 /* Lining numerals, editorial weight — credit balances, quotas, ₡.    */
 .bc-num{font-family:'Playfair Display',serif;font-feature-settings:'lnum' 1, 'tnum' 1;letter-spacing:-0.02em;line-height:1}
 /* Tiny tracked uppercase meta — labels, dates, captions.              */
-.bc-meta{font-family:'Manrope',sans-serif;font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+.bc-meta{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
 /* 1px hairline rule — replaces card borders as a divider.             */
 .bc-rule{height:1px;background:var(--rule);border:0;margin:0}
 .sUp{animation:sUp .3s ease both}
@@ -206,6 +206,22 @@ const CSS_BASE = `
   .bc input:hover,.bc textarea:hover,.bc select:hover{border-color:var(--pur)66 !important;}
 }
 `;
+
+// Nav line-icons (Brass & Velvet): monochrome stroke icons that inherit the
+// parent `color` via currentColor — gold when active, muted otherwise. Replace
+// the multicolour emoji so the bottom nav reads as the elegant déco set.
+function NavIcon({ id, size = 22 }) {
+  const p = { width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.7, strokeLinecap:'round', strokeLinejoin:'round' };
+  switch (id) {
+    case 'dashboard': return <svg {...p}><path d="M3 11.2 12 4l9 7.2"/><path d="M5.5 9.8V19h13V9.8"/><path d="M10 19v-5h4v5"/></svg>;
+    case 'bets':      return <svg {...p}><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.3"/><path d="M12 1.5v2.3M12 20.2v2.3M1.5 12h2.3M20.2 12h2.3"/></svg>;
+    case 'stats':     return <svg {...p} strokeWidth={2.2}><path d="M5 20.5V11.5"/><path d="M12 20.5V4.5"/><path d="M19 20.5V14.5"/></svg>;
+    case 'friends':   return <svg {...p}><circle cx="8.8" cy="8" r="3.1"/><path d="M3.4 19a5.4 5.4 0 0 1 10.8 0"/><path d="M15.6 5.4a3.1 3.1 0 0 1 0 5.6"/><path d="M16.4 14a5.4 5.4 0 0 1 4.2 5"/></svg>;
+    case 'trophies':  return <svg {...p}><path d="M7 4.5h10v3.2a5 5 0 0 1-10 0V4.5Z"/><path d="M7 6.5H4.2v.8a3 3 0 0 0 3 3M17 6.5h2.8v.8a3 3 0 0 1-3 3"/><path d="M12 12.7v3M9.2 19.5h5.6M10 19.5l.6-3.8M14 19.5l-.6-3.8"/></svg>;
+    case 'settings':  return <svg {...p}><circle cx="12" cy="12" r="3.1"/><path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.7 5.3l-1.7 1.7M7 17l-1.7 1.7M18.7 18.7 17 17M7 7 5.3 5.3"/></svg>;
+    default:          return null;
+  }
+}
 
 // Easter egg #2: fullscreen coin flip. Triggered from the ₡ symbol next to
 // the credit balance (mobile header + desktop sidebar). First flip ever
@@ -1821,7 +1837,7 @@ export default function App() {
                   padding: '8px 14px 8px ' + o.px + 'px',
                   marginTop: o.mt,
                   cursor: 'pointer',
-                  fontFamily:"'Cormorant Garamond',serif",
+                  fontFamily:"'Playfair Display',serif",
                   fontSize: isActive ? o.sz + 4 : o.sz,
                   fontStyle: 'italic',
                   fontWeight: isActive ? 600 : 500,
@@ -1835,7 +1851,7 @@ export default function App() {
                   userSelect: 'none', position: 'relative',
                   willChange: 'transform',
                 }}>
-                  <span style={{ fontSize: 17, transition: 'font-size .2s' }}>{n.e}</span>
+                  <span style={{ display:'flex', alignItems:'center', transition: 'transform .2s' }}><NavIcon id={n.id} size={18}/></span>
                   {n.l}
                   {n.id === 'bets' && secretCount > 0 && (
                     <div title="Vault" style={{ position: 'absolute', right: 14, width: 6, height: 6, borderRadius: 999, background: 'var(--gold)' }}/>
@@ -2007,7 +2023,7 @@ export default function App() {
                   color: isSwipeFocus ? 'var(--gold)' : isActive ? 'var(--gold)' : 'var(--mut)',
                   position: 'relative', userSelect: 'none',
                 }}>
-                <span style={{ fontSize: isActive && navSwipeIdx < 0 ? 22 : 18, transition:'font-size .18s' }}>{n.e}</span>
+                <span style={{ display:'flex', alignItems:'center', transition:'transform .18s' }}><NavIcon id={n.id} size={isActive && navSwipeIdx < 0 ? 23 : 20}/></span>
                 {n.id === 'friends' && pendingFriendCount > 0 && (
                   <div style={{ position: 'absolute', top: 0, right: 4, width: 6, height: 6, borderRadius: 999, background: 'var(--red)' }}/>
                 )}
