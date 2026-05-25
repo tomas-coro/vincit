@@ -28,7 +28,7 @@ const S = {
   raised: {background:"var(--card)",border:"1px solid var(--rule)",borderRadius:14,padding:16},
 };
 
-export default function SettingsView({user,profiles,groupMembers,isDark,setIsDark,theme,setTheme,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onTestReset,onLogout,onOpenProfileEdit,isAdmin=false,can}){
+export default function SettingsView({user,profiles,groupMembers,isDark,setIsDark,theme,setTheme,customCats,credits,bets,onUpdateProfile,onCreateCategory,onDeleteCategory,vaultPin,onSetVaultPin,isDesktop,onReset,onTestReset,onLogout,onOpenProfileEdit,isAdmin=false,can,onNavigate,pendingFriendCount=0,canAccessAdmin=false}){
   const { t, lang, setLang } = useLang();
   // Two-step logout: first tap arms the button ("Conferma uscita" in red),
   // second tap actually fires onLogout. Auto-resets after 4s so a forgotten
@@ -220,6 +220,37 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
         </div>
       )}
 
+      {/* QUICK NAV — Amici / Admin live here because the bottom nav was
+          trimmed to 5 items and no longer carries them. */}
+      {onNavigate && (
+        <>
+          <SecLabel>{t('settings.nav_section')}</SecLabel>
+          <div
+            onClick={() => onNavigate('friends')}
+            role="button" tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('friends'); } }}
+            style={{...S.card, marginBottom:0, display:'flex', alignItems:'center', gap:12, cursor:'pointer', WebkitTapHighlightColor:'transparent'}}>
+            <span style={{fontSize:20,flexShrink:0}} aria-hidden>👥</span>
+            <span style={{flex:1,fontSize:15,fontWeight:600,color:'var(--txt)'}}>{t('settings.nav_friends')}</span>
+            {pendingFriendCount > 0 && (
+              <span style={{background:'var(--red)',color:'#fff',borderRadius:999,fontSize:10,fontWeight:700,padding:'1px 7px',minWidth:18,textAlign:'center'}}>{pendingFriendCount}</span>
+            )}
+            <span style={{color:'var(--dim)',fontSize:16}} aria-hidden>›</span>
+          </div>
+          {canAccessAdmin && (
+            <div
+              onClick={() => onNavigate('admin')}
+              role="button" tabIndex={0}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('admin'); } }}
+              style={{...S.card, display:'flex', alignItems:'center', gap:12, cursor:'pointer', WebkitTapHighlightColor:'transparent'}}>
+              <span style={{fontSize:20,flexShrink:0}} aria-hidden>🛠️</span>
+              <span style={{flex:1,fontSize:15,fontWeight:600,color:'var(--txt)'}}>{t('settings.nav_admin')}</span>
+              <span style={{color:'var(--dim)',fontSize:16}} aria-hidden>›</span>
+            </div>
+          )}
+        </>
+      )}
+
       {/* LANGUAGE */}
       <SecLabel>{t('settings.lang_label')}</SecLabel>
       <div style={{...S.card,marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -238,23 +269,23 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
       <div style={{...S.card,marginBottom:12}}>
         <div style={{marginBottom:12}}>
           <div style={{fontSize:14,fontWeight:600}}>
-            {{dark:t('settings.theme_dark'),light:t('settings.theme_light'),amber:t('settings.theme_amber'),selva:t('settings.theme_selva'),sakura:t('settings.theme_sakura'),pece:t('settings.theme_pece')}[theme] ?? t('settings.theme_dark')}
+            {{ardesia:t('settings.theme_ardesia'),carta:t('settings.theme_carta'),amber:t('settings.theme_amber'),casino:t('settings.theme_casino'),sakura:t('settings.theme_sakura'),pece:t('settings.theme_pece')}[theme] ?? t('settings.theme_ardesia')}
           </div>
           <div style={{fontSize:12,color:"var(--dim)"}}>{t('settings.theme_desc')}</div>
         </div>
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(100px, 1fr))', gap:8}}>
           {[
-            {id:'dark',   label:t('settings.theme_dark'),   preview:['#1a1530','#c4a878']},
-            {id:'light',  label:t('settings.theme_light'),  preview:['#ede8d8','#7a5e30']},
-            {id:'amber',  label:t('settings.theme_amber'),  preview:['#1f1108','#e8b86a']},
-            {id:'selva',  label:t('settings.theme_selva'),  preview:['#0d1b10','#c8a040']},
-            {id:'sakura', label:t('settings.theme_sakura'), preview:['#1e1018','#e8b0b0']},
-            {id:'pece',   label:t('settings.theme_pece'),   preview:['#0c0c0e','#c8b896']},
+            {id:'ardesia', label:t('settings.theme_ardesia'), preview:['#131318','#c8a870']},
+            {id:'carta',   label:t('settings.theme_carta'),   preview:['#e8e0cc','#8b5e2a']},
+            {id:'amber',   label:t('settings.theme_amber'),   preview:['#1f1108','#e8b86a']},
+            {id:'casino',  label:t('settings.theme_casino'),  preview:['#0a1810','#e8c870']},
+            {id:'sakura',  label:t('settings.theme_sakura'),  preview:['#1e1018','#e8b0b0']},
+            {id:'pece',    label:t('settings.theme_pece'),    preview:['#0c0c0e','#c8b896']},
           ].map(opt => {
-            const active = (theme || (isDark ? 'dark' : 'light')) === opt.id;
+            const active = (theme || (isDark ? 'ardesia' : 'carta')) === opt.id;
             return (
               <button key={opt.id} type="button"
-                onClick={() => setTheme ? setTheme(opt.id) : setIsDark(opt.id === 'dark')}
+                onClick={() => setTheme ? setTheme(opt.id) : setIsDark(opt.id === 'ardesia')}
                 style={{
                   display:'flex', alignItems:'center', gap:8,
                   padding:'8px 12px', borderRadius:999,

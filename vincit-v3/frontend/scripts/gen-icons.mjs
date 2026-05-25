@@ -68,24 +68,68 @@ function hexRgb(h) {
   return [(n >> 16) & 0xFF, (n >> 8) & 0xFF, n & 0xFF];
 }
 
-const BG   = hexRgb('#07060f');
-const GOLD = hexRgb('#c8973f');
+const BG_OUTER = hexRgb('#091408');   // verde notte — sfondo
+const BG_INNER = hexRgb('#08160b');   // verde centrale — area chip
+const GOLD     = hexRgb('#d4a830');   // oro principale
+const GOLD_LIT = hexRgb('#f0d060');   // oro chiaro — top gradiente V
+
+function distToSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(px - ax, py - ay);
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
 
 function drawIcon(x, y, size) {
   const cx = size / 2, cy = size / 2;
-  const r  = size * 0.16;
+  const rr  = size * 0.211;  // corner radius — 108/512
+
   // rounded-rect mask
-  const inRect = x >= r && x < size - r && y >= 0 && y < size;
-  const inRect2 = y >= r && y < size - r && x >= 0 && x < size;
-  const corners = [
-    [r, r], [size - r, r], [r, size - r], [size - r, size - r]
-  ];
-  const inCorner = corners.some(([cx2, cy2]) => Math.hypot(x - cx2, y - cy2) < r);
-  const inside = inRect || inRect2 || inCorner;
-  if (!inside) return BG; // outside = background (transparent workaround: use dark bg)
-  // gold circle
-  const circ = Math.hypot(x - cx, y - cy) < size * 0.3;
-  return circ ? GOLD : BG;
+  const inR1 = x >= rr && x < size - rr && y >= 0 && y < size;
+  const inR2 = y >= rr && y < size - rr && x >= 0 && x < size;
+  const corners = [[rr,rr],[size-rr,rr],[rr,size-rr],[size-rr,size-rr]];
+  const inside  = inR1 || inR2 || corners.some(([cx2,cy2]) => Math.hypot(x-cx2, y-cy2) < rr);
+  if (!inside) return BG_OUTER;
+
+  const dx   = x - cx, dy = y - cy;
+  const dist = Math.hypot(dx, dy);
+  const outerR = size * 0.449;  // 230/512
+  const innerR = size * 0.375;  // 192/512
+
+  // chip ring: 6 settori oro
+  if (dist >= innerR && dist <= outerR) {
+    const angle      = (Math.atan2(dy, dx) + 2 * Math.PI) % (2 * Math.PI);
+    const sectorSpan = (2 * Math.PI) / 6;
+    const goldWidth  = sectorSpan * 0.714;  // 60.21/(60.21+24.08)
+    const offset     = 0.21;
+    const relAngle   = (angle + offset) % sectorSpan;
+    return relAngle < goldWidth ? GOLD : BG_OUTER;
+  }
+
+  if (dist > outerR) return BG_OUTER;
+
+  // V geometrica — due segmenti con gradiente verticale
+  const vStroke = size * 0.062;
+  const p1x = size * 0.270, p1y = size * 0.293;  // top-left
+  const p2x = size * 0.500, p2y = size * 0.715;  // bottom tip
+  const p3x = size * 0.730, p3y = size * 0.293;  // top-right
+
+  const dV = Math.min(
+    distToSeg(x, y, p1x, p1y, p2x, p2y),
+    distToSeg(x, y, p2x, p2y, p3x, p3y)
+  );
+
+  if (dV < vStroke) {
+    const t = Math.max(0, Math.min(1, (y - p1y) / (p2y - p1y)));
+    return [
+      Math.round(GOLD_LIT[0] + (GOLD[0] - GOLD_LIT[0]) * t),
+      Math.round(GOLD_LIT[1] + (GOLD[1] - GOLD_LIT[1]) * t),
+      Math.round(GOLD_LIT[2] + (GOLD[2] - GOLD_LIT[2]) * t),
+    ];
+  }
+
+  return BG_INNER;
 }
 
 mkdirSync('public/icons', { recursive: true });

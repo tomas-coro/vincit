@@ -26,6 +26,5 @@
   },
   "overrides": {
     "rollup": "4.9.6"
-  },
-  "npmrc": "omit=optional"
+  }
 }

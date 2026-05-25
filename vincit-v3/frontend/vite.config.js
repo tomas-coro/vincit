@@ -9,16 +9,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    // Proxy target configurable so the dev UI can point at a remote backend
-    // (es. produzione) per il viewing del restyle senza problemi CORS.
-    // Default invariato: backend locale su :3001.
-    proxy: {
-      '/api': {
-        target: process.env.VITE_PROXY_TARGET || 'http://localhost:3001',
-        changeOrigin: true,
-        secure: true,
-      },
-    },
+    proxy: { '/api': 'http://localhost:3001' },
   },
   build: {
     // Vite's default chunk-size warning threshold (500kb) is conservative

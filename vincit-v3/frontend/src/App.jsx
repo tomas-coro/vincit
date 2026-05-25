@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, lazy, Suspense } from 
 import { useSync } from './useSync.js';
 import * as api from './api.js';
 
-import { BRASS, DARK, LIGHT, AMBER, SELVA, SAKURA, PECE, rootVars, DEF_CATS, COLORS, VincitWordmark } from './components/Atoms.jsx';
+import { ARDESIA, CARTA, AMBER, CASINO, SAKURA, PECE, rootVars, DEF_CATS, COLORS, VincitWordmark } from './components/Atoms.jsx';
 import { useLang } from './i18n.js';
 import SplashScreen from './components/SplashScreen.jsx';
 import { SkeletonDashboard, SkeletonList } from './components/Skeleton.jsx';
@@ -95,7 +95,7 @@ export async function registerPush(user, { prompt = true } = {}) {
 }
 
 const CSS_BASE = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,700&family=Playfair+Display:wght@700;900&display=swap');
 @keyframes sUp{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes fIn{from{opacity:0}to{opacity:1}}
 @keyframes bIn{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.1)}80%{transform:scale(.95)}100%{transform:scale(1);opacity:1}}
@@ -106,7 +106,7 @@ const CSS_BASE = `
 @keyframes confB{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1}100%{transform:translate(var(--ex),var(--ey)) rotate(var(--rot,720deg)) scale(.4);opacity:0}}
 @keyframes bcStreakTap{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-8deg)}100%{transform:scale(1) rotate(0deg)}}
 .bc *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-.bc{font-family:'Inter',sans-serif;transition:background .25s,color .25s}
+.bc{font-family:'Manrope',sans-serif;transition:background .25s,color .25s}
 /* Kill every default focus/click outline app-wide — user reported the lavender
    focus ring and the mobile tap-highlight both reading as a "blue box" they
    never want to see. Anything that needs explicit keyboard focus styling
@@ -116,13 +116,13 @@ const CSS_BASE = `
 
 /* ─── Editorial type scale ────────────────────────────────────────── */
 /* Hero italic display (60–96px depending on viewport).               */
-.bc-hero{font-family:'Playfair Display',serif;font-style:italic;font-weight:600;letter-spacing:-0.01em;line-height:.96;color:var(--txt)}
-/* Section heading: Playfair display.                                  */
-.bc-head{font-family:'Playfair Display',serif;font-weight:700;letter-spacing:0;line-height:1.1}
+.bc-hero{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;letter-spacing:-0.03em;line-height:.92;color:var(--txt)}
+/* Section heading: large italic serif.                                */
+.bc-head{font-family:'Cormorant Garamond',serif;font-weight:600;letter-spacing:-0.01em;line-height:1.05}
 /* Lining numerals, editorial weight — credit balances, quotas, ₡.    */
 .bc-num{font-family:'Playfair Display',serif;font-feature-settings:'lnum' 1, 'tnum' 1;letter-spacing:-0.02em;line-height:1}
 /* Tiny tracked uppercase meta — labels, dates, captions.              */
-.bc-meta{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+.bc-meta{font-family:'Manrope',sans-serif;font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
 /* 1px hairline rule — replaces card borders as a divider.             */
 .bc-rule{height:1px;background:var(--rule);border:0;margin:0}
 .sUp{animation:sUp .3s ease both}
@@ -206,22 +206,6 @@ const CSS_BASE = `
   .bc input:hover,.bc textarea:hover,.bc select:hover{border-color:var(--pur)66 !important;}
 }
 `;
-
-// Nav line-icons (Brass & Velvet): monochrome stroke icons that inherit the
-// parent `color` via currentColor — gold when active, muted otherwise. Replace
-// the multicolour emoji so the bottom nav reads as the elegant déco set.
-function NavIcon({ id, size = 22 }) {
-  const p = { width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.7, strokeLinecap:'round', strokeLinejoin:'round' };
-  switch (id) {
-    case 'dashboard': return <svg {...p}><path d="M3 11.2 12 4l9 7.2"/><path d="M5.5 9.8V19h13V9.8"/><path d="M10 19v-5h4v5"/></svg>;
-    case 'bets':      return <svg {...p}><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.3"/><path d="M12 1.5v2.3M12 20.2v2.3M1.5 12h2.3M20.2 12h2.3"/></svg>;
-    case 'stats':     return <svg {...p} strokeWidth={2.2}><path d="M5 20.5V11.5"/><path d="M12 20.5V4.5"/><path d="M19 20.5V14.5"/></svg>;
-    case 'friends':   return <svg {...p}><circle cx="8.8" cy="8" r="3.1"/><path d="M3.4 19a5.4 5.4 0 0 1 10.8 0"/><path d="M15.6 5.4a3.1 3.1 0 0 1 0 5.6"/><path d="M16.4 14a5.4 5.4 0 0 1 4.2 5"/></svg>;
-    case 'trophies':  return <svg {...p}><path d="M7 4.5h10v3.2a5 5 0 0 1-10 0V4.5Z"/><path d="M7 6.5H4.2v.8a3 3 0 0 0 3 3M17 6.5h2.8v.8a3 3 0 0 1-3 3"/><path d="M12 12.7v3M9.2 19.5h5.6M10 19.5l.6-3.8M14 19.5l-.6-3.8"/></svg>;
-    case 'settings':  return <svg {...p}><circle cx="12" cy="12" r="3.1"/><path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.7 5.3l-1.7 1.7M7 17l-1.7 1.7M18.7 18.7 17 17M7 7 5.3 5.3"/></svg>;
-    default:          return null;
-  }
-}
 
 // Easter egg #2: fullscreen coin flip. Triggered from the ₡ symbol next to
 // the credit balance (mobile header + desktop sidebar). First flip ever
@@ -639,16 +623,16 @@ export default function App() {
   const [theme, setTheme] = useState(() => {
     try {
       const v = localStorage.getItem('bc_theme');
-      if (['brass','dark','light','amber','selva','sakura','pece'].includes(v)) return v;
+      if (['ardesia','carta','amber','casino','sakura','pece'].includes(v)) return v;
     } catch {}
-    return 'brass';
+    return 'ardesia';
   });
   useEffect(() => {
     try { localStorage.setItem('bc_theme', theme); } catch {}
   }, [theme]);
-  const isDark = theme !== 'light';
-  const setIsDark = (v) => setTheme(v ? 'brass' : 'light');
-  const C = theme === 'light' ? LIGHT : theme === 'amber' ? AMBER : theme === 'selva' ? SELVA : theme === 'sakura' ? SAKURA : theme === 'pece' ? PECE : theme === 'dark' ? DARK : BRASS;
+  const isDark = theme !== 'carta';
+  const setIsDark = (v) => setTheme(v ? 'ardesia' : 'carta');
+  const C = theme === 'carta' ? CARTA : theme === 'amber' ? AMBER : theme === 'casino' ? CASINO : theme === 'sakura' ? SAKURA : theme === 'pece' ? PECE : ARDESIA;
   const isDesktop = useBreakpoint(768);
   const { t } = useLang();
 
@@ -824,6 +808,7 @@ export default function App() {
   const [reactions,  setReactions]  = useState([]);
   const [settings,   setSettings]   = useState({ acceptance_threshold: 20, max_stake: 100 });
   const [syncError,  setSyncError]  = useState(null);
+  const [feedEvents, setFeedEvents] = useState([]);
 
   const refresh = useSync(useCallback(data => {
     if (data.profiles)   setProfiles(data.profiles);
@@ -832,6 +817,7 @@ export default function App() {
     if (data.categories) setCustomCats(data.categories);
     if (data.reactions)  setReactions(data.reactions);
     if (data.settings)   setSettings(data.settings);
+    if (data.feedEvents) setFeedEvents(data.feedEvents);
     stateLoadedRef.current = true;
   }, []), activeGroupId, token, setSyncError);
 
@@ -1608,6 +1594,61 @@ export default function App() {
     };
   }, [isDesktop]);
 
+  // Horizontal swipe on content area: left = next nav item, right = previous.
+  // Starts outside the 22px left-edge zone reserved for the back gesture.
+  useEffect(() => {
+    if (isDesktop) return;
+    const EDGE   = 22;
+    const THRESH = 90;
+    const VERT   = 40;
+    const s = { startX: null, startY: null, locked: false };
+
+    const onStart = e => {
+      // A modal is open → its close function is parked here. Don't let a
+      // horizontal swipe change the view behind the modal.
+      if (closeTopModalRef.current) return;
+      const x = e.touches[0].clientX;
+      if (x <= EDGE) return;
+      // Don't hijack swipes that begin inside a horizontally scrollable
+      // element (e.g. the BetsView filter-pill row) — let it scroll.
+      for (let el = e.target; el && el !== document.body; el = el.parentElement) {
+        if (!(el instanceof Element)) break;
+        const ov = getComputedStyle(el).overflowX;
+        if ((ov === 'auto' || ov === 'scroll') && el.scrollWidth > el.clientWidth) return;
+      }
+      s.startX = x; s.startY = e.touches[0].clientY; s.locked = false;
+    };
+    const onMove = e => {
+      if (s.startX === null) return;
+      if (closeTopModalRef.current) { s.startX = null; s.locked = false; return; }
+      const dx = e.touches[0].clientX - s.startX;
+      const dy = Math.abs(e.touches[0].clientY - s.startY);
+      if (dy > VERT) { s.startX = null; return; }
+      if (Math.abs(dx) > 10) { s.locked = true; e.preventDefault(); }
+    };
+    const onEnd = e => {
+      if (!s.locked || s.startX === null) return;
+      if (closeTopModalRef.current) { s.startX = null; s.locked = false; return; }
+      const dx = e.changedTouches[0].clientX - s.startX;
+      s.startX = null; s.locked = false;
+      if (Math.abs(dx) < THRESH) return;
+      const ids = navRef.current.map(n => n.id);
+      const cur = ids.indexOf(view);
+      if (cur < 0) return;
+      const next = dx < 0 ? ids[cur + 1] : ids[cur - 1];
+      if (next) setView(next);
+    };
+
+    document.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchmove',  onMove,  { passive: false });
+    document.addEventListener('touchend',   onEnd,   { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onStart);
+      document.removeEventListener('touchmove',  onMove);
+      document.removeEventListener('touchend',   onEnd);
+    };
+  }, [isDesktop, view]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Android / PWA system back gesture: intercepts the browser's popstate event
   // (fired by the Android back swipe / back button) so it closes the topmost
   // open modal rather than navigating away from the app.
@@ -1686,17 +1727,15 @@ export default function App() {
     ? { ...rootVars(C), minHeight: '100vh', position: 'relative' }
     : {
         ...rootVars(C), maxWidth: 480, margin: '0 auto', position: 'relative',
-        paddingBottom: 'calc(96px + env(safe-area-inset-bottom))',
+        paddingBottom: 'calc(84px + env(safe-area-inset-bottom))',
       };
 
   const NAV = [
     { id: 'dashboard', e: '🏠', l: t('nav.dashboard') },
-    { id: 'bets', e: '🎯', l: t('nav.bets') },
-    { id: 'stats', e: '📊', l: t('nav.stats') },
-    { id: 'friends', e: '👥', l: t('nav.friends') },
-    { id: 'trophies', e: '🏆', l: t('nav.trophies') },
-    ...(authUser?.is_admin ? [{ id: 'admin', e: '🛠️', l: 'Admin' }] : []),
-    { id: 'settings', e: '⚙️', l: t('nav.settings') },
+    { id: 'bets',      e: '🎯', l: t('nav.bets') },
+    { id: 'stats',     e: '📊', l: t('nav.stats') },
+    { id: 'trophies',  e: '🏆', l: t('nav.trophies') },
+    { id: 'settings',  e: '👤', l: t('nav.profile') },
   ];
   navRef.current = NAV; // sync ref every render so onEnd can navigate by index
 
@@ -1837,7 +1876,7 @@ export default function App() {
                   padding: '8px 14px 8px ' + o.px + 'px',
                   marginTop: o.mt,
                   cursor: 'pointer',
-                  fontFamily:"'Playfair Display',serif",
+                  fontFamily:"'Cormorant Garamond',serif",
                   fontSize: isActive ? o.sz + 4 : o.sz,
                   fontStyle: 'italic',
                   fontWeight: isActive ? 600 : 500,
@@ -1851,7 +1890,7 @@ export default function App() {
                   userSelect: 'none', position: 'relative',
                   willChange: 'transform',
                 }}>
-                  <span style={{ display:'flex', alignItems:'center', transition: 'transform .2s' }}><NavIcon id={n.id} size={18}/></span>
+                  <span style={{ fontSize: 17, transition: 'font-size .2s' }}>{n.e}</span>
                   {n.l}
                   {n.id === 'bets' && secretCount > 0 && (
                     <div title="Vault" style={{ position: 'absolute', right: 14, width: 6, height: 6, borderRadius: 999, background: 'var(--gold)' }}/>
@@ -1955,7 +1994,7 @@ export default function App() {
             : (view === 'stats' || view === 'trophies') ? <SkeletonList count={3} />
             :                                              <SkeletonList count={3} />;
           return (<Suspense fallback={ViewFallback}><>
-            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onGoToBets={goToAllBets} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={onEggFired} onOpenDie={() => setDieRollOpen(true)} onOpenIceEgg={() => setIceEggOpen(true)} onOpenPhoenixEgg={() => setPhoenixEggOpen(true)} pendingResolveIds={pendingResolveIds} onNotifSeen={handleNotifSeen} />}
+            {view === 'dashboard' && <DashboardView user={user} profiles={profiles} groupMembers={groupMembers} credits={credits} bets={bets} cats={cats} onCreate={() => setShowCreate(true)} onResolve={b => setResolveBet(b)} onReveal={b => setRevealBet(b)} onCounter={b => setCounterTarget(b)} onFlame={handleFlame} notifSince={notifSince} isDesktop={isDesktop} reactions={reactions} onReaction={handleReaction} onReactionPhoto={handleReactionPhoto} onDelete={handleDelete} onEdit={b => setEditingBet(b)} onAccept={handleAccept} onReject={handleReject} can={can} onGoToVault={goToVault} onGoToBets={goToAllBets} onConfirmOutcome={handleConfirmOutcome} onWithdrawResolve={handleWithdrawResolve} onOvertime={b => setOvertimeBet(b)} onEggUnlock={onEggFired} onOpenDie={() => setDieRollOpen(true)} onOpenIceEgg={() => setIceEggOpen(true)} onOpenPhoenixEgg={() => setPhoenixEggOpen(true)} pendingResolveIds={pendingResolveIds} onNotifSeen={handleNotifSeen} feedEvents={feedEvents} />}
             {view === 'bets'      && <BetsHubView
                 tab={betsTab} setTab={setBetsTab}
                 user={user} profiles={profiles} bets={bets} cats={cats} isDesktop={isDesktop}
@@ -1972,98 +2011,76 @@ export default function App() {
             {view === 'trophies'  && <TrophiesView bets={bets} isDesktop={isDesktop} />}
             {view === 'friends'   && <FriendsView groups={groups} user={user} myBets={bets} myCredits={credits[user] ?? 0} onSwitchToGroup={switchGroup} isDesktop={isDesktop} />}
             {view === 'admin' && authUser?.is_admin && <AdminView isDesktop={isDesktop} meId={authUser?.id} />}
-            {view === 'settings'  && <SettingsView user={user} profiles={profiles} groupMembers={groupMembers} isDark={isDark} setIsDark={setIsDark} theme={theme} setTheme={setTheme} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onTestReset={handleTestReset} onLogout={handleLogout} onOpenProfileEdit={() => setShowProfileEdit(true)} isAdmin={isAdmin} can={can} />}
+            {view === 'settings'  && <SettingsView user={user} profiles={profiles} groupMembers={groupMembers} isDark={isDark} setIsDark={setIsDark} theme={theme} setTheme={setTheme} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onTestReset={handleTestReset} onLogout={handleLogout} onOpenProfileEdit={() => setShowProfileEdit(true)} isAdmin={isAdmin} can={can} onNavigate={setView} pendingFriendCount={pendingFriendCount} canAccessAdmin={!!authUser?.is_admin} />}
           </></Suspense>);
         })()}
       </div>
 
-      {/* Bottom nav: mobile only — broken alignment, every icon at a slightly
-          different vertical offset so the row reads like a sawtooth instead
-          of a rigid grid. Active item floats highest. */}
+      {/* Glass pill nav — mobile only */}
       {!isDesktop && (
         <div ref={setNavBarEl} style={{
           position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: 480,
-          background: C.surf, borderTop: `1px solid ${C.brd}`,
-          // 12px bottom padding plus the iOS home-indicator safe area —
-          // otherwise the nav row hides behind the home bar on iPhone.
-          padding: '10px 4px calc(12px + env(safe-area-inset-bottom))',
-          display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end',
-          zIndex: 50,
+          padding: `0 14px calc(18px + env(safe-area-inset-bottom))`,
+          zIndex: 50, pointerEvents: 'none',
         }}>
-          {NAV.map((n, idx) => {
-            const isActive = view === n.id;
-            // Sawtooth vertical offsets — every other item lifted differently.
-            const baseLift = [0, 6, 2, 8, 4, 6, 0];
-            const baseLiftVal = isActive ? -8 : baseLift[idx % baseLift.length];
-            // Swipe magnification: center item grows biggest, neighbors less so.
-            const swipeDist = navSwipeIdx < 0 ? 99 : Math.abs(idx - navSwipeIdx);
-            const swipeScale = navSwipeIdx < 0 ? 1
-              : swipeDist === 0 ? 1.72
-              : swipeDist === 1 ? 1.28
-              : swipeDist === 2 ? 1.08
-              : 1;
-            const swipeLift = navSwipeIdx < 0 ? baseLiftVal
-              : swipeDist === 0 ? -18
-              : swipeDist === 1 ? baseLiftVal - 4
-              : baseLiftVal;
-            const isSwipeFocus = navSwipeIdx === idx;
-            const transitionStr = navSwipeIdx >= 0
-              ? 'transform .13s cubic-bezier(.34,1.56,.64,1), color .1s'
-              : 'transform .28s cubic-bezier(.34,1.56,.64,1), color .18s';
-            return (
-              <div key={n.id} data-tour={`nav-${n.id}`} data-navswipe={idx}
-                onClick={() => view === n.id ? window.scrollTo({ top: 0, behavior: 'smooth' }) : setView(n.id)}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                  padding: '4px 8px', cursor: 'pointer',
-                  transform: `translateY(${swipeLift}px) scale(${swipeScale})`,
-                  transformOrigin: 'center bottom',
-                  transition: transitionStr,
-                  color: isSwipeFocus ? 'var(--gold)' : isActive ? 'var(--gold)' : 'var(--mut)',
-                  position: 'relative', userSelect: 'none',
-                }}>
-                <span style={{ display:'flex', alignItems:'center', transition:'transform .18s' }}><NavIcon id={n.id} size={isActive && navSwipeIdx < 0 ? 23 : 20}/></span>
-                {n.id === 'friends' && pendingFriendCount > 0 && (
-                  <div style={{ position: 'absolute', top: 0, right: 4, width: 6, height: 6, borderRadius: 999, background: 'var(--red)' }}/>
-                )}
-                {n.id === 'bets' && secretCount > 0 && (
-                  <div style={{ position: 'absolute', top: 0, right: 4, width: 6, height: 6, borderRadius: 999, background: 'var(--gold)' }}/>
-                )}
-                <span style={{
-                  fontSize: 8, letterSpacing:'.2em', textTransform:'uppercase', fontWeight: 600,
-                  opacity: isActive ? 1 : .7,
-                }}>{n.l}</span>
-              </div>
-            );
-          })}
-          {/* "+" CTA floats higher than every nav item so it punctures the row.
-              Pulses (gold halo) until the user creates their first bet — once
-              they know what the button does, the pulse stops. */}
-          {(() => {
-            const noBetsYet = !bets.some(b => b.creator === user);
-            const fire = () => setShowCreate(true);
-            return (
-              <div data-tour="new-bet" onClick={fire}
-                role="button" tabIndex={0}
-                aria-label={t('app.new_bet')}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); } }}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                  cursor: 'pointer', userSelect: 'none',
-                  transform: 'translateY(-22px)',
-                }}>
-                <div className={noBetsYet ? 'pGold' : undefined} aria-hidden style={{
-                  width: 56, height: 56, borderRadius: 999,
-                  background: 'var(--pur)', color:'#1a1530',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 28, fontWeight: 300,
-                  boxShadow: '0 14px 30px -8px var(--pur), 0 1px 0 rgba(255,255,255,.18) inset',
-                  transition: 'transform .18s',
-                }}>+</div>
-              </div>
-            );
-          })()}
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            background: `${C.surf}a6`,
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            borderRadius: 22,
+            border: '1px solid var(--rule)',
+            boxShadow: '0 8px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,.15)',
+            padding: '8px 10px',
+            pointerEvents: 'all',
+          }}>
+            {NAV.map((n, idx) => {
+              const isActive = view === n.id;
+              const isSwipeFocus = navSwipeIdx === idx;
+              const pendingDot = n.id === 'bets' && bets.some(b =>
+                b.status === 'pending' && (b.opponent === user || b.creator === user)
+              );
+              return (
+                <div key={n.id} data-navswipe={idx}
+                  onClick={() => view === n.id
+                    ? window.scrollTo({ top: 0, behavior: 'smooth' })
+                    : setView(n.id)}
+                  style={{
+                    flex: 1, display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', gap: 2, padding: '5px 3px',
+                    cursor: 'pointer', borderRadius: 14,
+                    background: isActive ? `${C.gold}1a` : 'transparent',
+                    transition: 'background .18s',
+                    position: 'relative', userSelect: 'none',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}>
+                  <span style={{
+                    fontSize: 20, lineHeight: 1,
+                    filter: isActive || isSwipeFocus
+                      ? `drop-shadow(0 0 6px ${C.glow})`
+                      : 'none',
+                    transform: isActive ? 'translateY(-1px)' : 'none',
+                    transition: 'filter .2s, transform .15s',
+                  }}>{n.e}</span>
+                  {pendingDot && (
+                    <div style={{
+                      position: 'absolute', top: 2, right: '14%',
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: 'var(--red)', border: `2px solid ${C.surf}`,
+                    }}/>
+                  )}
+                  <span style={{
+                    fontSize: 7, fontWeight: 700, letterSpacing: '.06em',
+                    textTransform: 'uppercase',
+                    color: isActive ? 'var(--gold)' : 'var(--dim)',
+                    opacity: isActive ? 1 : 0.7,
+                    transition: 'color .2s, opacity .2s',
+                  }}>{n.l}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

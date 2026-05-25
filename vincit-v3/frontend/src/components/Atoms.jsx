@@ -1,22 +1,12 @@
 import { TRANSLATIONS } from '../i18n.js';
 import React from 'react';
 
-// Palette "Lavanda & Ottone" — viola lavanda dominante, ottone spazzolato come accento.
-// In light mode bg = farina d'avena (beige sporco), niente bianco puro.
-// Amber è una terza variante "cantina/whisky" — burgundy/cuoio scuro dominante, oro spazzolato come accento.
-// `rule` = ultra-soft hairline color (replaces the gray-ish borders), `soft` = barely-visible tint for grouping.
-export const DARK  = {bg:"#1a1530",surf:"#221c40",card:"#2b2247",brd:"#3a3260",rule:"rgba(183,148,244,0.16)",soft:"rgba(183,148,244,0.05)",gold:"#c4a878",goldL:"#d6bf94",glow:"rgba(196,168,120,0.18)",grn:"#3dd494",red:"#e26666",blu:"#7aa2ff",pur:"#b794f4",txt:"#ebe5ff",dim:"#9089b8",mut:"#403868",inp:"#1d1838"};
-export const LIGHT = {bg:"#ede8d8",surf:"#f5f0e0",card:"#faf5e5",brd:"#c4bca0",rule:"rgba(91,63,196,0.18)",soft:"rgba(91,63,196,0.05)",gold:"#7a5e30",goldL:"#946f33",glow:"rgba(122,94,48,0.16)",grn:"#1f9560",red:"#b73a4a",blu:"#3556bb",pur:"#5b3fc4",txt:"#2a2545",dim:"#5f5878",mut:"#bcb39a",inp:"#f0eadc"};
-export const AMBER = {bg:"#1f1108",surf:"#2c1810",card:"#3a2118",brd:"#5a3424",rule:"rgba(212,160,98,0.18)",soft:"rgba(212,160,98,0.06)",gold:"#e8b86a",goldL:"#f3cb8a",glow:"rgba(232,184,106,0.24)",grn:"#a8c46c",red:"#ff7a52",blu:"#8fb3d8",pur:"#d49c70",txt:"#f5e6cf",dim:"#c0a181",mut:"#6e4a35",inp:"#23130a"};
-// "Selva" — deep forest night: botanical green bg, copper-gold accent, sage highlights.
-export const SELVA = {bg:"#0d1b10",surf:"#152416",card:"#1d2f1e",brd:"#2e4a30",rule:"rgba(122,184,122,0.14)",soft:"rgba(122,184,122,0.05)",gold:"#c8a040",goldL:"#dab858",glow:"rgba(200,160,64,0.22)",grn:"#5dcc7a",red:"#e05555",blu:"#6aa0e0",pur:"#8ab888",txt:"#d4efcc",dim:"#8ab490",mut:"#2e4a30",inp:"#101e12"};
-// "Sakura" — dark plum/mauve: rose surfaces, champagne accent, lilac highlights.
-export const SAKURA= {bg:"#1e1018",surf:"#2d1828",card:"#3d2038",brd:"#5a3050",rule:"rgba(224,160,192,0.16)",soft:"rgba(224,160,192,0.06)",gold:"#e8b0b0",goldL:"#f0c8c8",glow:"rgba(232,176,176,0.24)",grn:"#a0d888",red:"#ff7070",blu:"#90a8e8",pur:"#c078c0",txt:"#f0d8e8",dim:"#c090a8",mut:"#5a3050",inp:"#190e18"};
-// "Pece" — pitch-black editorial: no tint, near-absolute black, ivory accent, ultra-minimal glow.
-export const PECE  = {bg:"#0c0c0e",surf:"#141417",card:"#1c1c20",brd:"#2c2c32",rule:"rgba(240,238,232,0.08)",soft:"rgba(240,238,232,0.03)",gold:"#c8b896",goldL:"#ddd0b8",glow:"rgba(200,184,150,0.18)",grn:"#4ec87a",red:"#e05555",blu:"#7a9ae0",pur:"#a898c8",txt:"#f0eee8",dim:"#888882",mut:"#2c2c32",inp:"#0a0a0c"};
-// "Brass & Velvet" — déco caldo, velluto bruno-rame, oro pallido. Tema default V3.
-// `pur` riusato come slot accento RAME (era viola); `blu` resta freddo per varietà.
-export const BRASS = {bg:"#1c1210",surf:"#2a1a16",card:"#35211b",brd:"#45302a",rule:"rgba(218,188,122,0.16)",soft:"rgba(218,188,122,0.05)",gold:"#dabc7a",goldL:"#efd9a8",glow:"rgba(197,119,47,0.22)",grn:"#5fb390",red:"#d85a47",blu:"#8fa8c8",pur:"#c5772f",txt:"#f3eadb",dim:"#b59e90",mut:"#5a4035",inp:"#1f130f"};
+export const ARDESIA = {bg:"#131318",surf:"#1e1e24",card:"#28282e",brd:"#38383e",rule:"rgba(212,200,184,0.12)",soft:"rgba(212,200,184,0.05)",gold:"#c8a870",goldL:"#d8bc88",glow:"rgba(200,168,112,0.20)",grn:"#60c898",red:"#dc4646",blu:"#8898c8",pur:"#9890b8",txt:"#f0ece4",dim:"#908880",mut:"#38383e",inp:"#111116"};
+export const CARTA   = {bg:"#e8e0cc",surf:"#f0ece0",card:"#f8f4e8",brd:"#ccc4a8",rule:"rgba(139,94,42,0.16)",soft:"rgba(139,94,42,0.06)",gold:"#8b5e2a",goldL:"#a06e30",glow:"rgba(139,94,42,0.18)",grn:"#2a7a4a",red:"#a02828",blu:"#3a5a9a",pur:"#6a4a9a",txt:"#2a2010",dim:"#7a6848",mut:"#ccc4a8",inp:"#f0ece0"};
+export const AMBER   = {bg:"#1f1108",surf:"#2c1810",card:"#3a2118",brd:"#5a3424",rule:"rgba(212,160,98,0.18)",soft:"rgba(212,160,98,0.06)",gold:"#e8b86a",goldL:"#f3cb8a",glow:"rgba(232,184,106,0.24)",grn:"#a8c46c",red:"#ff7a52",blu:"#8fb3d8",pur:"#d49c70",txt:"#f5e6cf",dim:"#c0a181",mut:"#6e4a35",inp:"#23130a"};
+export const CASINO  = {bg:"#0a1810",surf:"#142a1c",card:"#1e3c28",brd:"#2e5438",rule:"rgba(232,200,112,0.14)",soft:"rgba(232,200,112,0.05)",gold:"#e8c870",goldL:"#f0d888",glow:"rgba(232,200,112,0.24)",grn:"#58d888",red:"#e07860",blu:"#6898c8",pur:"#a888c0",txt:"#f0ece0",dim:"#688878",mut:"#2e5438",inp:"#081410"};
+export const SAKURA  = {bg:"#1e1018",surf:"#2d1828",card:"#3d2038",brd:"#5a3050",rule:"rgba(224,160,192,0.16)",soft:"rgba(224,160,192,0.06)",gold:"#e8b0b0",goldL:"#f0c8c8",glow:"rgba(232,176,176,0.24)",grn:"#a0d888",red:"#ff7070",blu:"#90a8e8",pur:"#c078c0",txt:"#f0d8e8",dim:"#c090a8",mut:"#5a3050",inp:"#190e18"};
+export const PECE    = {bg:"#0c0c0e",surf:"#141417",card:"#1c1c20",brd:"#2c2c32",rule:"rgba(240,238,232,0.08)",soft:"rgba(240,238,232,0.03)",gold:"#c8b896",goldL:"#ddd0b8",glow:"rgba(200,184,150,0.18)",grn:"#4ec87a",red:"#e05555",blu:"#7a9ae0",pur:"#a898c8",txt:"#f0eee8",dim:"#888882",mut:"#2c2c32",inp:"#0a0a0c"};
 
 export const rootVars = C => ({
   "--bg":C.bg,"--surf":C.surf,"--card":C.card,"--brd":C.brd,
@@ -24,14 +14,15 @@ export const rootVars = C => ({
   "--gold":C.gold,"--goldL":C.goldL,"--glow":C.glow,
   "--grn":C.grn,"--red":C.red,"--blu":C.blu,"--pur":C.pur,
   "--txt":C.txt,"--dim":C.dim,"--mut":C.mut,"--inp":C.inp,
-  // Font roles (V3 — 2 famiglie). Playfair Display per numeri ₡ E titoli
-  // (lusso editoriale déco), Inter per tutta la UI/body. Niente Cormorant
-  // né Manrope: brief vincola max 2 famiglie tipografiche.
+  // Font roles. Numbers stay Playfair (editorial weight on the credit
+  // counters & quotas), headings move to Cormorant Garamond, UI body is
+  // Manrope so the dashboard reads as a clean modern app rather than a
+  // shiny casino skin.
   "--f-num":  "'Playfair Display', serif",
-  "--f-head": "'Playfair Display', serif",
-  "--f-ui":   "'Inter', sans-serif",
+  "--f-head": "'Cormorant Garamond', serif",
+  "--f-ui":   "'Manrope', sans-serif",
   background:C.bg, color:C.txt,
-  fontFamily:"'Inter',sans-serif", minHeight:"100vh",
+  fontFamily:"'Manrope',sans-serif", minHeight:"100vh",
 });
 
 // Avatar emojis grouped by category. Order matters: items appear in this exact order in the picker.
@@ -123,12 +114,13 @@ export const Btn=({variant="ghost",sm,full,onClick,disabled,children,style={}})=
   if(sm){base.padding="8px 16px";base.fontSize=12;}
   if(full){base.width="100%";base.padding="15px 0";base.fontSize=14;}
   if(disabled){base.opacity=.4;base.pointerEvents="none";}
-  // Primary CTA = déco gold→copper gradient pill (firma Brass & Velvet) con
-  // ombra calda di brand. "gold" e "pur" restano i nomi-variante per
-  // compatibilità; visivamente sono entrambi il gradiente oro→rame.
+  // Primary CTA = solid lavender pill with a soft colored shadow that
+  // belongs to the brand (not a generic black drop-shadow). "gold" remains
+  // the variant name for compatibility but visually it's now lavender —
+  // gold is reserved for typographic accents and rules.
   const vars = {
-    gold:  {background:"linear-gradient(135deg, var(--gold), var(--pur))", color:"#2a1812", boxShadow:"0 8px 24px -10px var(--pur), 0 1px 0 rgba(255,255,255,.18) inset"},
-    pur:   {background:"linear-gradient(135deg, var(--gold), var(--pur))", color:"#2a1812", boxShadow:"0 8px 24px -10px var(--pur), 0 1px 0 rgba(255,255,255,.18) inset"},
+    gold:  {background:"var(--pur)",  color:"#1a1530", boxShadow:"0 10px 28px -10px var(--pur), 0 1px 0 rgba(255,255,255,.12) inset"},
+    pur:   {background:"var(--pur)",  color:"#1a1530", boxShadow:"0 10px 28px -10px var(--pur), 0 1px 0 rgba(255,255,255,.12) inset"},
     grn:   {background:"var(--grn)",  color:"#0a1f15", boxShadow:"0 10px 28px -12px var(--grn)"},
     red:   {background:"var(--red)",  color:"#fff",    boxShadow:"0 10px 28px -12px var(--red)"},
     accent:{background:"transparent", color:"var(--gold)", border:"1px solid var(--gold)44"},
@@ -166,23 +158,23 @@ export function Avatar({profile,size=36}){
 
 // V icon + "incit" wordmark. Adapts to all themes via CSS vars.
 export function VincitWordmark({ size = 28 }) {
-  const dim = Math.round(size * 1.05);
   return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:Math.round(size*0.14), lineHeight:1 }}>
-      <svg width={dim} height={dim} viewBox="0 0 512 512" fill="none"
-           xmlns="http://www.w3.org/2000/svg" style={{ display:'block', flexShrink:0 }} aria-hidden="true">
-        <polyline points="108,88 256,388 404,88" fill="none" stroke="var(--gold)"
-          strokeWidth="72" strokeLinecap="round" strokeLinejoin="round"/>
-        <text x="182" y="238" dominantBaseline="central" textAnchor="middle"
-          fontFamily="Georgia, serif" fontSize="80" fontWeight="700"
-          fill="var(--bg)" opacity="0.7" transform="rotate(27, 182, 238)">₡</text>
-        <text x="330" y="238" dominantBaseline="central" textAnchor="middle"
-          fontFamily="Georgia, serif" fontSize="80" fontWeight="700"
-          fill="var(--bg)" opacity="0.7" transform="rotate(-27, 330, 238)">₡</text>
-      </svg>
+    <span style={{ display:'inline-flex', alignItems:'baseline', lineHeight:1 }}>
+      <span style={{
+        fontFamily:"'Cinzel', serif",
+        fontWeight: 700,
+        fontSize: size,
+        color: 'var(--gold)',
+        lineHeight: 1,
+      }}>V</span>
       <span className="shim" style={{
-        fontFamily:"'Cormorant Garamond', serif", fontStyle:'italic',
-        fontWeight:600, fontSize:size, letterSpacing:-0.5,
+        fontFamily:"'Cormorant Garamond', serif",
+        fontStyle: 'italic',
+        fontWeight: 500,
+        fontSize: Math.round(size * 0.64),
+        letterSpacing: '0.5px',
+        marginLeft: -Math.round(size * 0.107),
+        lineHeight: 1,
       }}>incit</span>
     </span>
   );

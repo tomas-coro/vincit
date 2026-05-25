@@ -1,20 +1,56 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#1a1530"/>
-  <!-- V stroke -->
-  <polyline points="108,88 256,388 404,88" fill="none" stroke="#c4a878"
-    stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- ₡ serigraphy on left arm -->
-  <text x="182" y="238" dominant-baseline="central" text-anchor="middle"
-    font-family="Georgia, serif" font-size="72" font-weight="700"
-    fill="#1a1530" opacity="0.65" transform="rotate(27, 182, 238)">₡</text>
-  <!-- ₡ serigraphy on right arm -->
-  <text x="330" y="238" dominant-baseline="central" text-anchor="middle"
-    font-family="Georgia, serif" font-size="72" font-weight="700"
-    fill="#1a1530" opacity="0.65" transform="rotate(-27, 330, 238)">₡</text>
-  <!-- Die at vertex (3 face) -->
-  <rect x="218" y="350" width="76" height="76" rx="14"
-    fill="#1a1530" stroke="#c4a878" stroke-width="5"/>
-  <circle cx="268" cy="369" r="7" fill="#c4a878"/>
-  <circle cx="256" cy="388" r="7" fill="#c4a878"/>
-  <circle cx="244" cy="407" r="7" fill="#c4a878"/>
+  <defs>
+    <radialGradient id="bg" cx="40%" cy="36%" r="68%">
+      <stop offset="0%" stop-color="#132817"/>
+      <stop offset="100%" stop-color="#050f08"/>
+    </radialGradient>
+    <linearGradient id="vg" x1="5%" y1="5%" x2="95%" y2="95%">
+      <stop offset="0%" stop-color="#f8ec80"/>
+      <stop offset="40%" stop-color="#d4a830"/>
+      <stop offset="100%" stop-color="#8a5e08"/>
+    </linearGradient>
+  </defs>
+
+  <!-- sfondo -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+
+  <!-- chip: 6 settori oro alternati su bordo -->
+  <circle cx="256" cy="256" r="230" fill="none" stroke="#d4a830"
+    stroke-width="44" stroke-dasharray="60.21 24.08" stroke-dashoffset="12"/>
+  <circle cx="256" cy="256" r="230" fill="none" stroke="#050f08"
+    stroke-width="46" stroke-dasharray="0 60.21 24.08 0" stroke-dashoffset="-48"/>
+
+  <!-- bordo esterno sottile -->
+  <circle cx="256" cy="256" r="254" fill="none" stroke="#d4a830"
+    stroke-width="3" opacity="0.35"/>
+
+  <!-- raggi decorativi (8 direzioni) -->
+  <g stroke="#d4a830" stroke-width="1.2" opacity="0.14">
+    <line x1="256" y1="26"  x2="256" y2="70"/>
+    <line x1="256" y1="442" x2="256" y2="486"/>
+    <line x1="26"  y1="256" x2="70"  y2="256"/>
+    <line x1="442" y1="256" x2="486" y2="256"/>
+    <line x1="88"  y1="88"  x2="119" y2="119"/>
+    <line x1="393" y1="88"  x2="424" y2="119"/>
+    <line x1="88"  y1="424" x2="119" y2="393"/>
+    <line x1="393" y1="424" x2="424" y2="393"/>
+  </g>
+
+  <!-- anello interno decorativo -->
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#d4a830"
+    stroke-width="2" opacity="0.22"/>
+
+  <!-- fill area centrale -->
+  <circle cx="256" cy="256" r="192" fill="#08160b"/>
+
+  <!-- glow ambrato -->
+  <circle cx="256" cy="256" r="140" fill="#d4a830" opacity="0.07"/>
+
+  <!-- V Cinzel 900 con gradiente oro -->
+  <text x="256" y="310"
+    font-family="'Cinzel', 'Georgia', serif"
+    font-weight="900"
+    font-size="230"
+    text-anchor="middle"
+    fill="url(#vg)">V</text>
 </svg>
