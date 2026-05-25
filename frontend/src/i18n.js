@@ -178,6 +178,9 @@ const TRANSLATIONS = {
       profile_menu_logout_confirm:'Conferma uscita',
       admin_only:"🔒 Solo l'amministratore del gruppo può modificare questa impostazione",
       loading:'Caricamento dati…', you:'tu',
+      nav_section: 'Naviga',
+      nav_friends: 'Amici',
+      nav_admin:   'Admin',
     },
     bet_card: {
       reveal:'🔓 Rivela', declare:'Dichiara esito', secret_label:'Bet Segreta', challenge:'Sfida diretta',
@@ -897,6 +900,9 @@ const TRANSLATIONS = {
       profile_menu_logout_confirm:'Confirm log out',
       admin_only:'🔒 Only the group administrator can change this setting',
       loading:'Loading…', you:'you',
+      nav_section: 'Navigate',
+      nav_friends: 'Friends',
+      nav_admin:   'Admin',
     },
     bet_card: {
       reveal:'🔓 Reveal', declare:'Declare result', secret_label:'Secret Bet', challenge:'Direct challenge',
