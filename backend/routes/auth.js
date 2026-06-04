@@ -488,4 +488,66 @@ router.patch('/profile', async (req, res) => {
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
+// DELETE /api/auth/account — cancellazione GDPR per anonimizzazione.
+// I dati PERSONALI (email, nome, password, avatar, amicizie, push,
+// token) spariscono; bets/crediti/achievements e la membership nei
+// gruppi restano sotto "Utente eliminato" così lo storico del partner
+// e le classifiche non si rompono. La riga users NON viene cancellata
+// (le FK ON DELETE CASCADE quindi NON scattano: i DELETE servono).
+router.delete('/account', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    const { userId } = jwt.verify(authHeader.slice(7), SECRET);
+    const { password } = req.body || {};
+
+    const { rows } = await db.query('SELECT * FROM users WHERE id=$1', [userId]);
+    const u = rows[0];
+    if (!u || u.deleted_at) return res.status(401).json({ error: 'Unauthorized' });
+    if (!(await bcrypt.compare(password || '', u.password_hash)))
+      return res.status(403).json({ error: 'wrong_password' });
+
+    // Best-effort: elimina l'avatar custom da Cloudinary prima di
+    // anonimizzare (fuori transazione: se fallisce, pazienza).
+    if (u.avatar_url) {
+      try { await destroyByPublicId(AVATAR_FOLDER, userId); } catch (e) { console.warn('[delete-account] avatar cleanup failed', e.message); }
+    }
+
+    const now = Date.now();
+    // Password impossibile da indovinare e mai comunicata a nessuno.
+    const ghostHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), ROUNDS);
+
+    await db.transaction(async (client) => {
+      await client.query(
+        `UPDATE users SET
+           name='Utente eliminato',
+           email=$1,
+           password_hash=$2,
+           avatar='👻', avatar_url=NULL, vault_pin=NULL,
+           friend_code=NULL, is_admin=false,
+           deleted_at=$3
+         WHERE id=$4`,
+        [`deleted_${userId}@anon.local`, ghostHash, now, userId]
+      );
+      // Tabella profiles legacy: anonimizza anche lì se la riga esiste.
+      await client.query(
+        `UPDATE profiles SET name='Utente eliminato', avatar='👻' WHERE "user"=$1`,
+        [userId]
+      );
+      await client.query('DELETE FROM push_subscriptions WHERE "user"=$1', [userId]);
+      await client.query('DELETE FROM notification_prefs WHERE "user"=$1', [userId]);
+      await client.query('DELETE FROM password_resets WHERE user_id=$1', [userId]);
+      await client.query('DELETE FROM email_verifications WHERE user_id=$1', [userId]);
+      await client.query('DELETE FROM friendships WHERE user_id_a=$1 OR user_id_b=$1', [userId]);
+      await client.query('DELETE FROM friend_requests WHERE from_user_id=$1 OR to_user_id=$1', [userId]);
+    });
+
+    res.json({ ok: true });
+  } catch (e) {
+    if (e.name === 'JsonWebTokenError' || e.name === 'TokenExpiredError') return res.status(401).json({ error: 'Unauthorized' });
+    console.error('[delete-account]', e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
 module.exports = router;
