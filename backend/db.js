@@ -563,17 +563,30 @@ async function query(text, params) {
   return pool.query(text, params);
 }
 
+// Un solo retry su deadlock Postgres (40P01): i lock incrociati sui
+// crediti tra endpoint diversi possono — molto raramente — andare in
+// deadlock; Postgres uccide una vittima, che è sicura da ri-eseguire
+// (tutto il lavoro era dentro la transazione abortita).
 async function transaction(fn) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await fn(client);
-    await client.query('COMMIT');
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally {
-    client.release();
+  for (let attempt = 1; ; attempt++) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await fn(client);
+      await client.query('COMMIT');
+      return;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      if (e.code === '40P01' && attempt < 2) {
+        // Backoff breve con jitter, poi riprova con un client fresco
+        // (il finally rilascia questo).
+        await new Promise(r => setTimeout(r, 50 + Math.floor(Math.random() * 100)));
+        continue;
+      }
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 }
 
