@@ -662,6 +662,16 @@ export default function App() {
   const [authUser,    setAuthUser]    = useState(null);
   const [authLoading, setAuthLoading] = useState(!!localStorage.getItem('bc_token'));
 
+  // Banner offline: navigator.onLine + eventi online/offline.
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' && !navigator.onLine);
+  useEffect(() => {
+    const goOn  = () => setIsOffline(false);
+    const goOff = () => setIsOffline(true);
+    window.addEventListener('online', goOn);
+    window.addEventListener('offline', goOff);
+    return () => { window.removeEventListener('online', goOn); window.removeEventListener('offline', goOff); };
+  }, []);
+
   // Groups state
   const [groups,        setGroups]        = useState([]);
   const [groupsLoaded,  setGroupsLoaded]  = useState(false);
@@ -1795,6 +1805,15 @@ export default function App() {
   return (
     <div className="bc" style={rootStyle}>
       <style>{CSS_BASE}</style>
+
+      {isOffline && (
+        <div style={{position:'fixed',top:8,left:'50%',transform:'translateX(-50%)',zIndex:1001,
+          background:'var(--surf)',border:'1px solid var(--rule)',borderRadius:12,
+          padding:'8px 14px',fontSize:12,color:'var(--dim)',whiteSpace:'nowrap',
+          boxShadow:'0 8px 24px rgba(0,0,0,.35)'}}>
+          {t('app.offline_banner')}
+        </div>
+      )}
 
       {syncError && (
         <div style={{position:'fixed',top:8,left:'50%',transform:'translateX(-50%)',zIndex:1000,
