@@ -664,6 +664,8 @@ export default function App() {
 
   // Banner offline: navigator.onLine + eventi online/offline.
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' && !navigator.onLine);
+  // Banner verifica email: dismissibile per sessione (niente persistenza).
+  const [verifyBannerDismissed, setVerifyBannerDismissed] = useState(false);
   useEffect(() => {
     const goOn  = () => setIsOffline(false);
     const goOff = () => setIsOffline(true);
@@ -1812,6 +1814,24 @@ export default function App() {
           padding:'8px 14px',fontSize:12,color:'var(--dim)',whiteSpace:'nowrap',
           boxShadow:'0 8px 24px rgba(0,0,0,.35)'}}>
           {t('app.offline_banner')}
+        </div>
+      )}
+
+      {authUser && authUser.email_verified === false && !verifyBannerDismissed && (
+        <div style={{position:'fixed',top: isOffline ? 52 : 8,left:'50%',transform:'translateX(-50%)',zIndex:999,
+          display:'flex',alignItems:'center',gap:10,maxWidth:'calc(100% - 24px)',
+          background:'var(--surf)',border:'1px solid var(--rule)',borderRadius:12,
+          padding:'8px 12px',fontSize:12,color:'var(--dim)',boxShadow:'0 8px 24px rgba(0,0,0,.35)'}}>
+          <span>{t('app.verify_email_banner')}</span>
+          <button onClick={async () => {
+            try { await api.resendVerification(); toast.success(t('app.verify_email_sent')); }
+            catch { toast.error(t('app.verify_email_error')); }
+          }} style={{background:'transparent',border:'1px solid var(--gold)66',color:'var(--gold)',
+            borderRadius:8,padding:'4px 10px',fontSize:12,cursor:'pointer',whiteSpace:'nowrap'}}>
+            {t('app.verify_email_resend')}
+          </button>
+          <button onClick={() => setVerifyBannerDismissed(true)} aria-label="Chiudi"
+            style={{background:'transparent',border:'none',color:'var(--dim)',fontSize:14,cursor:'pointer',padding:2}}>✕</button>
         </div>
       )}
 

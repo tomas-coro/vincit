@@ -42,6 +42,8 @@ export const getMe           = ()          => req('GET',   '/auth/me');
 export const updateProfile   = d           => req('PATCH', '/auth/profile', d);
 export const forgotPassword  = email       => req('POST',  '/auth/forgot-password', { email });
 export const resetPassword   = (token, password) => req('POST', '/auth/reset-password', { token, password });
+export const resendVerification = () => req('POST', '/auth/resend-verification');
+export const deleteAccount      = (password) => req('DELETE', '/auth/account', { password });
 
 // State
 export const fetchState     = ()             => req('GET',    '/state');
