@@ -23,6 +23,7 @@ const FriendsView   = lazy(() => import('./components/views/FriendsView.jsx'));
 const AdminView     = lazy(() => import('./components/views/AdminView.jsx'));
 const SettingsView  = lazy(() => import('./components/views/SettingsView.jsx'));
 const ResetPasswordView = lazy(() => import('./components/views/ResetPasswordView.jsx'));
+const PrivacyView       = lazy(() => import('./components/views/PrivacyView.jsx'));
 
 // Lazy: modals — they're conditionally rendered ({showCreate && <Modal/>})
 // so the chunk is only fetched the first time the user opens that modal.
@@ -661,6 +662,7 @@ export default function App() {
   const [token,       setToken]       = useState(() => localStorage.getItem('bc_token'));
   const [authUser,    setAuthUser]    = useState(null);
   const [authLoading, setAuthLoading] = useState(!!localStorage.getItem('bc_token'));
+  const [showPrivacyGate, setShowPrivacyGate] = useState(false);
 
   // Banner offline: navigator.onLine + eventi online/offline.
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' && !navigator.onLine);
@@ -1730,7 +1732,9 @@ export default function App() {
                 window.location.reload();
               }}/>
             </Suspense>
-          : <AuthView onAuth={handleAuth} />}
+          : showPrivacyGate
+            ? <Suspense fallback={null}><PrivacyView onBack={() => setShowPrivacyGate(false)} /></Suspense>
+            : <AuthView onAuth={handleAuth} onShowPrivacy={() => setShowPrivacyGate(true)} />}
       </div>
     );
   }
@@ -2085,6 +2089,7 @@ export default function App() {
             {view === 'friends'   && <FriendsView groups={groups} user={user} myBets={bets} myCredits={credits[user] ?? 0} onSwitchToGroup={switchGroup} isDesktop={isDesktop} />}
             {view === 'admin' && authUser?.is_admin && <AdminView isDesktop={isDesktop} meId={authUser?.id} />}
             {view === 'settings'  && <SettingsView user={user} profiles={profiles} groupMembers={groupMembers} isDark={isDark} setIsDark={setIsDark} theme={theme} setTheme={setTheme} customCats={customCats} credits={credits} bets={bets} onUpdateProfile={handleUpdateProfile} onCreateCategory={handleCreateCategory} onDeleteCategory={handleDeleteCategory} vaultPin={vaultPin} onSetVaultPin={handleSetVaultPin} isDesktop={isDesktop} onReset={handleReset} onTestReset={handleTestReset} onLogout={handleLogout} onOpenProfileEdit={() => setShowProfileEdit(true)} isAdmin={isAdmin} can={can} onNavigate={setView} pendingFriendCount={pendingFriendCount} canAccessAdmin={!!authUser?.is_admin} />}
+            {view === 'privacy'   && <PrivacyView onBack={() => setView('settings')} />}
           </></Suspense>);
         })()}
       </div>

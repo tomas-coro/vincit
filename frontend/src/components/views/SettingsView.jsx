@@ -251,6 +251,15 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
               <span style={{color:'var(--dim)',fontSize:16}} aria-hidden>›</span>
             </div>
           )}
+          <div
+            onClick={() => onNavigate('privacy')}
+            role="button" tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('privacy'); } }}
+            style={{...S.card, display:'flex', alignItems:'center', gap:12, cursor:'pointer', WebkitTapHighlightColor:'transparent'}}>
+            <span style={{fontSize:20,flexShrink:0}} aria-hidden>🔒</span>
+            <span style={{flex:1,fontSize:15,fontWeight:600,color:'var(--txt)'}}>Privacy</span>
+            <span style={{color:'var(--dim)',fontSize:16}} aria-hidden>›</span>
+          </div>
         </>
       )}
 

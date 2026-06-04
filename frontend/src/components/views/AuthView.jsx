@@ -13,7 +13,7 @@ const S = {
   err:   { fontSize:12, color:'var(--red)', marginTop:14, fontWeight:600 },
 };
 
-export default function AuthView({ onAuth }) {
+export default function AuthView({ onAuth, onShowPrivacy }) {
   const { t } = useLang();
   const [tab, setTab]         = useState('login');
   const [name, setName]       = useState('');
@@ -221,6 +221,13 @@ export default function AuthView({ onAuth }) {
           </button>
         </form>
       </div>
+
+      <button onClick={onShowPrivacy}
+        style={{ background: 'transparent', border: 'none', color: 'var(--dim)',
+          fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
+          display: 'block', margin: '18px auto 0' }}>
+        Privacy
+      </button>
 
       {forgotOpen && (
         <div onClick={() => setForgotOpen(false)} style={{
