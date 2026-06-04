@@ -265,6 +265,33 @@ const pool = new Pool({
     CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
   `);
 
+  // ── Email verification (soft) + soft-delete ─────────────────────────
+  // email_verified_at: NULL = non verificata. Il backfill è ONE-TIME e
+  // gated sull'esistenza della colonna: gli account esistenti vengono
+  // considerati verificati (grandfathered), i nuovi partono NULL. Se il
+  // backfill girasse a ogni boot, ogni deploy "verificherebbe" anche i
+  // nuovi account non verificati.
+  const { rows: evCol } = await pool.query(
+    `SELECT 1 FROM information_schema.columns
+      WHERE table_name='users' AND column_name='email_verified_at'`
+  );
+  if (!evCol.length) {
+    await pool.query('ALTER TABLE users ADD COLUMN email_verified_at BIGINT');
+    await pool.query('UPDATE users SET email_verified_at = created_at');
+  }
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at BIGINT');
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS email_verifications (
+      token       TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at  BIGINT NOT NULL,
+      expires_at  BIGINT NOT NULL,
+      used_at     BIGINT
+    );
+    CREATE INDEX IF NOT EXISTS idx_email_verifications_user ON email_verifications(user_id);
+  `);
+
   // Explicit friendships (accepted) + pending requests.
   // Friendships are stored in canonical pair order (user_id_a < user_id_b)
   // so the (a, b) PK is enough — no need to insert both directions.
