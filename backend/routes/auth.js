@@ -24,6 +24,39 @@ function makeInviteCode() {
   return Array.from(crypto.randomBytes(6), b => CHARSET[b % CHARSET.length]).join('');
 }
 
+const VERIFY_TTL = 48 * 60 * 60 * 1000; // 48h
+
+async function createVerificationToken(userId) {
+  const token = crypto.randomBytes(32).toString('base64url');
+  const now = Date.now();
+  // Un solo token vivo per utente: invalida i precedenti, poi emetti.
+  await db.query(
+    'UPDATE email_verifications SET used_at=$1 WHERE user_id=$2 AND used_at IS NULL',
+    [now, userId]
+  );
+  await db.query(
+    'INSERT INTO email_verifications(token, user_id, created_at, expires_at) VALUES($1,$2,$3,$4)',
+    [token, userId, now, now + VERIFY_TTL]
+  );
+  return token;
+}
+
+async function sendVerificationEmail({ id, name, email }, reqOrigin) {
+  const token = await createVerificationToken(id);
+  const base = (process.env.APP_BASE_URL || reqOrigin || '').replace(/\/+$/, '');
+  const link = `${base}/api/auth/verify-email?token=${token}`;
+  await sendMail({
+    to: email,
+    subject: 'Vincit · Verifica la tua email',
+    text: `Ciao ${name},\n\nConferma la tua email aprendo questo link entro 48 ore:\n${link}\n\nSe non ti sei registrato su Vincit, ignora questa email.\n— Vincit`,
+    html: `<p>Ciao <b>${name}</b>,</p>
+           <p>Conferma la tua email toccando il bottone qui sotto entro 48 ore:</p>
+           <p><a href="${link}" style="display:inline-block;padding:12px 22px;background:#c8973f;color:#07060f;border-radius:10px;text-decoration:none;font-weight:700;font-family:sans-serif">Verifica email</a></p>
+           <p style="font-size:12px;color:#777">Se il bottone non funziona, copia questo indirizzo nel browser:<br><code>${link}</code></p>
+           <p style="font-size:12px;color:#777">Se non ti sei registrato su Vincit, ignora questa email.</p>`,
+  });
+}
+
 // POST /api/auth/register — creates the user only. No auto-group: the user picks
 // one (create or join via invite code) from the PairingView right after.
 router.post('/register', async (req, res) => {
@@ -52,8 +85,15 @@ router.post('/register', async (req, res) => {
       );
     });
 
+    if (mailReady()) {
+      // Fire-and-forget: la registrazione non deve fallire né rallentare
+      // se l'SMTP è giù — l'utente potrà ri-inviare dal banner in-app.
+      sendVerificationEmail({ id: userId, name: name.trim(), email: email.toLowerCase() }, req.headers.origin)
+        .catch(err => console.error('[register] verification mail failed', err));
+    }
+
     const token = makeToken(userId, name.trim(), null);
-    res.json({ token, user: { id:userId, name:name.trim(), avatar:avatar||'😊', avatar_url:null, color_key:color_key||'blue', room_id:null, invite_code:null, paired:false } });
+    res.json({ token, user: { id:userId, name:name.trim(), avatar:avatar||'😊', avatar_url:null, color_key:color_key||'blue', room_id:null, invite_code:null, paired:false, email_verified:false } });
   } catch(e) {
     console.error(e);
     res.status(500).json({ error: 'Server error' });
@@ -176,6 +216,68 @@ router.post('/reset-password', async (req, res) => {
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// GET /api/auth/verify-email?token= — consuma il token e marca l'email
+// verificata. Risponde con una mini-pagina HTML (il link arriva via mail,
+// quindi si apre nel browser, non nella SPA).
+function verifyResultPage(ok, title, message) {
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vincit · ${title}</title></head>
+<body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#07060f;font-family:sans-serif">
+<div style="text-align:center;padding:32px;max-width:420px">
+<div style="font-size:48px;margin-bottom:16px">${ok ? '✅' : '⚠️'}</div>
+<h1 style="color:#e8e4f0;font-size:22px;margin:0 0 10px">${title}</h1>
+<p style="color:#9a93ad;font-size:14px;line-height:1.5;margin:0 0 24px">${message}</p>
+<a href="/" style="display:inline-block;padding:12px 22px;background:#c8973f;color:#07060f;border-radius:10px;text-decoration:none;font-weight:700">Torna a Vincit</a>
+</div></body></html>`;
+}
+
+router.get('/verify-email', async (req, res) => {
+  try {
+    const token = String(req.query.token || '');
+    if (token.length < 16)
+      return res.status(400).send(verifyResultPage(false, 'Link non valido', 'Il link è incompleto. Richiedine uno nuovo dal banner nel tuo profilo Vincit.'));
+    const { rows } = await db.query(
+      'SELECT user_id, expires_at, used_at FROM email_verifications WHERE token=$1',
+      [token]
+    );
+    const tok = rows[0];
+    if (!tok || tok.used_at || Date.now() > Number(tok.expires_at))
+      return res.status(410).send(verifyResultPage(false, 'Link scaduto', 'Questo link è scaduto o già usato. Richiedine uno nuovo dal banner nel tuo profilo Vincit.'));
+    const now = Date.now();
+    await db.transaction(async (client) => {
+      await client.query('UPDATE users SET email_verified_at=$1 WHERE id=$2 AND email_verified_at IS NULL', [now, tok.user_id]);
+      await client.query('UPDATE email_verifications SET used_at=$1 WHERE token=$2', [now, token]);
+    });
+    res.send(verifyResultPage(true, 'Email verificata', 'Il tuo account è confermato. Puoi tornare all\'app.'));
+  } catch (e) {
+    console.error('[verify-email]', e);
+    res.status(500).send(verifyResultPage(false, 'Errore', 'Qualcosa è andato storto. Riprova più tardi.'));
+  }
+});
+
+// POST /api/auth/resend-verification — autenticata; no-op se già verificata.
+router.post('/resend-verification', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    const { userId } = jwt.verify(authHeader.slice(7), SECRET);
+    const { rows } = await db.query(
+      'SELECT id, name, email, email_verified_at, deleted_at FROM users WHERE id=$1',
+      [userId]
+    );
+    const u = rows[0];
+    if (!u || u.deleted_at) return res.status(401).json({ error: 'Unauthorized' });
+    if (u.email_verified_at) return res.json({ ok: true, already_verified: true });
+    if (!mailReady()) return res.status(503).json({ error: 'mail_unavailable' });
+    await sendVerificationEmail(u, req.headers.origin);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[resend-verification]', e);
     res.status(500).json({ error: 'server_error' });
   }
 });
