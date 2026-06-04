@@ -54,9 +54,10 @@ module.exports = function(broadcastUpdate) {
 
       // Pot mode: any TARGETED non-surprise bet must wait for the opponent to
       // accept (and pick their stake). Surprise stays auto-active (otherwise
-      // the surprise would be spoiled). Open / vault never go pending.
-      const isTargetedAccept = !isSecret && !!opponent && !surprise;
-      const isPending = isTargetedAccept || (!isSecret && opponent && stake >= threshold);
+      // the surprise would be spoiled) — safe at any stake: without an accept
+      // there is no opponent_stake, so the payout comes from the bank and the
+      // opponent never risks own credits. Open / vault never go pending.
+      const isPending = !isSecret && !!opponent && !surprise;
       const status = isPending ? 'pending' : 'active';
 
       // Validate target: must be in the same group, can't be creator, can't equal opponent (for clarity)
