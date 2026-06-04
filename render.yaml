@@ -1,3 +1,6 @@
+# Blueprint per un servizio Render nuovo. NOTA: la produzione attuale è il
+# servizio `vincit-xq87` (creato a mano, deploy dal branch redesign-v2) —
+# questo file serve da riferimento per le env var e per eventuali ricreazioni.
 services:
   - type: web
     name: vincit
@@ -52,6 +55,22 @@ services:
       - key: APP_BASE_URL
         sync: false
 
-      # ── Admin key (optional) ──────────────────────────────────────────
+      # ── Admin ─────────────────────────────────────────────────────────
+      # ADMIN_EMAIL è FUNZIONALE: all'avvio promuove a admin l'utente con
+      # questa email. Senza, nessun account admin esiste in produzione.
+      - key: ADMIN_EMAIL
+        sync: false
+      # Chiave condivisa per la diagnostica /api/admin (opzionale)
       - key: ADMIN_KEY
+        sync: false
+
+      # ── Error tracking (opzionale) ────────────────────────────────────
+      # DSN Sentry — senza, il tracking è semplicemente disattivato
+      - key: SENTRY_DSN
+        sync: false
+
+      # ── CORS (opzionale) ──────────────────────────────────────────────
+      # Lista di origin extra separati da virgola. In produzione l'URL del
+      # servizio Render è già incluso automaticamente (RENDER_EXTERNAL_URL).
+      - key: ALLOWED_ORIGIN
         sync: false

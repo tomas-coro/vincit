@@ -139,6 +139,7 @@ app.get('/api/health', (req, res) => {
       ready: mailConfigured(),
     },
     admin: !!process.env.ADMIN_KEY,
+    admin_email: !!process.env.ADMIN_EMAIL,
   });
 });
 
@@ -180,6 +181,10 @@ app.use('/api/admin',      require('./routes/admin.js'));
 if (process.env.SENTRY_DSN && typeof Sentry.setupExpressErrorHandler === 'function') {
   Sentry.setupExpressErrorHandler(app);
 }
+
+// Unknown /api routes: JSON 404, never the SPA's index.html — a typo'd
+// fetch should fail loudly, not parse HTML as JSON.
+app.use('/api', (req, res) => res.status(404).json({ error: 'not_found' }));
 
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 app.get('*', (req, res) => {
