@@ -122,7 +122,7 @@ router.post('/login', async (req, res) => {
     const { rows } = await db.query('SELECT * FROM users WHERE LOWER(email)=$1', [email?.toLowerCase()]);
     const u = rows[0];
     // Same error for wrong email or wrong password — prevents account enumeration
-    if (!u || !(await bcrypt.compare(password || '', u.password_hash)))
+    if (!u || u.deleted_at || !(await bcrypt.compare(password || '', u.password_hash)))
       return res.status(401).json({ error: 'Invalid email or password' });
 
     let inviteCode = null;
@@ -137,7 +137,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = makeToken(u.id, u.name, u.room_id);
-    res.json({ token, user: { id:u.id, name:u.name, avatar:u.avatar, avatar_url:u.avatar_url, color_key:u.color_key, room_id:u.room_id, invite_code:inviteCode, paired, is_admin: u.is_admin === true, fresh_reset_at: u.fresh_reset_at == null ? null : Number(u.fresh_reset_at) } });
+    res.json({ token, user: { id:u.id, name:u.name, avatar:u.avatar, avatar_url:u.avatar_url, color_key:u.color_key, room_id:u.room_id, invite_code:inviteCode, paired, is_admin: u.is_admin === true, fresh_reset_at: u.fresh_reset_at == null ? null : Number(u.fresh_reset_at), email_verified: u.email_verified_at != null } });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
@@ -342,7 +342,7 @@ router.get('/me', async (req, res) => {
     if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
     const { userId } = jwt.verify(authHeader.slice(7), SECRET);
     const { rows } = await db.query('SELECT * FROM users WHERE id=$1', [userId]);
-    if (!rows[0]) return res.status(404).json({ error: 'User not found' });
+    if (!rows[0] || rows[0].deleted_at) return res.status(401).json({ error: 'Unauthorized' });
     const u = rows[0];
     let inviteCode = null, paired = false;
     if (u.room_id) {
@@ -358,6 +358,7 @@ router.get('/me', async (req, res) => {
       room_id:u.room_id, invite_code:inviteCode, paired,
       is_admin: u.is_admin === true,
       fresh_reset_at: u.fresh_reset_at == null ? null : Number(u.fresh_reset_at),
+      email_verified: u.email_verified_at != null,
       privacy: {
         trophies: u.privacy_trophies || 'public',
         stats:    u.privacy_stats    || 'public',
