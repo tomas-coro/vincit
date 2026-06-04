@@ -72,6 +72,7 @@ app.use('/api/auth/register',        authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth/reset-password',  authLimiter);
 app.use('/api/auth/resend-verification', authLimiter);
+app.use('/api/auth/account',             authLimiter);
 
 // Room-scoped SSE clients
 const clients = new Map(); // roomId → Set<res>

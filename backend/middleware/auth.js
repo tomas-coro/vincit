@@ -9,11 +9,15 @@ function verify(token) {
   return { userId: p.userId, roomId: p.roomId ?? null, userName: p.name };
 }
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   try {
     const token = req.headers.authorization?.slice(7);
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
     Object.assign(req, verify(token));
+    // Lockout account eliminati: il JWT può sopravvivere alla cancellazione
+    // (TTL 30g), quindi il gate va fatto sul DB, non solo sulla firma.
+    const { rows } = await db.query('SELECT deleted_at FROM users WHERE id=$1', [req.userId]);
+    if (!rows[0] || rows[0].deleted_at) return res.status(401).json({ error: 'Unauthorized' });
     next();
   } catch { res.status(401).json({ error: 'Invalid or expired token' }); }
 }
