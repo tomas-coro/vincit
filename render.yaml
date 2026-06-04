@@ -1,6 +1,6 @@
 # Blueprint per un servizio Render nuovo. NOTA: la produzione attuale è il
-# servizio `vincit-xq87` (creato a mano, deploy dal branch redesign-v2) —
-# questo file serve da riferimento per le env var e per eventuali ricreazioni.
+# servizio `vincit-xq87` (creato a mano, deploya da `main`) — questo file
+# serve da riferimento per le env var e per eventuali ricreazioni.
 services:
   - type: web
     name: vincit

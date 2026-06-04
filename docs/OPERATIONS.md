@@ -6,21 +6,19 @@ Aggiornata: giugno 2026.
 
 | Servizio | URL | Stato | Note |
 |---|---|---|---|
-| **vincit-xq87** | https://vincit-xq87.onrender.com | **PRODUZIONE** | DB Neon proprio. Deploya dal branch `redesign-v2` |
-| betcouple | betcouple.onrender.com | duplicato stale | DB separato, NON è produzione |
+| **vincit-xq87** | https://vincit-xq87.onrender.com | **PRODUZIONE** | DB Neon proprio. Deploya da `main` (dal 30/05/2026) |
+| betcouple | betcouple.onrender.com | duplicato stale | DB separato, NON è produzione. Da sospendere |
 | vincit | — | sospeso | — |
 
-⚠️ Debito tecnico: 3 servizi + 2 branch + DB separati. Da consolidare in un
-solo servizio che deploya da `main`.
+⚠️ Debito tecnico residuo: servizio `betcouple` da sospendere (DB con soli
+dati throwaway, verificato 30/05).
 
 ## Deploy
 
-La produzione (`vincit-xq87`) parte dal branch **`redesign-v2`**, non da `main`.
-Dopo un commit su `main`:
+La produzione (`vincit-xq87`) deploya automaticamente dal branch **`main`**:
 
 ```sh
-git push origin main             # aggiorna il remoto
-git push origin main:redesign-v2 # triggera il deploy su vincit-xq87
+git push origin main
 ```
 
 Build su Render (vedi `render.yaml`):
