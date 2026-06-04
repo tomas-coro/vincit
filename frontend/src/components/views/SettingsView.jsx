@@ -84,6 +84,9 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
   const [creditErr, setCreditErr] = useState({});
   const [showResetConfirm,setShowResetConfirm]=useState(false);
   const [showTestResetConfirm, setShowTestResetConfirm] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deletePw, setDeletePw]                   = useState('');
+  const [deleteBusy, setDeleteBusy]               = useState(false);
   const [notifPrefs,setNotifPrefs]=useState({
     on_group_bet:true, on_challenged:true, on_targeted:true,
     on_resolved:true, on_expiry:true, on_bet_message:true,
@@ -893,6 +896,46 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
               </div>
             )}
           </>
+        )}
+
+        {/* Account deletion — for everyone, not gated on canReset */}
+        {showDeleteAccount ? (
+          <div style={{...S.raised,border:'1px solid var(--red)',background:'var(--red)0d',marginTop:10}}>
+            <div style={{fontSize:14,fontWeight:700,color:'var(--red)',marginBottom:8}}>{t('settings.delete_account_confirm_title')}</div>
+            <div style={{fontSize:12,color:'var(--dim)',marginBottom:12}}>{t('settings.delete_account_confirm_desc')}</div>
+            <input type="password" value={deletePw} onChange={e=>setDeletePw(e.target.value)}
+              placeholder={t('settings.delete_account_pw_placeholder')} autoComplete="current-password"
+              style={{width:'100%',padding:'10px 12px',borderRadius:10,border:'1px solid var(--brd)',
+                background:'var(--bg)',color:'var(--txt)',fontSize:13,marginBottom:12}} />
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>{setShowDeleteAccount(false);setDeletePw('');}}
+                style={{...S.btn,flex:1,background:'transparent',border:'1px solid var(--brd)',color:'var(--dim)'}}>
+                {t('settings.reset_cancel')}
+              </button>
+              <button disabled={deleteBusy || !deletePw} onClick={async ()=>{
+                setDeleteBusy(true);
+                try {
+                  await api.deleteAccount(deletePw);
+                  onLogout();
+                } catch (e) {
+                  toast.error(e?.status === 403 ? t('settings.delete_account_wrong_pw') : t('settings.delete_account_error'));
+                  setDeleteBusy(false);
+                }
+              }} style={{...S.btn,flex:1,background:'var(--red)',border:'none',color:'#fff',fontWeight:700,
+                opacity:(deleteBusy||!deletePw)?0.6:1}}>
+                {t('settings.delete_account_confirm_btn')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{...S.raised,border:'1px solid var(--red)33',marginTop:10}}>
+            <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>{t('settings.delete_account_title')}</div>
+            <div style={{fontSize:12,color:'var(--dim)',marginBottom:14}}>{t('settings.delete_account_desc')}</div>
+            <button onClick={()=>setShowDeleteAccount(true)}
+              style={{...S.btn,width:'100%',background:'transparent',border:'1px solid var(--red)66',color:'var(--red)',fontSize:13}}>
+              🗑 {t('settings.delete_account_btn')}
+            </button>
+          </div>
         )}
       </div>
     </div>
