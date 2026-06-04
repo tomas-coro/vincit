@@ -26,30 +26,45 @@ function makeInviteCode() {
 
 const VERIFY_TTL = 48 * 60 * 60 * 1000; // 48h
 
+// Fix 3 — helper per l'escape HTML: previene XSS nei nomi interpolati nelle mail.
+const escHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// Fix 1 — UPDATE + INSERT in un'unica transazione: evita la race condition
+// in cui due richieste concorrenti emettono entrambe un token valido.
 async function createVerificationToken(userId) {
   const token = crypto.randomBytes(32).toString('base64url');
   const now = Date.now();
-  // Un solo token vivo per utente: invalida i precedenti, poi emetti.
-  await db.query(
-    'UPDATE email_verifications SET used_at=$1 WHERE user_id=$2 AND used_at IS NULL',
-    [now, userId]
-  );
-  await db.query(
-    'INSERT INTO email_verifications(token, user_id, created_at, expires_at) VALUES($1,$2,$3,$4)',
-    [token, userId, now, now + VERIFY_TTL]
-  );
+  await db.transaction(async (client) => {
+    // Un solo token vivo per utente: invalida i precedenti, poi emetti.
+    await client.query(
+      'UPDATE email_verifications SET used_at=$1 WHERE user_id=$2 AND used_at IS NULL',
+      [now, userId]
+    );
+    await client.query(
+      'INSERT INTO email_verifications(token, user_id, created_at, expires_at) VALUES($1,$2,$3,$4)',
+      [token, userId, now, now + VERIFY_TTL]
+    );
+  });
   return token;
 }
 
-async function sendVerificationEmail({ id, name, email }, reqOrigin) {
+async function sendVerificationEmail({ id, name, email }) {
+  // Fix 2 — mai derivare il base URL da header del client: un Origin forgiato
+  // finirebbe nel link della mail (furto del token di verifica).
+  const base = (process.env.APP_BASE_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/+$/, '');
+  if (!base) throw new Error('APP_BASE_URL/RENDER_EXTERNAL_URL non configurati: mail di verifica non inviata');
+
+  // Fix 4 — validazione strict dell'indirizzo prima dell'invio per prevenire
+  // header/multi-recipient injection (riusa lo stesso pattern di /forgot-password).
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('indirizzo email non valido: mail di verifica non inviata');
+
   const token = await createVerificationToken(id);
-  const base = (process.env.APP_BASE_URL || reqOrigin || '').replace(/\/+$/, '');
   const link = `${base}/api/auth/verify-email?token=${token}`;
   await sendMail({
     to: email,
     subject: 'Vincit · Verifica la tua email',
     text: `Ciao ${name},\n\nConferma la tua email aprendo questo link entro 48 ore:\n${link}\n\nSe non ti sei registrato su Vincit, ignora questa email.\n— Vincit`,
-    html: `<p>Ciao <b>${name}</b>,</p>
+    html: `<p>Ciao <b>${escHtml(name)}</b>,</p>
            <p>Conferma la tua email toccando il bottone qui sotto entro 48 ore:</p>
            <p><a href="${link}" style="display:inline-block;padding:12px 22px;background:#c8973f;color:#07060f;border-radius:10px;text-decoration:none;font-weight:700;font-family:sans-serif">Verifica email</a></p>
            <p style="font-size:12px;color:#777">Se il bottone non funziona, copia questo indirizzo nel browser:<br><code>${link}</code></p>
@@ -88,7 +103,7 @@ router.post('/register', async (req, res) => {
     if (mailReady()) {
       // Fire-and-forget: la registrazione non deve fallire né rallentare
       // se l'SMTP è giù — l'utente potrà ri-inviare dal banner in-app.
-      sendVerificationEmail({ id: userId, name: name.trim(), email: email.toLowerCase() }, req.headers.origin)
+      sendVerificationEmail({ id: userId, name: name.trim(), email: email.toLowerCase() })
         .catch(err => console.error('[register] verification mail failed', err));
     }
 
@@ -159,7 +174,7 @@ router.post('/forgot-password', async (req, res) => {
           to: email,
           subject: 'Vincit · Reset password',
           text: `Ciao ${user.name},\n\nHai chiesto di reimpostare la password.\nApri questo link entro 1 ora:\n${link}\n\nSe non sei stato tu, ignora questa email.\n— Vincit`,
-          html: `<p>Ciao <b>${user.name}</b>,</p>
+          html: `<p>Ciao <b>${escHtml(user.name)}</b>,</p>
                  <p>Hai chiesto di reimpostare la password. Tocca il bottone qui sotto entro 1 ora:</p>
                  <p><a href="${link}" style="display:inline-block;padding:12px 22px;background:#c8973f;color:#07060f;border-radius:10px;text-decoration:none;font-weight:700;font-family:sans-serif">Reimposta password</a></p>
                  <p style="font-size:12px;color:#777">Se il bottone non funziona, copia questo indirizzo nel browser:<br><code>${link}</code></p>
@@ -274,9 +289,11 @@ router.post('/resend-verification', async (req, res) => {
     if (!u || u.deleted_at) return res.status(401).json({ error: 'Unauthorized' });
     if (u.email_verified_at) return res.json({ ok: true, already_verified: true });
     if (!mailReady()) return res.status(503).json({ error: 'mail_unavailable' });
-    await sendVerificationEmail(u, req.headers.origin);
+    await sendVerificationEmail(u);
     res.json({ ok: true });
   } catch (e) {
+    // Fix 5 — JWT malformato o scaduto → 401, non 500.
+    if (e.name === 'JsonWebTokenError' || e.name === 'TokenExpiredError') return res.status(401).json({ error: 'Unauthorized' });
     console.error('[resend-verification]', e);
     res.status(500).json({ error: 'server_error' });
   }
