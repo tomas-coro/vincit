@@ -273,11 +273,16 @@ const pool = new Pool({
   // nuovi account non verificati.
   const { rows: evCol } = await pool.query(
     `SELECT 1 FROM information_schema.columns
-      WHERE table_name='users' AND column_name='email_verified_at'`
+      WHERE table_name='users' AND column_name='email_verified_at' AND table_schema='public'`
   );
   if (!evCol.length) {
-    await pool.query('ALTER TABLE users ADD COLUMN email_verified_at BIGINT');
-    await pool.query('UPDATE users SET email_verified_at = created_at');
+    // Un'unica query multi-statement = transazione implicita: o la colonna
+    // nasce già backfillata, o non nasce affatto (niente stato a metà se
+    // il boot crasha qui).
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN email_verified_at BIGINT;
+      UPDATE users SET email_verified_at = created_at;
+    `);
   }
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at BIGINT');
 
