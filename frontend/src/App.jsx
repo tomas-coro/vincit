@@ -1286,7 +1286,13 @@ export default function App() {
       if (tourPaused && !tourDone) setTourPaused(false);
       refresh();
       toast.success(t('app.ok_created'));
-    } catch (e) { console.error(e); toast.error(t('app.error_create')); }
+    } catch (e) {
+      console.error(e);
+      const msg = e?.message === 'insufficient_credits' ? t('create.err_insufficient')
+        : e?.message === 'invalid_opponent' ? t('create.err_invalid_opponent')
+        : t('app.error_create');
+      toast.error(msg);
+    }
   };
 
   const handleEdit = async (id, data) => {
@@ -1406,7 +1412,12 @@ export default function App() {
     try {
       await api.counterBet(bet.id, { ...cb, id: `cb${Date.now()}` });
       setCounterTarget(null);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.message === 'insufficient_credits'
+        ? t('counter.err_insufficient')
+        : t('app.error_counter'));
+    }
   };
 
   const handleFlame = async id => {
@@ -1430,8 +1441,17 @@ export default function App() {
     try { await api.acceptBet(id, body); refresh(); toast.success(t('app.ok_accepted')); }
     catch(e) {
       console.error(e);
+      if (e?.message === 'expired') {
+        // Retrying a dead challenge is pointless — close the modal and resync.
+        setAcceptingBet(null);
+        refresh();
+        toast.error(t('accept.err_expired'));
+        return;
+      }
       const msg = e?.message === 'insufficient_credits'
         ? t('accept.err_insufficient')
+        : e?.message === 'creator_insufficient_credits'
+        ? t('accept.err_creator_insufficient')
         : t('app.error_accept');
       toast.error(msg);
     }

@@ -26,7 +26,7 @@ export default function AuthView({ onAuth }) {
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotMsg, setForgotMsg] = useState(null); // {type:'ok'|'err'|'fallback', text:string}
+  const [forgotMsg, setForgotMsg] = useState(null); // {type:'ok'|'err', text:string}
   const [forgotBusy, setForgotBusy] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -45,12 +45,8 @@ export default function AuthView({ onAuth }) {
     if (!forgotEmail.includes('@')) { setForgotMsg({ type: 'err', text: t('auth.forgot_err_email') }); return; }
     setForgotBusy(true); setForgotMsg(null);
     try {
-      const result = await api.forgotPassword(forgotEmail.trim().toLowerCase());
-      if (result.fallback_link) {
-        setForgotMsg({ type: 'fallback', text: result.fallback_link });
-      } else {
-        setForgotMsg({ type: 'ok', text: t('auth.forgot_ok') });
-      }
+      await api.forgotPassword(forgotEmail.trim().toLowerCase());
+      setForgotMsg({ type: 'ok', text: t('auth.forgot_ok') });
     } catch (err) {
       setForgotMsg({ type: 'err', text: t('auth.forgot_err_generic') });
     } finally { setForgotBusy(false); }
@@ -250,14 +246,12 @@ export default function AuthView({ onAuth }) {
               {forgotMsg && (
                 <div style={{
                   marginTop: 10, padding: '10px 12px', borderRadius: 10, fontSize: 12, lineHeight: 1.5,
-                  background: forgotMsg.type === 'err' ? 'var(--red)18' : forgotMsg.type === 'fallback' ? 'var(--gold)15' : 'var(--grn)18',
-                  border: `1px solid ${forgotMsg.type === 'err' ? 'var(--red)44' : forgotMsg.type === 'fallback' ? 'var(--gold)55' : 'var(--grn)44'}`,
-                  color: forgotMsg.type === 'err' ? 'var(--red)' : forgotMsg.type === 'fallback' ? 'var(--gold)' : 'var(--grn)',
+                  background: forgotMsg.type === 'err' ? 'var(--red)18' : 'var(--grn)18',
+                  border: `1px solid ${forgotMsg.type === 'err' ? 'var(--red)44' : 'var(--grn)44'}`,
+                  color: forgotMsg.type === 'err' ? 'var(--red)' : 'var(--grn)',
                   wordBreak: 'break-all',
                 }}>
-                  {forgotMsg.type === 'fallback'
-                    ? <>{t('auth.forgot_fallback')}<br/><a href={forgotMsg.text} style={{ color: 'inherit' }}>{forgotMsg.text}</a></>
-                    : forgotMsg.text}
+                  {forgotMsg.text}
                 </div>
               )}
               <div style={{ display: 'flex', gap: 8, marginTop: 14, justifyContent: 'flex-end' }}>

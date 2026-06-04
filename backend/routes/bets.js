@@ -14,7 +14,7 @@ module.exports = function(broadcastUpdate) {
       const creator = req.userId;
       const roomId  = req.activeRoomId;
       const { title, quota: quotaRaw, stake: stakeRaw,
-              category, isSecret, isCounterable, pegno, expiresAt, opponent, isSurprise, targetUser,
+              category, isSecret, isCounterable, pegno, expiresAt, opponent: opponentRaw, isSurprise, targetUser,
               allowedMembers } = req.body;
 
       const quota = parseFloat(quotaRaw);
@@ -23,6 +23,21 @@ module.exports = function(broadcastUpdate) {
         return res.status(400).json({ error: 'quota must be 1.01–100' });
       if (!Number.isInteger(stake) || stake < 1)
         return res.status(400).json({ error: 'stake must be a positive integer' });
+
+      // Validate opponent: must be a member of this group and not the creator.
+      // Reject explicitly — silently dropping it would flip a targeted bet to
+      // an open one (broadcast to the whole group, no pending acceptance).
+      let opponent = null;
+      if (opponentRaw) {
+        if (typeof opponentRaw !== 'string' || opponentRaw === creator)
+          return res.status(400).json({ error: 'invalid_opponent' });
+        const { rows: om } = await db.query(
+          'SELECT 1 FROM user_groups WHERE group_id=$1 AND user_id=$2',
+          [roomId, opponentRaw]
+        );
+        if (!om.length) return res.status(400).json({ error: 'invalid_opponent' });
+        opponent = opponentRaw;
+      }
 
       const id           = `b_${crypto.randomUUID()}`;
       const createdAt    = Date.now();
@@ -74,6 +89,18 @@ module.exports = function(broadcastUpdate) {
       }
 
       await db.transaction(async (client) => {
+        if (!isPending) {
+          // Server-side balance check (mirrors /accept): lock the row so two
+          // concurrent bets can't both pass with the same credits.
+          const { rows: cr } = await client.query(
+            'SELECT amount FROM credits WHERE "user"=$1 FOR UPDATE', [creator]
+          );
+          if ((cr[0]?.amount ?? 0) < stake) {
+            const e = new Error('insufficient_credits');
+            e.status = 400;
+            throw e;
+          }
+        }
         await client.query(
           `INSERT INTO bets
              (id, creator, room_id, title, quota, stake, potential_win,
@@ -158,6 +185,7 @@ module.exports = function(broadcastUpdate) {
 
       res.status(201).json({ id });
     } catch (err) {
+      if (err.status === 400) return res.status(400).json({ error: err.message });
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -461,6 +489,15 @@ module.exports = function(broadcastUpdate) {
       const id         = `cb_${crypto.randomUUID()}`;
 
       await db.transaction(async (client) => {
+        // Same balance guard as bet creation: lock + refuse on insufficient credits.
+        const { rows: cr } = await client.query(
+          'SELECT amount FROM credits WHERE "user"=$1 FOR UPDATE', [bettor]
+        );
+        if ((cr[0]?.amount ?? 0) < stake) {
+          const e = new Error('insufficient_credits');
+          e.status = 400;
+          throw e;
+        }
         await client.query(
           `INSERT INTO counter_bets
              (id, bet_id, bettor, side, quota_used, stake, potential_win)
@@ -476,6 +513,7 @@ module.exports = function(broadcastUpdate) {
       broadcastUpdate(req.activeRoomId);
       res.status(201).json({ id });
     } catch (err) {
+      if (err.status === 400) return res.status(400).json({ error: err.message });
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -537,6 +575,10 @@ module.exports = function(broadcastUpdate) {
       if (bet.room_id !== req.activeRoomId) return res.status(403).json({ error: 'Forbidden' });
       if (bet.status !== 'pending') return res.status(400).json({ error: 'Not pending' });
       if (bet.opponent !== req.userId) return res.status(403).json({ error: 'Not the opponent' });
+      // A challenge can't be accepted past its own deadline — otherwise the
+      // creator's stake would be deducted out of the blue long after expiry.
+      if (bet.expires_at != null && Date.now() > Number(bet.expires_at))
+        return res.status(410).json({ error: 'expired' });
 
       // Optional pot-mode stake. If absent we fall back to legacy free-bet
       // behavior (creator-only stake, casino payout on win).
@@ -544,14 +586,41 @@ module.exports = function(broadcastUpdate) {
       if (req.body && req.body.stake != null) {
         const s = parseInt(req.body.stake, 10);
         if (!Number.isInteger(s) || s < 1) return res.status(400).json({ error: 'stake_invalid' });
-        // Check opponent has the credits
-        const { rows: cr } = await db.query('SELECT amount FROM credits WHERE "user"=$1', [req.userId]);
-        const have = cr[0]?.amount ?? 0;
-        if (s > have) return res.status(400).json({ error: 'insufficient_credits' });
         opponentStake = s;
       }
 
       await db.transaction(async (client) => {
+        // Re-check the bet under lock: the pre-transaction read is stale, so
+        // two concurrent accepts (double click) would otherwise both pass the
+        // 'pending' check and deduct the stakes twice.
+        const { rows: lockedBet } = await client.query(
+          'SELECT status FROM bets WHERE id=$1 FOR UPDATE', [bet.id]
+        );
+        if (lockedBet[0]?.status !== 'pending') {
+          const e = new Error('Not pending');
+          e.status = 400;
+          throw e;
+        }
+        // Balance checks under lock (same pattern as create/counter): both
+        // the creator's stake (held now for the first time) and the
+        // opponent's pot-mode stake must be covered, atomically. Ids are
+        // sorted so every locker acquires credits rows in the same order
+        // (deadlock avoidance).
+        const ids = (opponentStake != null ? [bet.creator, req.userId] : [bet.creator]).sort();
+        const { rows: balances } = await client.query(
+          'SELECT "user", amount FROM credits WHERE "user" = ANY($1) FOR UPDATE', [ids]
+        );
+        const bal = Object.fromEntries(balances.map(r => [r.user, r.amount]));
+        if ((bal[bet.creator] ?? 0) < bet.stake) {
+          const e = new Error('creator_insufficient_credits');
+          e.status = 400;
+          throw e;
+        }
+        if (opponentStake != null && (bal[req.userId] ?? 0) < opponentStake) {
+          const e = new Error('insufficient_credits');
+          e.status = 400;
+          throw e;
+        }
         if (opponentStake != null) {
           await client.query(
             'UPDATE bets SET status=$1, opponent_stake=$2 WHERE id=$3',
@@ -605,6 +674,7 @@ module.exports = function(broadcastUpdate) {
 
       res.json({ ok: true });
     } catch (err) {
+      if (err.status === 400) return res.status(400).json({ error: err.message });
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });
     }

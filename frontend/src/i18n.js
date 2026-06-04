@@ -9,11 +9,13 @@ const TRANSLATIONS = {
     cats:    { scherzi:'Scherzi', sport:'Sport', media:'Media', gaming:'Gaming', cibo:'Cibo', eventi:'Eventi', vita:'Vita', altro:'Altro', intimo:'Intimo', serata:'Serata', casa:'Casa' },
     qpre:    { q110:'👑 Quasi certo', q130:'🔥 Molto prob.', q150:'⚡ Probabile', q200:'🎲 Fifty-fifty', q350:'💀 Outsider', q600:'🌙 Miracolo' },
     welcome: { private:'Privato · Solo per voi', subtitle:'Il vostro gioco privato di scommesse', iam:'Sono io', footer:'Quote decimali europee · Dati salvati sul server' },
-    app:     { welcome_back:'Bentornato', credits:'Crediti', switch:'Switch', new_bet:'+ Nuova Bet', new_bet_label:'Nuova', new_group:'+ Nuovo gruppo', error_create:'Errore nella creazione della bet. Riprova.', error_cancel:"Errore durante l'annullamento. Riprova.", error_expired_cancel:'Non puoi annullare una bet scaduta — solo un admin del gruppo può farlo.', error_edit:'Errore durante la modifica. Riprova.', error_reset:'Errore durante il reset. Riprova.', error_accept:"Errore durante l'accettazione. Riprova.", error_reject:'Errore durante il rifiuto. Riprova.', reject_confirm:'Rifiutare questa bet?', sync_error:'Errore di sincronizzazione — tocca per riprovare', ok_created:'Bet creata!', ok_edited:'Bet modificata', ok_cancelled:'Bet annullata', ok_accepted:'Bet accettata', ok_rejected:'Bet rifiutata', ok_reset:'Stagione resettata', ok_profile_saved:'Profilo aggiornato', err_role:'Impossibile cambiare ruolo', err_perms:'Impossibile aggiornare i permessi', undo:'Annulla', resolve_pending_won:'✅ "{title}" segnata come vinta — annulla entro 5s', resolve_pending_lost:'❌ "{title}" segnata come persa — annulla entro 5s', resolve_undone:'Risoluzione annullata' },
+    app:     { welcome_back:'Bentornato', credits:'Crediti', switch:'Switch', new_bet:'+ Nuova Bet', new_bet_label:'Nuova', new_group:'+ Nuovo gruppo', error_create:'Errore nella creazione della bet. Riprova.', error_cancel:"Errore durante l'annullamento. Riprova.", error_expired_cancel:'Non puoi annullare una bet scaduta — solo un admin del gruppo può farlo.', error_edit:'Errore durante la modifica. Riprova.', error_reset:'Errore durante il reset. Riprova.', error_accept:"Errore durante l'accettazione. Riprova.", error_counter:'Errore durante la puntata. Riprova.', error_reject:'Errore durante il rifiuto. Riprova.', reject_confirm:'Rifiutare questa bet?', sync_error:'Errore di sincronizzazione — tocca per riprovare', ok_created:'Bet creata!', ok_edited:'Bet modificata', ok_cancelled:'Bet annullata', ok_accepted:'Bet accettata', ok_rejected:'Bet rifiutata', ok_reset:'Stagione resettata', ok_profile_saved:'Profilo aggiornato', err_role:'Impossibile cambiare ruolo', err_perms:'Impossibile aggiornare i permessi', undo:'Annulla', resolve_pending_won:'✅ "{title}" segnata come vinta — annulla entro 5s', resolve_pending_lost:'❌ "{title}" segnata come persa — annulla entro 5s', resolve_undone:'Risoluzione annullata' },
     nav:     { dashboard:'Home', bets:'Bets', vault:'Vault', stats:'Stats', trophies:'Trofei', friends:'Amici', settings:'Config', profile:'Profilo' },
     bets_hub:{ tab_open:'Aperte', tab_vault:'Vault' },
     create: {
       title:'Nuova Bet 🎲', secret_on_label:'🔒 Bet Segreta (Vault)', secret_off_label:'👁 Bet Condivisa',
+      err_insufficient:'Crediti insufficienti per questa puntata.',
+      err_invalid_opponent:"L'avversario scelto non fa parte di questo gruppo.",
       secret_on_desc:'Solo tu la vedi · Timestamp garantisce onestà', secret_off_desc:'Visibile a entrambi',
       counter_title:'⚡ Abilita Sfida Diretta', counter_desc:'può scommettere SÌ o NO',
       type_label:'Tipo di bet',
@@ -231,7 +233,7 @@ const TRANSLATIONS = {
       assign_hint:'Testa o croce · 50/50, la moneta decide',
       result_landed:'È uscita {side}',
     },
-    counter:  { title:'⚡ Sfida Diretta', by:'di', yes_label:'SÌ succederà', no_label:'NO non succederà', stake_max:'Stake (max {max} ₡)', placeholder:'Importo libero...', risks:'Rischi', pot_win:'Vincita pot.', cancel:'Annulla', bet_yes:'Scommetti SÌ →', bet_no:'Scommetti NO →' },
+    counter:  { title:'⚡ Sfida Diretta', by:'di', yes_label:'SÌ succederà', no_label:'NO non succederà', stake_max:'Stake (max {max} ₡)', placeholder:'Importo libero...', risks:'Rischi', pot_win:'Vincita pot.', cancel:'Annulla', bet_yes:'Scommetti SÌ →', bet_no:'Scommetti NO →', err_insufficient:'Crediti insufficienti per questa puntata.' },
     comment:  { won:'✅ Vinta!', lost:'❌ Persa', prompt:"Aggiungi un commento... es. \"te l'avevo detto! 😂\"", placeholder:'Scrivi un commento...', save:'Salva commento', skip:'Salta' },
     comments: {
       label:'Commenti', empty:'Ancora nessun commento. Apri il thread tu.',
@@ -257,7 +259,6 @@ const TRANSLATIONS = {
       forgot_ok:'✓ Email inviata. Controlla la posta (anche lo spam).',
       forgot_err_email:"Inserisci un'email valida.",
       forgot_err_generic:'Errore. Riprova tra poco.',
-      forgot_fallback:'Email non configurata sul server. Apri il link manualmente:',
     },
     pw: {
       hint:'Min 8 caratteri, almeno 1 maiuscola e 1 carattere speciale.',
@@ -569,6 +570,8 @@ const TRANSLATIONS = {
       if_you_lose:'Se perdi',
       confirm:'Accetta',
       err_insufficient:'Crediti insufficienti per questa puntata.',
+      err_creator_insufficient:'Lo sfidante non ha più i crediti per coprire la puntata.',
+      err_expired:'Questa sfida è scaduta e non può più essere accettata.',
     },
     subset_edit: {
       title:'Gestisci invitati',
@@ -732,11 +735,13 @@ const TRANSLATIONS = {
     cats:    { scherzi:'Pranks', sport:'Sport', media:'Media', gaming:'Gaming', cibo:'Food', eventi:'Events', vita:'Life', altro:'Other', intimo:'Intimate', serata:'Night Out', casa:'Home' },
     qpre:    { q110:'👑 Almost certain', q130:'🔥 Very likely', q150:'⚡ Probable', q200:'🎲 Fifty-fifty', q350:'💀 Outsider', q600:'🌙 Miracle' },
     welcome: { private:'Private · Just the two of you', subtitle:'Your personal couples betting game', iam:"That's me", footer:'European decimal odds · Data stored on server' },
-    app:     { welcome_back:'Welcome back', credits:'Credits', switch:'Switch', new_bet:'+ New Bet', new_bet_label:'New', new_group:'+ New group', error_create:'Failed to create the bet. Please try again.', error_cancel:'Failed to cancel the bet. Please try again.', error_expired_cancel:'You cannot cancel an expired bet — only a group admin can do that.', error_edit:'Failed to edit the bet. Please try again.', error_reset:'Reset failed. Please try again.', error_accept:'Failed to accept the bet. Please try again.', error_reject:'Failed to reject the bet. Please try again.', reject_confirm:'Reject this bet?', sync_error:'Sync error — tap to retry', ok_created:'Bet created!', ok_edited:'Bet updated', ok_cancelled:'Bet cancelled', ok_accepted:'Bet accepted', ok_rejected:'Bet rejected', ok_reset:'Season reset', ok_profile_saved:'Profile updated', err_role:"Couldn't change role", err_perms:"Couldn't update permissions", undo:'Undo', resolve_pending_won:'✅ "{title}" marked as won — undo within 5s', resolve_pending_lost:'❌ "{title}" marked as lost — undo within 5s', resolve_undone:'Resolution undone' },
+    app:     { welcome_back:'Welcome back', credits:'Credits', switch:'Switch', new_bet:'+ New Bet', new_bet_label:'New', new_group:'+ New group', error_create:'Failed to create the bet. Please try again.', error_cancel:'Failed to cancel the bet. Please try again.', error_expired_cancel:'You cannot cancel an expired bet — only a group admin can do that.', error_edit:'Failed to edit the bet. Please try again.', error_reset:'Reset failed. Please try again.', error_accept:'Failed to accept the bet. Please try again.', error_counter:'Failed to place the bet. Please try again.', error_reject:'Failed to reject the bet. Please try again.', reject_confirm:'Reject this bet?', sync_error:'Sync error — tap to retry', ok_created:'Bet created!', ok_edited:'Bet updated', ok_cancelled:'Bet cancelled', ok_accepted:'Bet accepted', ok_rejected:'Bet rejected', ok_reset:'Season reset', ok_profile_saved:'Profile updated', err_role:"Couldn't change role", err_perms:"Couldn't update permissions", undo:'Undo', resolve_pending_won:'✅ "{title}" marked as won — undo within 5s', resolve_pending_lost:'❌ "{title}" marked as lost — undo within 5s', resolve_undone:'Resolution undone' },
     nav:     { dashboard:'Home', bets:'Bets', vault:'Vault', stats:'Stats', trophies:'Trophies', friends:'Friends', settings:'Settings', profile:'Profile' },
     bets_hub:{ tab_open:'Open', tab_vault:'Vault' },
     create: {
       title:'New Bet 🎲', secret_on_label:'🔒 Secret Bet (Vault)', secret_off_label:'👁 Shared Bet',
+      err_insufficient:'Not enough credits for this stake.',
+      err_invalid_opponent:'The chosen opponent is not a member of this group.',
       secret_on_desc:'Only you can see it · Timestamp proves honesty', secret_off_desc:'Visible to both of you',
       counter_title:'⚡ Enable Direct Challenge', counter_desc:'can bet YES or NO',
       type_label:'Bet type',
@@ -954,7 +959,7 @@ const TRANSLATIONS = {
       assign_hint:'Heads or tails · 50/50, the coin decides',
       result_landed:'It landed on {side}',
     },
-    counter:  { title:'⚡ Direct Challenge', by:'by', yes_label:'YES it will happen', no_label:"NO it won't happen", stake_max:'Stake (max {max} ₡)', placeholder:'Custom amount...', risks:'You risk', pot_win:'Pot. win', cancel:'Cancel', bet_yes:'Bet YES →', bet_no:'Bet NO →' },
+    counter:  { title:'⚡ Direct Challenge', by:'by', yes_label:'YES it will happen', no_label:"NO it won't happen", stake_max:'Stake (max {max} ₡)', placeholder:'Custom amount...', risks:'You risk', pot_win:'Pot. win', cancel:'Cancel', bet_yes:'Bet YES →', bet_no:'Bet NO →', err_insufficient:'Not enough credits for this stake.' },
     comment:  { won:'✅ Won!', lost:'❌ Lost', prompt:'Add a comment... e.g. "told you so! 😂"', placeholder:'Write a comment...', save:'Save comment', skip:'Skip' },
     comments: {
       label:'Comments', empty:'No comments yet. Open the thread.',
@@ -980,7 +985,6 @@ const TRANSLATIONS = {
       forgot_ok:'✓ Email sent. Check your inbox (and spam).',
       forgot_err_email:'Enter a valid email.',
       forgot_err_generic:'Something went wrong. Try again later.',
-      forgot_fallback:'Email not configured on the server. Open the link manually:',
     },
     pw: {
       hint:'Min 8 characters, at least 1 uppercase letter and 1 special character.',
@@ -1285,6 +1289,8 @@ const TRANSLATIONS = {
       if_you_lose:'If you lose',
       confirm:'Accept',
       err_insufficient:'Not enough credits for this stake.',
+      err_creator_insufficient:'The challenger no longer has the credits to cover their stake.',
+      err_expired:'This challenge has expired and can no longer be accepted.',
     },
     subset_edit: {
       title:'Manage invitees',

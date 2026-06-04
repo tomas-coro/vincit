@@ -9,7 +9,8 @@ const { send: sendMail, isConfigured: mailReady } = require('../mailer.js');
 const { validatePassword } = require('../passwordPolicy.js');
 
 const router  = express.Router();
-const SECRET  = process.env.JWT_SECRET || 'dev-secret';
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var is required');
+const SECRET  = process.env.JWT_SECRET;
 const ROUNDS  = 10;
 const AVATAR_FOLDER = 'betcouple/avatars';
 // 31^6 ≈ 887M combinations; no ambiguous chars (0,O,1,I,L)
@@ -130,11 +131,12 @@ router.post('/forgot-password', async (req, res) => {
         // Fall through to fallback below.
       }
     }
-    // Fallback: SMTP not configured (or send failed). Return the link to the
-    // caller so the admin can hand it over manually. This is logged loudly so
-    // it shows up in Render logs without surfacing tokens to other users.
+    // Fallback: SMTP not configured (or send failed). NEVER return the link
+    // to the caller — anyone knowing a victim's email could hijack the
+    // account. Log it loudly instead, so the admin can hand it over manually
+    // from the Render logs. The response stays uniform with the success path.
     console.warn(`[forgot-password] FALLBACK LINK for ${email}: ${link}`);
-    return res.json({ ok: true, fallback_link: link });
+    return res.json({ ok: true });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server_error' });

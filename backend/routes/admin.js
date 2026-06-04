@@ -5,7 +5,8 @@ const bcrypt  = require('bcrypt');
 const db      = require('../db.js');
 const { validatePassword } = require('../passwordPolicy.js');
 
-const SECRET = process.env.JWT_SECRET || 'dev-secret';
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var is required');
+const SECRET = process.env.JWT_SECRET;
 const BCRYPT_ROUNDS = 10;
 
 // Admin gate. Two ways to authenticate, either is enough:

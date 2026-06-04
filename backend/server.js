@@ -26,6 +26,10 @@ const db = require('./db.js');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+// Behind Render's load balancer req.ip would be the proxy's IP, making every
+// rate limiter share ONE global bucket (10 logins/15min for ALL users = DoS).
+// Trust exactly one hop so express-rate-limit keys on the real client IP.
+app.set('trust proxy', 1);
 
 function getCorsOrigin() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -52,6 +56,21 @@ const betLimiter = rateLimit({
 app.use('/api/bets',    betLimiter);
 app.use('/api/credits', betLimiter);
 app.use('/api/push',    betLimiter);
+
+// Stricter limiter on credential endpoints: brute-force / abuse protection.
+// Applied per-path (NOT on all of /api/auth) so frequent calls like
+// GET /api/auth/me stay unthrottled.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts, please try again later.' },
+});
+app.use('/api/auth/login',           authLimiter);
+app.use('/api/auth/register',        authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password',  authLimiter);
 
 // Room-scoped SSE clients
 const clients = new Map(); // roomId → Set<res>
@@ -183,6 +202,21 @@ setInterval(async () => {
         broadcastUpdate(b.room_id);
         if (await isPrefEnabled(b.creator, 'on_expiry'))
           sendPushToUser(b.creator, { title:'Vincit ⏱', body:`"${b.title}" è scaduta — dichiara l'esito!`, url:'/' });
+      }
+    }
+    // Pending challenges past their deadline: no credits were ever deducted
+    // (that happens at accept). They go to 'rejected', NOT 'expired' — the
+    // resolve endpoint accepts 'expired' and would pay out potential_win for
+    // a stake that was never actually held.
+    const pend = await db.query(
+      "UPDATE bets SET status='rejected' WHERE status='pending' AND expires_at IS NOT NULL AND expires_at < $1 RETURNING creator, title, room_id",
+      [now]
+    );
+    if (pend.rowCount > 0) {
+      for (const b of pend.rows) {
+        broadcastUpdate(b.room_id);
+        if (await isPrefEnabled(b.creator, 'on_expiry'))
+          sendPushToUser(b.creator, { title:'Vincit ⏱', body:`La sfida "${b.title}" è scaduta senza risposta.`, url:'/' });
       }
     }
   } catch (err) {

@@ -11,6 +11,7 @@ export default function CounterModal({bet,user,profiles,credits,cats,onPlace,onC
   const catLabel = c => DEF_IDS.includes(c.id) ? t('cats.'+c.id) : c.label;
   const [side,setSide]=useState(null);
   const [stakeStr,setStakeStr]=useState("10");
+  const [busy,setBusy]=useState(false); // double-click guard while /counter is in flight
   const qY=bet.quota; const qN=qNo(bet.quota);
   const stake=parseFloat(stakeStr)||0;
   const q=side==="yes"?qY:qN;
@@ -79,7 +80,11 @@ export default function CounterModal({bet,user,profiles,credits,cats,onPlace,onC
 
         <div style={{display:"flex",gap:10,marginTop:side?0:8}}>
           <Btn variant="ghost" full onClick={onClose}>{t('counter.cancel')}</Btn>
-          <Btn variant="gold" full disabled={!side||stake<=0||stake>credits[user]} onClick={()=>onPlace(bet,{bettor:user,side,stake,quotaUsed:q,potentialWin:potWin})}>
+          <Btn variant="gold" full disabled={busy||!side||stake<=0||stake>credits[user]} onClick={async()=>{
+            setBusy(true);
+            try { await onPlace(bet,{bettor:user,side,stake,quotaUsed:q,potentialWin:potWin}); }
+            finally { setBusy(false); }
+          }}>
             {side==="yes"?t('counter.bet_yes'):side==="no"?t('counter.bet_no'):t('counter.cancel')}
           </Btn>
         </div>
