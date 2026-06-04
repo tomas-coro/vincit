@@ -226,6 +226,17 @@ setInterval(async () => {
           sendPushToUser(b.creator, { title:'Vincit ⏱', body:`La sfida "${b.title}" è scaduta senza risposta.`, url:'/' });
       }
     }
+    // Purge dei token one-time consumati o scaduti, così le tabelle non
+    // crescono per sempre. Gli usati restano 24h per diagnosi.
+    const dayAgo = now - 24 * 60 * 60 * 1000;
+    await db.query(
+      'DELETE FROM password_resets WHERE expires_at < $1 OR (used_at IS NOT NULL AND used_at < $2)',
+      [now, dayAgo]
+    );
+    await db.query(
+      'DELETE FROM email_verifications WHERE expires_at < $1 OR (used_at IS NOT NULL AND used_at < $2)',
+      [now, dayAgo]
+    );
   } catch (err) {
     console.error('Expiry job error:', err);
   }
