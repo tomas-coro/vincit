@@ -43,11 +43,6 @@ module.exports = function(broadcastUpdate) {
       const createdAt    = Date.now();
       const potentialWin = Math.round(stake * quota);
 
-      const { rows: roomRows } = await db.query(
-        'SELECT acceptance_threshold FROM rooms WHERE id=$1', [roomId]
-      );
-      const threshold = roomRows[0]?.acceptance_threshold ?? 20;
-
       // A surprise bet requires an opponent and is never broadcasted as counterable
       const surprise = !!isSurprise && !!opponent && !isSecret;
       const counterable = isCounterable && !isSecret && !surprise;
