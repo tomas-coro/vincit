@@ -46,7 +46,7 @@ export default function EmptyState({
           background: 'linear-gradient(90deg, var(--gold) 0%, var(--goldL) 50%, var(--gold) 100%)',
           backgroundSize: '200% 100%', animation: 'shimmer 3s linear infinite',
           color: '#1a1530',
-          fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 800,
+          fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 800,
           letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer',
           boxShadow: '0 14px 30px -10px var(--gold)',
           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
@@ -61,7 +61,7 @@ export default function EmptyState({
           <button onClick={() => setOpen(o => !o)} style={{
             background: 'transparent', border: 'none', cursor: 'pointer',
             color: 'var(--dim)',
-            fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 700,
+            fontFamily: "'Archivo',sans-serif", fontSize: 10, fontWeight: 700,
             letterSpacing: '.22em', textTransform: 'uppercase',
             padding: '6px 8px',
             display: 'inline-flex', alignItems: 'center', gap: 6,

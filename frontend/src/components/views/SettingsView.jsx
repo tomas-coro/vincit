@@ -23,8 +23,8 @@ function readPushState() {
 // inline.
 const S = {
   card: {padding:"22px 0", borderBottom:"1px solid var(--rule)"},
-  inp: {background:"transparent",border:0,borderBottom:"1px solid var(--brd)",borderRadius:0,color:"var(--txt)",padding:"8px 2px",fontFamily:"'Manrope',sans-serif",fontSize:15,outline:"none",width:"100%"},
-  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 20px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:12,fontWeight:600,letterSpacing:".06em",transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
+  inp: {background:"transparent",border:0,borderBottom:"1px solid var(--brd)",borderRadius:0,color:"var(--txt)",padding:"8px 2px",fontFamily:"'Archivo',sans-serif",fontSize:15,outline:"none",width:"100%"},
+  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 20px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Archivo',sans-serif",fontSize:12,fontWeight:600,letterSpacing:".06em",transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
   raised: {background:"var(--card)",border:"1px solid var(--rule)",borderRadius:14,padding:16},
 };
 
@@ -209,7 +209,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
             <button onClick={dismissIntro} style={{
               marginTop: 12, padding: '6px 14px', borderRadius: 999,
               background: 'var(--gold)', border: 'none', color: '#1a1530',
-              fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 800,
+              fontFamily: "'Archivo',sans-serif", fontSize: 10, fontWeight: 800,
               letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer',
               WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
             }}>{t('settings.intro_dismiss')}</button>
@@ -304,7 +304,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
                   border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
                   background: active ? 'var(--gold)18' : 'transparent',
                   color: active ? 'var(--gold)' : 'var(--dim)',
-                  fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:700,
+                  fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:700,
                   letterSpacing:'.04em', cursor:'pointer',
                   transition:'all .18s',
                   WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
@@ -350,7 +350,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
               </div>
             </div>
             <div style={{
-              fontSize:14, color:'var(--gold)', fontFamily:"'Manrope',sans-serif", fontWeight:700,
+              fontSize:14, color:'var(--gold)', fontFamily:"'Archivo',sans-serif", fontWeight:700,
               padding:'6px 12px', borderRadius:20,
               border:'1px solid var(--gold)44', background:'var(--gold)0d',
               flexShrink:0,
@@ -442,7 +442,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
                             border: `1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
                             background: active ? 'var(--gold)1a' : 'transparent',
                             color: active ? 'var(--gold)' : 'var(--dim)',
-                            fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 700,
+                            fontFamily: "'Archivo',sans-serif", fontSize: 10, fontWeight: 700,
                             letterSpacing: '.04em', whiteSpace: 'nowrap',
                             WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
                           }}>
@@ -475,7 +475,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
                   padding: '12px 14px',
                   background: 'transparent', border: 'none', cursor: 'pointer',
                   color: 'var(--txt)', textAlign: 'left',
-                  fontFamily: "'Manrope',sans-serif",
+                  fontFamily: "'Archivo',sans-serif",
                 }}
               >
                 <div style={{
@@ -751,7 +751,7 @@ export default function SettingsView({user,profiles,groupMembers,isDark,setIsDar
                     padding: '12px 14px',
                     background: 'transparent', border: 'none', cursor: 'pointer',
                     color: 'var(--txt)', textAlign: 'left',
-                    fontFamily: "'Manrope',sans-serif",
+                    fontFamily: "'Archivo',sans-serif",
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center' }}>

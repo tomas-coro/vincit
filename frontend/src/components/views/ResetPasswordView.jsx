@@ -61,7 +61,7 @@ export default function ResetPasswordView({ token, onDone }) {
             </div>
             <button onClick={onDone} style={{
               width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
-              background: 'var(--gold)', color: '#07060f', fontFamily: "'Manrope',sans-serif",
+              background: 'var(--gold)', color: '#07060f', fontFamily: "'Archivo',sans-serif",
               fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px var(--glow)',
             }}>
               {t('reset.go_login')}
@@ -88,7 +88,7 @@ export default function ResetPasswordView({ token, onDone }) {
             )}
             <button type="submit" disabled={busy} style={{
               width: '100%', marginTop: 8, padding: '13px 0', borderRadius: 12, border: 'none',
-              background: 'var(--gold)', color: '#07060f', fontFamily: "'Manrope',sans-serif",
+              background: 'var(--gold)', color: '#07060f', fontFamily: "'Archivo',sans-serif",
               fontSize: 15, fontWeight: 700, cursor: busy ? 'wait' : 'pointer',
               opacity: busy ? 0.7 : 1, boxShadow: '0 4px 16px var(--glow)',
             }}>{busy ? '…' : t('reset.confirm_btn')}</button>

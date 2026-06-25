@@ -116,7 +116,7 @@ function ToastItem({ toast, onDismiss }) {
       boxShadow: '0 10px 28px rgba(0,0,0,.45)',
       cursor: 'pointer',
       display: 'flex', alignItems: 'center', gap: 10,
-      fontFamily: "'Manrope', sans-serif", fontSize: 13,
+      fontFamily: "'Archivo', sans-serif", fontSize: 13,
       color: 'var(--txt)',
       animation: 'toastIn .25s cubic-bezier(.34,1.56,.64,1) both',
       position: 'relative', overflow: 'hidden',
@@ -128,7 +128,7 @@ function ToastItem({ toast, onDismiss }) {
           style={{
             background: 'transparent', border: `1px solid ${cfg.color}`,
             color: cfg.color, padding: '4px 12px', borderRadius: 999,
-            fontFamily: "'Manrope', sans-serif", fontSize: 11, fontWeight: 700,
+            fontFamily: "'Archivo', sans-serif", fontSize: 11, fontWeight: 700,
             letterSpacing: '.1em', textTransform: 'uppercase', cursor: 'pointer',
             flexShrink: 0, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
           }}>{toast.actionLabel}</button>

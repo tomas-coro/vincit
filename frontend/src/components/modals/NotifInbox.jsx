@@ -113,7 +113,7 @@ export default function NotifInbox({ open, onClose, items, onMarkAllRead, onClea
               color: '#000',
               borderRadius: 999,
               fontSize: 11,
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "'Archivo', sans-serif",
               fontWeight: 700,
               letterSpacing: '0.04em',
               padding: '2px 7px',
@@ -160,7 +160,7 @@ export default function NotifInbox({ open, onClose, items, onMarkAllRead, onClea
                   border: 'none',
                   color: 'var(--gold)',
                   fontSize: 12,
-                  fontFamily: "'Manrope', sans-serif",
+                  fontFamily: "'Archivo', sans-serif",
                   fontWeight: 600,
                   cursor: 'pointer',
                   padding: 0,
@@ -178,7 +178,7 @@ export default function NotifInbox({ open, onClose, items, onMarkAllRead, onClea
                   border: 'none',
                   color: 'var(--dim)',
                   fontSize: 11,
-                  fontFamily: "'Manrope', sans-serif",
+                  fontFamily: "'Archivo', sans-serif",
                   cursor: 'pointer',
                   padding: 0,
                   letterSpacing: '0.03em',
@@ -227,7 +227,7 @@ export default function NotifInbox({ open, onClose, items, onMarkAllRead, onClea
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontFamily: "'Manrope', sans-serif",
+                    fontFamily: "'Archivo', sans-serif",
                     fontWeight: 700,
                     fontSize: 13,
                     color: 'var(--txt)',
@@ -240,7 +240,7 @@ export default function NotifInbox({ open, onClose, items, onMarkAllRead, onClea
                   </div>
                   {item.body && (
                     <div style={{
-                      fontFamily: "'Manrope', sans-serif",
+                      fontFamily: "'Archivo', sans-serif",
                       fontSize: 11,
                       color: 'var(--dim)',
                       marginTop: 2,
@@ -251,7 +251,7 @@ export default function NotifInbox({ open, onClose, items, onMarkAllRead, onClea
                   )}
                 </div>
                 <span style={{
-                  fontFamily: "'Playfair Display', serif",
+                  fontFamily: "'Bodoni Moda', serif",
                   fontSize: 10,
                   color: 'var(--dim)',
                   flexShrink: 0,

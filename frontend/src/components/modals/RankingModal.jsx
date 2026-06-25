@@ -73,7 +73,7 @@ export default function RankingModal({ open, onClose, rankRows, bets, profiles, 
               color: paWins >= pbWins ? 'var(--gold)' : 'var(--dim)', textAlign: 'center',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 80,
             }}>{pa.p?.name}</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: 36,
+            <div style={{ fontFamily: "'Bodoni Moda',serif", fontWeight: 900, fontSize: 36,
               color: paWins >= pbWins ? 'var(--gold)' : 'var(--txt)', lineHeight: 1 }}>{paWins}</div>
           </div>
 
@@ -96,7 +96,7 @@ export default function RankingModal({ open, onClose, rankRows, bets, profiles, 
               color: pbWins >= paWins ? 'var(--gold)' : 'var(--dim)', textAlign: 'center',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 80,
             }}>{pb.p?.name}</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: 36,
+            <div style={{ fontFamily: "'Bodoni Moda',serif", fontWeight: 900, fontSize: 36,
               color: pbWins >= paWins ? 'var(--gold)' : 'var(--txt)', lineHeight: 1 }}>{pbWins}</div>
           </div>
         </div>
@@ -176,7 +176,7 @@ export default function RankingModal({ open, onClose, rankRows, bets, profiles, 
                 <div style={{ width: 26, flexShrink: 0, textAlign: 'center' }}>
                   {i < 3
                     ? <span style={{ fontSize: 15 }}>{medals[i]}</span>
-                    : <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 13,
+                    : <span style={{ fontFamily: "'Bodoni Moda',serif", fontSize: 13,
                         fontWeight: 700, color: 'var(--mut)' }}>#{i + 1}</span>}
                 </div>
 
@@ -203,7 +203,7 @@ export default function RankingModal({ open, onClose, rankRows, bets, profiles, 
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>
                     {s.p?.name}
-                    {isMe && <span style={{ fontFamily: "'Manrope',sans-serif", fontStyle: 'normal',
+                    {isMe && <span style={{ fontFamily: "'Archivo',sans-serif", fontStyle: 'normal',
                       fontSize: 8, color: 'var(--gold)', marginLeft: 6, letterSpacing: '.15em' }}>TU</span>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
@@ -218,7 +218,7 @@ export default function RankingModal({ open, onClose, rankRows, bets, profiles, 
 
                 {/* Net ₡ */}
                 <div style={{
-                  fontFamily: "'Playfair Display',serif", fontWeight: 700,
+                  fontFamily: "'Bodoni Moda',serif", fontWeight: 700,
                   fontSize: 15, flexShrink: 0, textAlign: 'right',
                   color: st.net >= 0 ? 'var(--grn)' : 'var(--red)',
                   letterSpacing: '-0.02em',
@@ -249,7 +249,7 @@ export default function RankingModal({ open, onClose, rankRows, bets, profiles, 
                     borderLeft: i === 0 ? 'none' : '1px solid var(--rule)',
                     paddingLeft: i === 0 ? 0 : 6,
                   }}>
-                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 18,
+                    <div style={{ fontFamily: "'Bodoni Moda',serif", fontSize: 18,
                       fontWeight: 900, color: s.c, lineHeight: 1 }}>{s.v}</div>
                     <div className="bc-meta" style={{ fontSize: 7, marginTop: 5 }}>{s.l}</div>
                   </div>

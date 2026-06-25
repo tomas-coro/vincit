@@ -34,7 +34,7 @@ export default function ProfileAvatarMenu({ profile, t, onEdit, onLogout, onClos
     display:'flex', alignItems:'center', gap:14,
     width:'100%', padding:'14px 18px', background:'transparent',
     border:'none', cursor:'pointer',
-    fontFamily:"'Manrope',sans-serif", fontSize:14, fontWeight:600,
+    fontFamily:"'Archivo',sans-serif", fontSize:14, fontWeight:600,
     color:'var(--txt)', textAlign:'left',
     transition:'background .12s',
   };
@@ -68,7 +68,7 @@ export default function ProfileAvatarMenu({ profile, t, onEdit, onLogout, onClos
           </div>
           <div style={{flex:1, minWidth:0}}>
             <div style={{
-              fontFamily:"'Manrope',sans-serif",
+              fontFamily:"'Archivo',sans-serif",
               fontSize:15, fontWeight:700, color:'var(--txt)',
               overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
             }}>{name}</div>

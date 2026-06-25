@@ -14,15 +14,17 @@ export const rootVars = C => ({
   "--gold":C.gold,"--goldL":C.goldL,"--glow":C.glow,
   "--grn":C.grn,"--red":C.red,"--blu":C.blu,"--pur":C.pur,
   "--txt":C.txt,"--dim":C.dim,"--mut":C.mut,"--inp":C.inp,
-  // Font roles. Numbers stay Playfair (editorial weight on the credit
-  // counters & quotas), headings move to Cormorant Garamond, UI body is
-  // Manrope so the dashboard reads as a clean modern app rather than a
-  // shiny casino skin.
-  "--f-num":  "'Playfair Display', serif",
+  // Font roles — "Editorial Maximal" direction. Numbers use Bodoni Moda
+  // (didone masthead weight on credit counters, quotas & ₡), headings stay
+  // Cormorant Garamond (editorial italics), UI body is Archivo — more
+  // character than a neutral grotesque, same legibility. NOTE: most of the
+  // app still hardcodes these family names inline rather than reading these
+  // vars, so changing a face means a global rename, not just editing here.
+  "--f-num":  "'Bodoni Moda', serif",
   "--f-head": "'Cormorant Garamond', serif",
-  "--f-ui":   "'Manrope', sans-serif",
+  "--f-ui":   "'Archivo', sans-serif",
   background:C.bg, color:C.txt,
-  fontFamily:"'Manrope',sans-serif", minHeight:"100vh",
+  fontFamily:"'Archivo',sans-serif", minHeight:"100vh",
 });
 
 // Avatar emojis grouped by category. Order matters: items appear in this exact order in the picker.
@@ -100,13 +102,13 @@ const S = {
   // Pill badge, kept compact + tracked.
   bdg: {display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:999,fontSize:10,fontWeight:600,letterSpacing:".06em",textTransform:"uppercase"},
   // Default button = pill, hard radius, no border. Variants own their color.
-  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 22px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:13,fontWeight:600,letterSpacing:".02em",transition:"transform .18s ease, filter .18s ease, box-shadow .18s ease",userSelect:"none",whiteSpace:"nowrap"},
+  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 22px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Archivo',sans-serif",fontSize:13,fontWeight:600,letterSpacing:".02em",transition:"transform .18s ease, filter .18s ease, box-shadow .18s ease",userSelect:"none",whiteSpace:"nowrap"},
   row: {display:"flex",alignItems:"center",gap:10},
   col: {display:"flex",flexDirection:"column",gap:6},
   // Tiny tracked meta-label. Pair with whitespace, not with boxes.
   lbl: {fontSize:9,color:"var(--dim)",letterSpacing:".3em",textTransform:"uppercase",fontWeight:600,display:"block",marginBottom:10},
   // Inputs lose the box. Underline only, lavender on focus.
-  inp: {background:"transparent",border:0,borderBottom:"1px solid var(--brd)",borderRadius:0,color:"var(--txt)",padding:"10px 2px",fontFamily:"'Manrope',sans-serif",fontSize:15,outline:"none",width:"100%",transition:"border-color .18s ease"},
+  inp: {background:"transparent",border:0,borderBottom:"1px solid var(--brd)",borderRadius:0,color:"var(--txt)",padding:"10px 2px",fontFamily:"'Archivo',sans-serif",fontSize:15,outline:"none",width:"100%",transition:"border-color .18s ease"},
 };
 export const Bdg=({c,bg,children})=><span style={{...S.bdg,background:bg,color:c}}>{children}</span>;
 export const Btn=({variant="ghost",sm,full,onClick,disabled,children,style={}})=>{

@@ -173,7 +173,7 @@ export default function DashboardView({
     background: 'transparent', border: 'none',
     borderBottom: tab === id ? '2px solid var(--gold)' : '2px solid transparent',
     color: tab === id ? 'var(--gold)' : 'var(--dim)',
-    fontFamily: "'Manrope', sans-serif", fontSize: 11, fontWeight: 700,
+    fontFamily: "'Archivo', sans-serif", fontSize: 11, fontWeight: 700,
     letterSpacing: '.06em', textTransform: 'uppercase',
     cursor: 'pointer', position: 'relative',
     transition: 'color .15s, border-color .15s',
@@ -264,7 +264,7 @@ export default function DashboardView({
             <span style={{
               position: 'absolute', top: 4, right: 4,
               fontSize: 10, fontWeight: 800, color: streakAccent,
-              fontFamily: "'Manrope',sans-serif", letterSpacing: '.1em',
+              fontFamily: "'Archivo',sans-serif", letterSpacing: '.1em',
             }}>{streakTapCount}/3</span>
           )}
         </div>
@@ -308,7 +308,7 @@ export default function DashboardView({
                   width: dim, height: dim, borderRadius: 8,
                   background: badgeBg, border: 'none', padding: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: "'Manrope',sans-serif",
+                  fontFamily: "'Archivo',sans-serif",
                   fontSize: isDesktop ? 18 : 15, fontWeight: 800,
                   color: '#fff', cursor: 'pointer', opacity: fade,
                   transform: isLatest ? 'scale(1.1)' : 'scale(1)',
@@ -355,7 +355,7 @@ export default function DashboardView({
         })()}
         {latestBet && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: 9, color: 'var(--gold)', fontWeight: 800, letterSpacing: '.22em', flexShrink: 0, fontFamily: "'Manrope',sans-serif" }}>
+            <span style={{ fontSize: 9, color: 'var(--gold)', fontWeight: 800, letterSpacing: '.22em', flexShrink: 0, fontFamily: "'Archivo',sans-serif" }}>
               LIVE →
             </span>
             <span style={{
@@ -509,7 +509,7 @@ export default function DashboardView({
                   }}>
                     {s.p?.name}{s.isMe && <span style={{ color: 'var(--gold)', marginLeft: 2 }}>·</span>}
                   </div>
-                  <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: numSize, lineHeight: 1, color: numColor }}>
+                  <div style={{ fontFamily: "'Bodoni Moda',serif", fontWeight: 900, fontSize: numSize, lineHeight: 1, color: numColor }}>
                     {s.w}
                   </div>
                   <div style={{ fontSize: 7, color: isFirst ? 'var(--gold)' : 'var(--mut)', letterSpacing: '.18em', lineHeight: 1 }}>
@@ -530,10 +530,10 @@ export default function DashboardView({
                 background: 'var(--soft)', border: '1px solid var(--brd)',
               }}>
                 <span style={{ fontSize: 13, lineHeight: 1 }}>{s.p?.avatar ?? '👤'}</span>
-                <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11, color: 'var(--dim)', fontWeight: 600, maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontFamily: "'Archivo',sans-serif", fontSize: 11, color: 'var(--dim)', fontWeight: 600, maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {s.p?.name?.split(' ')[0] ?? ''}
                 </span>
-                <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 13, fontWeight: 900, color: s.c, lineHeight: 1 }}>{s.w}</span>
+                <span style={{ fontFamily: "'Bodoni Moda',serif", fontSize: 13, fontWeight: 900, color: s.c, lineHeight: 1 }}>{s.w}</span>
                 <span style={{ fontSize: 7, color: 'var(--dim)', letterSpacing: '.1em' }}>V</span>
               </div>
             ))}
@@ -560,7 +560,7 @@ export default function DashboardView({
           marginTop: 12, width: '100%', padding: '7px 0',
           background: 'transparent', border: '1px solid var(--gold)33',
           borderRadius: 8, cursor: 'pointer',
-          fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 700,
+          fontFamily: "'Archivo',sans-serif", fontSize: 10, fontWeight: 700,
           letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--gold)',
           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
         }}>
@@ -607,8 +607,8 @@ export default function DashboardView({
           {onResolve && (() => {
             const isPendingResolve = pendingResolveIds?.has(b.id);
             return isPendingResolve
-              ? <span style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 999, background: 'var(--mut)22', border: '1px solid var(--mut)44', color: 'var(--mut)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', fontFamily: "'Manrope',sans-serif", opacity: .55 }}>⏳ In invio…</span>
-              : <button onClick={() => onResolve(b)} style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 999, background: 'var(--red)22', border: '1px solid var(--red)55', color: 'var(--red)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: "'Manrope',sans-serif", WebkitTapHighlightColor: 'transparent' }}>Dichiara</button>;
+              ? <span style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 999, background: 'var(--mut)22', border: '1px solid var(--mut)44', color: 'var(--mut)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', fontFamily: "'Archivo',sans-serif", opacity: .55 }}>⏳ In invio…</span>
+              : <button onClick={() => onResolve(b)} style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 999, background: 'var(--red)22', border: '1px solid var(--red)55', color: 'var(--red)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: "'Archivo',sans-serif", WebkitTapHighlightColor: 'transparent' }}>Dichiara</button>;
           })()}
         </div>
       ))}
@@ -642,13 +642,13 @@ export default function DashboardView({
         style={{ ...S.card, marginBottom: 12, background: 'var(--gold)0a', border: '1px solid var(--gold)33', borderLeft: '3px solid var(--gold)', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 8, color: 'var(--gold)', letterSpacing: '.22em', fontWeight: 700, marginBottom: 6, fontFamily: "'Manrope',sans-serif" }}>
+            <div style={{ fontSize: 8, color: 'var(--gold)', letterSpacing: '.22em', fontWeight: 700, marginBottom: 6, fontFamily: "'Archivo',sans-serif" }}>
               SETT. {weekNum} · BET HIGHLIGHTS
             </div>
             {topWinBet && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: isDifferent ? 4 : 0 }}>
                 <span style={{ fontSize: 12 }}>🏆</span>
-                <span style={{ fontSize: 10, color: 'var(--grn)', fontWeight: 700, flexShrink: 0, fontFamily: "'Manrope',sans-serif" }}>+{gain} ₡</span>
+                <span style={{ fontSize: 10, color: 'var(--grn)', fontWeight: 700, flexShrink: 0, fontFamily: "'Archivo',sans-serif" }}>+{gain} ₡</span>
                 <span style={{ fontSize: 12, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontStyle: 'italic', fontFamily: "'Cormorant Garamond',serif" }}>
                   "{topWinBet.title}"
                 </span>
@@ -657,7 +657,7 @@ export default function DashboardView({
             {isDifferent && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 12 }}>💀</span>
-                <span style={{ fontSize: 10, color: 'var(--red)', fontWeight: 700, flexShrink: 0, fontFamily: "'Manrope',sans-serif" }}>{prob}% win</span>
+                <span style={{ fontSize: 10, color: 'var(--red)', fontWeight: 700, flexShrink: 0, fontFamily: "'Archivo',sans-serif" }}>{prob}% win</span>
                 <span style={{ fontSize: 12, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontStyle: 'italic', fontFamily: "'Cormorant Garamond',serif" }}>
                   "{craziestBet.title}"
                 </span>
@@ -690,7 +690,7 @@ export default function DashboardView({
               marginTop: 10, padding: '10px 14px', width: '100%',
               background: 'transparent', border: '1px dashed var(--brd)',
               borderRadius: 12, cursor: 'pointer',
-              color: 'var(--gold)', fontFamily: "'Manrope',sans-serif",
+              color: 'var(--gold)', fontFamily: "'Archivo',sans-serif",
               fontSize: 11, fontWeight: 700, letterSpacing: '.14em',
               textTransform: 'uppercase',
               WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
@@ -756,7 +756,7 @@ export default function DashboardView({
         width: '100%', padding: '12px 0', marginBottom: 16,
         background: 'var(--pur)', color: '#fff',
         border: 'none', borderRadius: 9,
-        fontFamily: "'Manrope', sans-serif",
+        fontFamily: "'Archivo', sans-serif",
         fontSize: 14, fontWeight: 800, cursor: 'pointer', letterSpacing: '.02em',
       }}>
         {t('dashboard.cta')}
@@ -827,11 +827,11 @@ export default function DashboardView({
               <div style={{ borderTop: '1px solid var(--rule)', marginTop: 10, paddingTop: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
                   <span style={{ color: 'var(--dim)' }}>Totale in gioco</span>
-                  <span style={{ fontFamily: "'Playfair Display',serif", fontWeight: 600 }}>₡ {totalInPlay}</span>
+                  <span style={{ fontFamily: "'Bodoni Moda',serif", fontWeight: 600 }}>₡ {totalInPlay}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
                   <span style={{ color: 'var(--dim)' }}>Potenziale vincita</span>
-                  <span style={{ fontFamily: "'Playfair Display',serif", fontWeight: 600, color: 'var(--grn)' }}>₡ {potentialTotal}</span>
+                  <span style={{ fontFamily: "'Bodoni Moda',serif", fontWeight: 600, color: 'var(--grn)' }}>₡ {potentialTotal}</span>
                 </div>
               </div>
             )}

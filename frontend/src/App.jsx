@@ -96,7 +96,7 @@ export async function registerPush(user, { prompt = true } = {}) {
 }
 
 const CSS_BASE = `
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,700&family=Playfair+Display:wght@700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,700&family=Playfair+Display:wght@700;900&display=swap');
 @keyframes sUp{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes fIn{from{opacity:0}to{opacity:1}}
 @keyframes bIn{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.1)}80%{transform:scale(.95)}100%{transform:scale(1);opacity:1}}
@@ -107,7 +107,7 @@ const CSS_BASE = `
 @keyframes confB{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1}100%{transform:translate(var(--ex),var(--ey)) rotate(var(--rot,720deg)) scale(.4);opacity:0}}
 @keyframes bcStreakTap{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-8deg)}100%{transform:scale(1) rotate(0deg)}}
 .bc *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-.bc{font-family:'Manrope',sans-serif;transition:background .25s,color .25s}
+.bc{font-family:'Archivo',sans-serif;transition:background .25s,color .25s}
 /* Kill every default focus/click outline app-wide — user reported the lavender
    focus ring and the mobile tap-highlight both reading as a "blue box" they
    never want to see. Anything that needs explicit keyboard focus styling
@@ -121,9 +121,9 @@ const CSS_BASE = `
 /* Section heading: large italic serif.                                */
 .bc-head{font-family:'Cormorant Garamond',serif;font-weight:600;letter-spacing:-0.01em;line-height:1.05}
 /* Lining numerals, editorial weight — credit balances, quotas, ₡.    */
-.bc-num{font-family:'Playfair Display',serif;font-feature-settings:'lnum' 1, 'tnum' 1;letter-spacing:-0.02em;line-height:1}
+.bc-num{font-family:'Bodoni Moda',serif;font-feature-settings:'lnum' 1, 'tnum' 1;letter-spacing:-0.02em;line-height:1}
 /* Tiny tracked uppercase meta — labels, dates, captions.              */
-.bc-meta{font-family:'Manrope',sans-serif;font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+.bc-meta{font-family:'Archivo',sans-serif;font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
 /* 1px hairline rule — replaces card borders as a divider.             */
 .bc-rule{height:1px;background:var(--rule);border:0;margin:0}
 .sUp{animation:sUp .3s ease both}
@@ -355,7 +355,7 @@ function DieRollOverlay({ open, onClose, onEggUnlock }) {
               ))}
             </div>
             <div style={{
-              marginTop:8, fontFamily:"'Manrope',sans-serif",
+              marginTop:8, fontFamily:"'Archivo',sans-serif",
               fontSize:9, letterSpacing:'.22em', textTransform:'uppercase',
               color: hasAll ? 'var(--gold)' : 'var(--dim)',
             }}>
@@ -512,7 +512,7 @@ function ColdStartLoader({ t }) {
       padding:'40px 28px', textAlign:'center', gap:20,
     }}>
       <div style={{
-        fontFamily:"'Playfair Display',serif", fontSize:48, color:'var(--gold)',
+        fontFamily:"'Bodoni Moda',serif", fontSize:48, color:'var(--gold)',
         animation: 'pGold 2.5s ease-in-out infinite',
       }}>₡</div>
       {level >= 1 && (
@@ -603,13 +603,13 @@ function PwaInstallBanner({ t, visible }) {
         <button onClick={later} style={{
           padding:'8px 14px', borderRadius:999, background:'transparent',
           border:'1px solid var(--brd)', color:'var(--dim)',
-          fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:700,
+          fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:700,
           letterSpacing:'.08em', textTransform:'uppercase', cursor:'pointer',
         }}>{t('pwa.install_later')}</button>
         <button onClick={accept} style={{
           padding:'8px 16px', borderRadius:999, border:'none',
           background:'var(--gold)', color:'#1a1530',
-          fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:800,
+          fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:800,
           letterSpacing:'.08em', textTransform:'uppercase', cursor:'pointer',
         }}>{t('pwa.install_cta')}</button>
       </div>
@@ -1743,7 +1743,7 @@ export default function App() {
   if (!groupsLoaded) return (
     <div style={{position:'fixed',inset:0,display:'flex',alignItems:'center',
       justifyContent:'center',background:'var(--bg)'}}>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:'var(--gold)'}}>₡</div>
+      <div style={{fontFamily:"'Bodoni Moda',serif",fontSize:32,color:'var(--gold)'}}>₡</div>
     </div>
   );
 
@@ -1902,14 +1902,14 @@ export default function App() {
             <button onClick={() => { setInboxOpen(true); markInboxRead(); }}
               style={{ position:'relative', background:'transparent', border:'none', cursor:'pointer',
                 display:'flex', alignItems:'center', gap:7, padding:'6px 0', fontSize:13,
-                fontFamily:"'Manrope',sans-serif", color:'var(--dim)', fontWeight:600,
+                fontFamily:"'Archivo',sans-serif", color:'var(--dim)', fontWeight:600,
                 letterSpacing:'.06em', WebkitTapHighlightColor:'transparent' }}>
               <span style={{ fontSize:17, lineHeight:1 }}>🔔</span>
               Notifiche
               {inboxUnread > 0 && (
                 <span style={{ minWidth:18, height:18, padding:'0 5px', borderRadius:9,
                   background:'var(--red)', color:'#fff',
-                  fontSize:10, fontWeight:800, fontFamily:"'Manrope',sans-serif",
+                  fontSize:10, fontWeight:800, fontFamily:"'Archivo',sans-serif",
                   display:'inline-flex', alignItems:'center', justifyContent:'center',
                 }}>{inboxUnread > 9 ? '9+' : inboxUnread}</span>
               )}
@@ -1985,7 +1985,7 @@ export default function App() {
             <button data-tour="new-bet" onClick={() => setShowCreate(true)} style={{
               width: '100%', padding: '13px 0', borderRadius: 999, border: 'none',
               background: 'var(--pur)', color: '#1a1530',
-              fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 700,
+              fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 700,
               letterSpacing: '.18em', textTransform: 'uppercase',
               cursor: 'pointer',
               boxShadow: '0 14px 36px -12px var(--pur), 0 1px 0 rgba(255,255,255,.15) inset',
@@ -2024,7 +2024,7 @@ export default function App() {
                   <span style={{ position:'absolute', top:0, right:-2,
                     minWidth:16, height:16, padding:'0 3px', borderRadius:8,
                     background:'var(--red)', color:'#fff',
-                    fontSize:10, fontWeight:700, fontFamily:"'Manrope',sans-serif",
+                    fontSize:10, fontWeight:700, fontFamily:"'Archivo',sans-serif",
                     display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1,
                   }}>{inboxUnread > 9 ? '9+' : inboxUnread}</span>
                 )}

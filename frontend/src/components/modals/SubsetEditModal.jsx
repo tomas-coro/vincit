@@ -91,7 +91,7 @@ export default function SubsetEditModal({ bet, groupMembers, onSaved, onClose })
               border: `1px solid ${picked.size === 0 ? 'var(--gold)' : 'var(--rule)'}`,
               background: picked.size === 0 ? 'var(--soft)' : 'transparent',
               color: picked.size === 0 ? 'var(--gold)' : 'var(--dim)',
-              cursor: 'pointer', fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 600,
               letterSpacing: '.06em', textAlign: 'left', transition: 'all .15s',
             }}>
             🌐 {t('subset_edit.everyone')}
@@ -112,7 +112,7 @@ export default function SubsetEditModal({ bet, groupMembers, onSaved, onClose })
                   color: isPicked ? 'var(--gold)' : 'var(--txt)',
                   cursor: isLocked ? 'not-allowed' : 'pointer',
                   opacity: isLocked ? .45 : 1,
-                  fontFamily: "'Manrope',sans-serif", fontSize: 14, fontWeight: 500,
+                  fontFamily: "'Archivo',sans-serif", fontSize: 14, fontWeight: 500,
                   textAlign: 'left', transition: 'color .18s',
                 }}>
                 <div style={{

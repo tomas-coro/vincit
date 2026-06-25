@@ -448,7 +448,7 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
               {t('photo.gate_title')}
             </div>
             <div style={{
-              fontFamily: "'Manrope',sans-serif", fontSize: 13, lineHeight: 1.5,
+              fontFamily: "'Archivo',sans-serif", fontSize: 13, lineHeight: 1.5,
               color: 'var(--dim)', marginBottom: 24,
             }}>
               {t('photo.gate_body')}
@@ -457,7 +457,7 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
               padding: '13px 28px', borderRadius: 999,
               background: 'var(--gold)', border: 'none',
               color: '#1a1530', cursor: 'pointer',
-              fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 800,
+              fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 800,
               letterSpacing: '.22em', textTransform: 'uppercase',
               boxShadow: '0 10px 28px rgba(196,168,120,.35)',
               marginBottom: 18,
@@ -468,7 +468,7 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
             <div
               onClick={() => fileRef.current?.click()}
               style={{
-                fontFamily: "'Manrope',sans-serif", fontSize: 12,
+                fontFamily: "'Archivo',sans-serif", fontSize: 12,
                 color: 'var(--dim)', cursor: 'pointer',
                 letterSpacing: '.02em', userSelect: 'none',
                 padding: '6px 12px',
@@ -498,7 +498,7 @@ export default function CameraModal({ onCapture, onClose, size = 1080, quality =
             </div>
             {error?.hint && (
               <div style={{
-                fontFamily: "'Manrope',sans-serif", fontSize: 12.5, lineHeight: 1.5,
+                fontFamily: "'Archivo',sans-serif", fontSize: 12.5, lineHeight: 1.5,
                 color: 'var(--dim)', marginBottom: 4,
               }}>
                 {error.hint}

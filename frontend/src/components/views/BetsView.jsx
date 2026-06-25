@@ -32,7 +32,7 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
 
   const pill = active => ({
     padding:'5px 12px', borderRadius:20, flexShrink:0, cursor:'pointer', whiteSpace:'nowrap',
-    fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:600,
+    fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:600,
     border:`1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
     background: active ? 'var(--gold)22' : 'transparent',
     color: active ? 'var(--gold)' : 'var(--dim)',
@@ -62,7 +62,7 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
         <input value={query} onChange={e=>setQuery(e.target.value)}
           placeholder={t('bets_view.search_ph')}
           style={{ flex:1, border:'none', outline:'none', background:'transparent',
-            color:'var(--txt)', fontFamily:"'Manrope',sans-serif", fontSize:14, letterSpacing:'.01em' }}/>
+            color:'var(--txt)', fontFamily:"'Archivo',sans-serif", fontSize:14, letterSpacing:'.01em' }}/>
         {q && (
           <button onClick={()=>setQuery('')} aria-label="Pulisci ricerca"
             style={{ background:'transparent', border:'none', cursor:'pointer',
@@ -102,7 +102,7 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
                 style={{
                   padding:'5px 12px', borderRadius:20, cursor:'pointer',
                   background:'transparent', border:'1px dashed var(--brd)',
-                  color:'var(--dim)', fontFamily:"'Manrope',sans-serif",
+                  color:'var(--dim)', fontFamily:"'Archivo',sans-serif",
                   fontSize:11, fontWeight:600, whiteSpace:'nowrap',
                   WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
                 }}>
@@ -144,7 +144,7 @@ export default function BetsView({user,profiles,bets,cats,onResolve,onCounter,on
                       padding:'8px 18px', borderRadius:999,
                       background:'var(--gold)1a', border:'1px solid var(--gold)55',
                       color:'var(--gold)', cursor:'pointer',
-                      fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:800,
+                      fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:800,
                       letterSpacing:'.08em', textTransform:'uppercase',
                       WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
                     }}>

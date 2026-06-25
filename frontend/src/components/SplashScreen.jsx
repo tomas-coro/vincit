@@ -258,7 +258,7 @@ export default function SplashScreen({ onDone, brand = 'Vincit' }) {
       <div style={{
         position: 'absolute', bottom: 22, fontSize: 9,
         color: 'var(--mut)', letterSpacing: '.22em',
-        fontFamily: "'Manrope', sans-serif",
+        fontFamily: "'Archivo', sans-serif",
         textTransform: 'uppercase', opacity: .5,
       }}>
         {t('splash.tap_skip')}

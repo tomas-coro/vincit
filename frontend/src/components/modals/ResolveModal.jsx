@@ -75,7 +75,7 @@ export function ResolveModal({bet,cats,profiles,onResolve,onClose}){
         <button onClick={onClose} style={{
           width:"100%", padding:"4px 0",
           background:"transparent", border:"none", cursor:"pointer",
-          fontFamily:"'Manrope',sans-serif", fontSize:10, fontWeight:600,
+          fontFamily:"'Archivo',sans-serif", fontSize:10, fontWeight:600,
           letterSpacing:".3em", textTransform:"uppercase", color:"var(--dim)",
         }}>{t('resolve.cancel')}</button>
       </div>

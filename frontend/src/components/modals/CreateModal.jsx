@@ -12,8 +12,8 @@ import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
 // card pattern is a soft tinted callout for the payout summary.
 const S = {
   lbl: {fontSize:9,color:"var(--dim)",letterSpacing:".3em",textTransform:"uppercase",fontWeight:600,display:"block",marginBottom:10},
-  inp: {background:"transparent",border:0,borderBottom:"1px solid var(--brd)",color:"var(--txt)",borderRadius:0,padding:"8px 2px",fontFamily:"'Manrope',sans-serif",fontSize:15,outline:"none",width:"100%"},
-  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px 14px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:11,fontWeight:600,letterSpacing:".08em",transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
+  inp: {background:"transparent",border:0,borderBottom:"1px solid var(--brd)",color:"var(--txt)",borderRadius:0,padding:"8px 2px",fontFamily:"'Archivo',sans-serif",fontSize:15,outline:"none",width:"100%"},
+  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px 14px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Archivo',sans-serif",fontSize:11,fontWeight:600,letterSpacing:".08em",transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
   card: {background:"var(--soft)",border:"1px solid var(--rule)",borderRadius:4,padding:14},
   bdg: {display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:999,fontSize:10,fontWeight:600,letterSpacing:".06em",textTransform:"uppercase"},
 };
@@ -165,7 +165,7 @@ function SlotReel({ symbols, cellW, itemH, fontPx, reelLen, durationMs }) {
           <div key={j} style={{
             height: itemH, flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: "'Playfair Display',serif", fontWeight: 900,
+            fontFamily: "'Bodoni Moda',serif", fontWeight: 900,
             fontSize: fontPx, lineHeight: 1,
             color: 'var(--gold)',
             filter: 'drop-shadow(0 0 6px rgba(196,168,120,.6))',
@@ -510,7 +510,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
               padding:'6px 12px', borderRadius:20,
               border:'1px solid var(--gold)44',
               background:'var(--gold)0d', color:'var(--gold)',
-              cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:600,
+              cursor:'pointer', fontFamily:"'Archivo',sans-serif", fontSize:12, fontWeight:600,
             }}>
             <span style={{fontSize:13}}>💾</span>
             <span>{tpl.name}</span>
@@ -529,7 +529,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         padding:'6px 12px', borderRadius:20,
         border:'1px solid var(--brd)', background:'transparent',
         color:'var(--dim)', cursor:'pointer',
-        fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:600,
+        fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:600,
         marginTop:10,
       }}>
       {t('templates.save_as_btn')}
@@ -561,7 +561,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
               style={{
                 padding:'4px 0', cursor: disabled ? 'not-allowed' : 'pointer',
                 background:'transparent', border:'none',
-                fontFamily:"'Manrope',sans-serif",
+                fontFamily:"'Archivo',sans-serif",
                 fontSize:11, fontWeight: active ? 700 : 600,
                 letterSpacing:'.22em', textTransform:'uppercase',
                 color: active ? o.color : 'var(--dim)',
@@ -694,7 +694,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
         aria-label={t('create.member_search_ph')}
         style={{
           flex: 1, border: 'none', outline: 'none', background: 'transparent',
-          color: 'var(--txt)', fontFamily: "'Manrope',sans-serif", fontSize: 13,
+          color: 'var(--txt)', fontFamily: "'Archivo',sans-serif", fontSize: 13,
         }}/>
       {memberSearch && (
         <button onClick={() => setMemberSearch('')} aria-label="Pulisci ricerca"
@@ -758,7 +758,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
               border:`1px solid ${allowedSet.size === 0 ? 'var(--gold)' : 'var(--brd)'}`,
               background: allowedSet.size === 0 ? 'var(--gold)1a' : 'transparent',
               color: allowedSet.size === 0 ? 'var(--gold)' : 'var(--dim)',
-              cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
+              cursor:'pointer', fontFamily:"'Archivo',sans-serif", fontSize:12, fontWeight:700,
               letterSpacing:'.06em',
             }}>{t('create.subset_all')}</button>
         </div>
@@ -808,7 +808,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
             border:`1px solid ${!targetId ? 'var(--pur)' : 'var(--brd)'}`,
             background: !targetId ? 'var(--pur)1a' : 'transparent',
             color: !targetId ? 'var(--pur)' : 'var(--dim)',
-            cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:700,
+            cursor:'pointer', fontFamily:"'Archivo',sans-serif", fontSize:12, fontWeight:700,
             letterSpacing:'.06em',
           }}>—  {t('create.target_none')}</button>
       </div>
@@ -916,7 +916,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
               onClick={() => setWinStr(String(Math.max(1, Math.round(stake * p.ratio))))}
               style={{
                 padding:'2px 0', background:'transparent', border:'none', cursor:'pointer',
-                fontFamily:"'Manrope',sans-serif",
+                fontFamily:"'Archivo',sans-serif",
                 fontSize:11, fontWeight: isActive ? 700 : 600,
                 letterSpacing:'.18em',
                 color: isActive ? 'var(--gold)' : 'var(--dim)',
@@ -941,7 +941,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
     <div data-coach="stake" style={{marginBottom:24}}>
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:14}}>
         <label style={{...S.lbl, marginBottom:0}}>{t('create.stake_label')}</label>
-        <span className="bc-meta" style={{fontSize:8}}>{t('create.stake_max')} <span style={{fontFamily:"'Playfair Display',serif", fontSize:14, letterSpacing:'-0.02em', color:'var(--gold)', marginLeft:3}}>{Math.round(maxStake)}₡</span></span>
+        <span className="bc-meta" style={{fontSize:8}}>{t('create.stake_max')} <span style={{fontFamily:"'Bodoni Moda',serif", fontSize:14, letterSpacing:'-0.02em', color:'var(--gold)', marginLeft:3}}>{Math.round(maxStake)}₡</span></span>
       </div>
 
       {/* Hero stake number */}
@@ -960,7 +960,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
               style={{
                 padding:'2px 0', background:'transparent', border:'none',
                 cursor: disabled ? 'not-allowed' : 'pointer',
-                fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight: active ? 700 : 600,
+                fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight: active ? 700 : 600,
                 letterSpacing:'.2em',
                 color: active ? 'var(--gold)' : 'var(--dim)',
                 borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
@@ -1023,7 +1023,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
               border:`1px solid ${active ? c.color : 'var(--rule)'}`,
               background: active ? `${c.color}14` : 'transparent',
               color: active ? c.color : 'var(--dim)',
-              fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight: active ? 700 : 600,
+              fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight: active ? 700 : 600,
               letterSpacing:'.08em', textTransform:'uppercase',
               transition:'all .15s',
             }}>
@@ -1154,7 +1154,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
                   width: 30, height: 30, borderRadius: '50%',
                   background: 'transparent', border: '1px solid var(--gold)66',
                   cursor: 'pointer', color: 'var(--gold)',
-                  fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 800,
+                  fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 800,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: 0, lineHeight: 1,
                 }}>?</button>
@@ -1254,7 +1254,7 @@ export default function CreateModal({user,profiles,groupMembers,maxC,cats,settin
                   width: 30, height: 30, borderRadius: '50%',
                   background: 'transparent', border: '1px solid var(--gold)66',
                   cursor: 'pointer', color: 'var(--gold)',
-                  fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 800,
+                  fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 800,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: 0, lineHeight: 1,
                   WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',

@@ -230,13 +230,13 @@ export default function PhotoCropModal({ img, dataUrl, size = 512, quality = 0.8
             padding: '8px 16px', borderRadius: 10,
             background: 'transparent', border: '1px solid var(--brd)',
             color: 'var(--dim)', cursor: 'pointer',
-            fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 600,
+            fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 600,
           }}>{t('crop.cancel')}</button>
           <button onClick={handleConfirm} style={{
             padding: '10px 22px', borderRadius: 10,
             background: 'var(--gold)', border: 'none',
             color: '#07060f', cursor: 'pointer',
-            fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 800,
+            fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 800,
             boxShadow: '0 4px 16px var(--glow)',
           }}>{t('crop.confirm')}</button>
         </div>

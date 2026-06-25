@@ -104,7 +104,7 @@ export function CoinFaceCroce({ size }) {
       }}>
         <span style={{
           display:'block', width:'100%', textAlign:'center',
-          fontFamily:"'Playfair Display',serif", fontWeight: 900,
+          fontFamily:"'Bodoni Moda',serif", fontWeight: 900,
           fontFeatureSettings: "'lnum' 1, 'tnum' 1",
           fontSize: size * 0.46, lineHeight: 1, letterSpacing: '0.01em',
           color: '#3d2412',
@@ -112,7 +112,7 @@ export function CoinFaceCroce({ size }) {
         }}>777</span>
         <span style={{
           display:'block', width:'100%', textAlign:'center',
-          fontFamily:"'Playfair Display',serif", fontWeight: 700,
+          fontFamily:"'Bodoni Moda',serif", fontWeight: 700,
           fontSize: size * 0.16, lineHeight: 1,
           color: '#3d2412', opacity: .75,
           textShadow: '0 1px 0 rgba(255,255,255,.45)',

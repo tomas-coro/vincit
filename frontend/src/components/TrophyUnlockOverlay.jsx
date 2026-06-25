@@ -100,7 +100,7 @@ export default function TrophyUnlockOverlay({ queue, onDone }) {
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: 9, letterSpacing: 2, fontWeight: 800, fontFamily: "'Manrope',sans-serif",
+            fontSize: 9, letterSpacing: 2, fontWeight: 800, fontFamily: "'Archivo',sans-serif",
             textTransform: 'uppercase', marginBottom: 2,
           }}>
             <span className="tr-shim">🏆 {isMax ? t('trophies.max_reached') : `${t('trophies.unlocked_header')} · Lv ${current.level}`}</span>
@@ -120,7 +120,7 @@ export default function TrophyUnlockOverlay({ queue, onDone }) {
           {current.tip && (
             <div style={{
               fontSize: 10, color: 'var(--gold)', marginTop: 6, lineHeight: 1.35,
-              fontFamily: "'Manrope',sans-serif", fontWeight: 600,
+              fontFamily: "'Archivo',sans-serif", fontWeight: 600,
               paddingTop: 6, borderTop: '1px solid var(--rule)',
             }}>{t('trophies.' + current.tip)}</div>
           )}

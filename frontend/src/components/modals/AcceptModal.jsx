@@ -88,7 +88,7 @@ export default function AcceptModal({ bet, profiles, myCredits, onAccept, onClos
             <button onClick={() => setStake(Math.min(suggested, maxStake))} style={{
               background: 'transparent', border: '1px solid var(--rule)', borderRadius: 999,
               padding: '6px 14px', fontSize: 10, color: 'var(--dim)', cursor: 'pointer',
-              fontFamily: "'Manrope',sans-serif", fontWeight: 600,
+              fontFamily: "'Archivo',sans-serif", fontWeight: 600,
               letterSpacing: '.12em', textTransform: 'uppercase',
             }}>= {suggested}₡ {t('accept.match')}</button>
             <input
@@ -100,7 +100,7 @@ export default function AcceptModal({ bet, profiles, myCredits, onAccept, onClos
                 width: 110, textAlign: 'right',
                 background: 'transparent', border: 0, borderBottom: '1px solid var(--brd)', borderRadius: 0,
                 color: 'var(--gold)', padding: '6px 4px', fontWeight: 700,
-                fontFamily: "'Playfair Display',serif", fontSize: 22, outline: 'none',
+                fontFamily: "'Bodoni Moda',serif", fontSize: 22, outline: 'none',
               }}
             />
           </div>

@@ -234,7 +234,7 @@ export default function CreateModalCoachmarks({ open, onClose }) {
         borderRadius: 14,
         padding: '18px 20px 16px',
         boxShadow: '0 18px 50px rgba(0,0,0,.55), 0 0 0 1px var(--gold)22',
-        fontFamily: "'Manrope', sans-serif",
+        fontFamily: "'Archivo', sans-serif",
         animation: 'bcCoachBubble .35s cubic-bezier(.34,1.56,.64,1) both',
         ...bubbleStyle,
       }}>
@@ -273,7 +273,7 @@ export default function CreateModalCoachmarks({ open, onClose }) {
           <button onClick={close} style={{
             padding: '6px 0', background: 'transparent', border: 'none',
             color: 'var(--mut)', cursor: 'pointer',
-            fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 700,
+            fontFamily: "'Archivo',sans-serif", fontSize: 10, fontWeight: 700,
             letterSpacing: '.18em', textTransform: 'uppercase',
             WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
           }}>{t('coach.skip')}</button>
@@ -284,7 +284,7 @@ export default function CreateModalCoachmarks({ open, onClose }) {
                 padding: '8px 14px', borderRadius: 999,
                 background: 'transparent', border: '1px solid var(--brd)',
                 color: 'var(--dim)', cursor: 'pointer',
-                fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
+                fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 700,
                 letterSpacing: '.1em', textTransform: 'uppercase',
                 WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
               }}>← {t('coach.prev')}</button>
@@ -293,7 +293,7 @@ export default function CreateModalCoachmarks({ open, onClose }) {
               padding: '8px 16px', borderRadius: 999, border: 'none',
               background: 'var(--gold)', color: '#1a1530',
               cursor: 'pointer',
-              fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 800,
+              fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 800,
               letterSpacing: '.08em', textTransform: 'uppercase',
               WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
             }}>{isLast ? t('coach.done') : t('coach.next') + ' →'}</button>

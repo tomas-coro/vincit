@@ -4,7 +4,7 @@ import { useLang } from '../../i18n.js';
 import * as api from '../../api.js';
 
 const S = {
-  btn: { display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6, padding:'10px 18px', borderRadius:10, border:'none', cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight:600, transition:'all .18s', userSelect:'none', whiteSpace:'nowrap' },
+  btn: { display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6, padding:'10px 18px', borderRadius:10, border:'none', cursor:'pointer', fontFamily:"'Archivo',sans-serif", fontSize:13, fontWeight:600, transition:'all .18s', userSelect:'none', whiteSpace:'nowrap' },
 };
 
 const EMOJIS = ['🎲','⚡','🎯','🔥','💜','🌙','🏆','🎮','🍕','🎸'];

@@ -56,7 +56,7 @@ export default function StreakBadge({ winStreak = 0, lossStreak = 0, label = 'St
         {c?.icon ?? '—'}
       </div>
       <div style={{
-        fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900,
+        fontFamily:"'Bodoni Moda',serif", fontSize:22, fontWeight:900,
         color: c?.color ?? 'var(--mut)', lineHeight:1.1, marginTop:2,
       }}>{n}</div>
       <div style={{fontSize:10, color:'var(--dim)', letterSpacing:1}}>{label}</div>

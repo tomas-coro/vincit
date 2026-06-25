@@ -63,7 +63,7 @@ export default function CreateGroupModal({ onCreated, onClose }) {
             <button key={tab_id} onClick={() => { setTab(tab_id); setError(''); }}
               style={{
                 padding:'6px 0 12px', border:'none', cursor:'pointer', background:'transparent',
-                fontFamily:"'Manrope',sans-serif", fontSize:10, fontWeight:600,
+                fontFamily:"'Archivo',sans-serif", fontSize:10, fontWeight:600,
                 letterSpacing:'.22em', textTransform:'uppercase',
                 color: tab===tab_id ? 'var(--txt)' : 'var(--dim)',
                 borderBottom: `2px solid ${tab===tab_id ? 'var(--gold)' : 'transparent'}`,
@@ -108,7 +108,7 @@ export default function CreateGroupModal({ onCreated, onClose }) {
             <Inp value={code}
               onChange={e => { setCode(e.target.value.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6)); setError(''); }}
               placeholder={t('group.code_ph')}
-              style={{ textAlign:'center', letterSpacing:10, fontSize:28, fontFamily:"'Playfair Display',serif", marginBottom:24 }} />
+              style={{ textAlign:'center', letterSpacing:10, fontSize:28, fontFamily:"'Bodoni Moda',serif", marginBottom:24 }} />
             {error && <div style={{ fontSize:12, color:'var(--red)', marginBottom:14, fontWeight:600 }}>{error}</div>}
             <div style={{ display:'flex', gap:10 }}>
               <Btn variant="ghost" full onClick={onClose}>{t('group.cancel')}</Btn>

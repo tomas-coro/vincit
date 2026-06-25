@@ -4,7 +4,7 @@ import { useLang } from '../i18n.js';
 
 // Editorial fullscreen onboarding — five hero pages in the same broken-grid
 // Lavanda+Ottone language as the rest of the app. Each page is a poster:
-// italic Cormorant headline, Manrope body, big emoji/composition, with
+// italic Cormorant headline, Archivo body, big emoji/composition, with
 // "Salta" always visible top-right. The "Crea bet" step exposes an
 // `onOpenCreate` callback so the user can pop the real CreateModal as a
 // hands-on demo and come back to the tour where they left off.
@@ -98,7 +98,7 @@ export default function OnboardingTour({ step, onStepChange, onDone, onOpenCreat
         background: 'radial-gradient(circle at 50% 35%, var(--card) 0%, var(--bg) 75%)',
         animation: exiting ? 'bcOnbBgOut .28s ease forwards' : 'bcOnbBgIn .3s ease both',
         display: 'flex', flexDirection: 'column',
-        fontFamily: "'Manrope', sans-serif",
+        fontFamily: "'Archivo', sans-serif",
         overflow: 'hidden',
       }}
     >
@@ -121,7 +121,7 @@ export default function OnboardingTour({ step, onStepChange, onDone, onOpenCreat
           padding: '8px 16px', borderRadius: 999,
           background: 'transparent', border: '1px solid var(--brd)',
           color: 'var(--dim)', cursor: 'pointer',
-          fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
+          fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 700,
           letterSpacing: '.12em', textTransform: 'uppercase',
           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
         }}>{t('tour.skip')}</button>
@@ -156,7 +156,7 @@ export default function OnboardingTour({ step, onStepChange, onDone, onOpenCreat
           marginBottom: 18,
         }}>{title}</div>
 
-        {/* Body copy — Manrope, generous line-height, dim */}
+        {/* Body copy — Archivo, generous line-height, dim */}
         <div style={{
           fontSize: 'clamp(14px, 2vw, 17px)',
           color: 'var(--dim)',
@@ -207,7 +207,7 @@ export default function OnboardingTour({ step, onStepChange, onDone, onOpenCreat
               padding: '12px 22px', borderRadius: 999,
               background: 'transparent', border: '1px solid var(--brd)',
               color: 'var(--dim)', cursor: 'pointer',
-              fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 700,
+              fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 700,
               letterSpacing: '.08em', textTransform: 'uppercase',
               WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
             }}>← {t('tour.prev')}</button>
@@ -221,7 +221,7 @@ export default function OnboardingTour({ step, onStepChange, onDone, onOpenCreat
                 animation: 'bcOnbShimmer 3s linear infinite',
                 color: '#1a1530',
                 cursor: 'pointer', flex: idx > 0 ? 'unset' : 1,
-                fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 800,
+                fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 800,
                 letterSpacing: '.08em', textTransform: 'uppercase',
                 WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
               }}>{t('tour.demo_open')}</button>
@@ -229,7 +229,7 @@ export default function OnboardingTour({ step, onStepChange, onDone, onOpenCreat
                 padding: '12px 22px', borderRadius: 999,
                 background: 'transparent', border: '1px solid var(--brd)',
                 color: 'var(--dim)', cursor: 'pointer',
-                fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 700,
+                fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 700,
                 letterSpacing: '.08em', textTransform: 'uppercase',
                 WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
               }}>{t('tour.next')} →</button>
@@ -242,7 +242,7 @@ export default function OnboardingTour({ step, onStepChange, onDone, onOpenCreat
               animation: 'bcOnbShimmer 3s linear infinite',
               color: '#1a1530',
               cursor: 'pointer', flex: idx > 0 ? 'unset' : 1,
-              fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 800,
+              fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 800,
               letterSpacing: '.08em', textTransform: 'uppercase',
               WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
             }}>{isLast ? `${t('tour.start_app')} →` : `${t('tour.next')} →`}</button>

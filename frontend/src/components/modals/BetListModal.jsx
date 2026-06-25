@@ -313,7 +313,7 @@ function BetRow({ bet: b, roster, participants, userId, autoExpand }) {
         <div style={{ display:'flex', alignItems:'center', gap: 8, flexShrink: 0 }}>
           <div style={{
             textAlign: 'right',
-            fontFamily: "'Playfair Display',serif",
+            fontFamily: "'Bodoni Moda',serif",
             fontFeatureSettings: "'lnum' 1, 'tnum' 1",
             fontSize: 16, fontWeight: 700,
             color: iWon ? 'var(--grn)' : 'var(--red)',
@@ -368,7 +368,7 @@ function BetRow({ bet: b, roster, participants, userId, autoExpand }) {
                   {r.label}{r.isYou && (
                     <span style={{
                       fontSize: 9, marginLeft: 6, color: 'var(--gold)',
-                      letterSpacing: 1, fontFamily: "'Manrope',sans-serif",
+                      letterSpacing: 1, fontFamily: "'Archivo',sans-serif",
                     }}>TU</span>
                   )}
                 </div>
@@ -379,7 +379,7 @@ function BetRow({ bet: b, roster, participants, userId, autoExpand }) {
               {r.outcome && (
                 <div style={{
                   textAlign: 'right',
-                  fontFamily: "'Playfair Display',serif",
+                  fontFamily: "'Bodoni Moda',serif",
                   fontFeatureSettings: "'lnum' 1, 'tnum' 1",
                   fontSize: 14, fontWeight: 700,
                   color: r.outcome === 'won' ? 'var(--grn)' : 'var(--red)',

@@ -96,7 +96,7 @@ export default function WinOverlay({ amount, onDone }) {
           </svg>
 
           <div style={{
-            fontFamily:"'Manrope',sans-serif",
+            fontFamily:"'Archivo',sans-serif",
             fontSize:9, fontWeight:800,
             letterSpacing:'.32em', textTransform:'uppercase',
             color:'#e8b84b', opacity:.78,
@@ -104,7 +104,7 @@ export default function WinOverlay({ amount, onDone }) {
           }}>Vittoria</div>
 
           <div style={{
-            fontFamily:"'Playfair Display',serif",
+            fontFamily:"'Bodoni Moda',serif",
             fontSize:30, fontWeight:700,
             color:'var(--grn)',
             lineHeight:1, letterSpacing:'-0.01em',

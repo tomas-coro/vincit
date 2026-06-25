@@ -37,7 +37,7 @@ export default function BetsHubView({
         background: active ? 'var(--gold)18' : 'transparent',
         color: active ? 'var(--gold)' : 'var(--dim)',
         border: 'none', borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
-        cursor: 'pointer', fontFamily: "'Manrope',sans-serif",
+        cursor: 'pointer', fontFamily: "'Archivo',sans-serif",
         fontSize: 13, fontWeight: 700, letterSpacing: 0.3,
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
         transition: 'all .18s',

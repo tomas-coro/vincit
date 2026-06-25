@@ -165,7 +165,7 @@ export default function IceEggOverlay({ open, onClose }) {
       <div style={{
         position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
         fontSize: 10, letterSpacing: '.25em', textTransform: 'uppercase',
-        color: 'rgba(220,240,255,.7)', fontFamily: "'Manrope', sans-serif",
+        color: 'rgba(220,240,255,.7)', fontFamily: "'Archivo', sans-serif",
         fontWeight: 600,
       }}>tap per chiudere</div>
     </div>

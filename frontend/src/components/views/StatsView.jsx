@@ -325,7 +325,7 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
               padding:'5px 12px', borderRadius:999,
               background:'var(--gold)18', border:'1px solid var(--gold)55',
               color:'var(--gold)', cursor:'pointer',
-              fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:700,
+              fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:700,
               letterSpacing:'.08em', textTransform:'uppercase',
               display:'inline-flex', alignItems:'center', gap:5,
             }}>
@@ -384,7 +384,7 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
                   border:`1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
                   background: active ? 'var(--gold)1a' : 'transparent',
                   color: active ? 'var(--gold)' : 'var(--dim)',
-                  cursor:'pointer', fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:600,
+                  cursor:'pointer', fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:600,
                 }}>
                 {m.avatarUrl
                   ? <img src={m.avatarUrl} alt="" style={{width:20,height:20,borderRadius:'50%',objectFit:'cover'}}/>
@@ -557,9 +557,9 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
                 opacity: i >= 4 ? 0.65 : 1,
               }}>
                 <div style={{display:'flex', alignItems:'baseline', gap:'clamp(8px, 2vw, 18px)', minWidth:0, flex:1}}>
-                  {/* Rank glyph drifts to the gutter — italic Cormorant for podium, tiny Manrope below */}
+                  {/* Rank glyph drifts to the gutter — italic Cormorant for podium, tiny Archivo below */}
                   <div style={{
-                    fontFamily: isPodium ? "'Cormorant Garamond',serif" : "'Manrope',sans-serif",
+                    fontFamily: isPodium ? "'Cormorant Garamond',serif" : "'Archivo',sans-serif",
                     fontStyle: isPodium ? 'italic' : 'normal',
                     fontSize: isPodium ? 'clamp(20px, 5vw, 32px)' : '10px',
                     fontWeight: isPodium ? 600 : 700,
@@ -684,7 +684,7 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
       <div style={{...S.card}}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
           <span className="bc-meta">{t('stats_view.heatmap') || 'Attività'}</span>
-          <span style={{fontSize:11, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>
+          <span style={{fontSize:11, color:'var(--dim)', fontFamily:"'Archivo',sans-serif"}}>
             {totalBets} bet · 16 sett.
           </span>
         </div>
@@ -696,7 +696,7 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
                 <div key={di} style={{
                   height:CELL, marginBottom:GAP,
                   fontSize:9, color:'var(--dim)',
-                  fontFamily:"'Manrope',sans-serif", fontWeight:600, letterSpacing:'.04em',
+                  fontFamily:"'Archivo',sans-serif", fontWeight:600, letterSpacing:'.04em',
                   display:'flex', alignItems:'center', justifyContent:'flex-end',
                   width:12,
                   opacity: di % 2 === 0 ? 1 : 0,
@@ -714,7 +714,7 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
                   return (
                     <div key={wi} style={{
                       width:colW, fontSize:10, color:'var(--txt)',
-                      fontFamily:"'Manrope',sans-serif", fontWeight:600, letterSpacing:'.03em',
+                      fontFamily:"'Archivo',sans-serif", fontWeight:600, letterSpacing:'.03em',
                       overflow:'visible', whiteSpace:'nowrap',
                     }}>
                       {lbl ? lbl.label : ''}
@@ -750,7 +750,7 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
         </div>
         {/* Legend */}
         <div style={{display:'flex', gap:6, marginTop:12, alignItems:'center'}}>
-          <span style={{fontSize:10, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>Meno</span>
+          <span style={{fontSize:10, color:'var(--dim)', fontFamily:"'Archivo',sans-serif"}}>Meno</span>
           {LEVELS.map((lvl, i) => (
             <div key={i} style={{
               width:CELL, height:CELL, borderRadius:3,
@@ -759,16 +759,16 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
               boxShadow: lvl.shadow,
             }}/>
           ))}
-          <span style={{fontSize:10, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>Di più</span>
+          <span style={{fontSize:10, color:'var(--dim)', fontFamily:"'Archivo',sans-serif"}}>Di più</span>
         </div>
         {/* Day detail panel */}
         {hmDay && (
           <div style={{marginTop:16, paddingTop:14, borderTop:'1px solid var(--rule)'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
-              <span style={{fontSize:11, color:'var(--dim)', fontFamily:"'Manrope',sans-serif", textTransform:'capitalize'}}>
+              <span style={{fontSize:11, color:'var(--dim)', fontFamily:"'Archivo',sans-serif", textTransform:'capitalize'}}>
                 {dayPanelLabel}
               </span>
-              <span style={{fontSize:11, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>
+              <span style={{fontSize:11, color:'var(--dim)', fontFamily:"'Archivo',sans-serif"}}>
                 {dayPanelBets.length} bet
               </span>
             </div>
@@ -788,16 +788,16 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
                       {b.title}
                     </div>
                     {cat && (
-                      <div style={{fontSize:10, color:'var(--dim)', fontFamily:"'Manrope',sans-serif", marginTop:2}}>
+                      <div style={{fontSize:10, color:'var(--dim)', fontFamily:"'Archivo',sans-serif", marginTop:2}}>
                         {catLabel(cat)}
                       </div>
                     )}
                   </div>
                   <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2, flexShrink:0}}>
-                    <span style={{fontSize:11, color:st.color, fontWeight:700, fontFamily:"'Manrope',sans-serif"}}>
+                    <span style={{fontSize:11, color:st.color, fontWeight:700, fontFamily:"'Archivo',sans-serif"}}>
                       {st.label}
                     </span>
-                    <span style={{fontSize:10, color:'var(--dim)', fontFamily:"'Manrope',sans-serif"}}>
+                    <span style={{fontSize:10, color:'var(--dim)', fontFamily:"'Archivo',sans-serif"}}>
                       {b.stake} ₡
                     </span>
                   </div>
@@ -872,7 +872,7 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
                     <div style={{fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
                       fontSize:22, fontWeight:600, color:'var(--txt)', lineHeight:1}}>{s.label}</div>
                     <div style={{fontSize:10, color:'var(--dim)', marginTop:4, letterSpacing:'.12em',
-                      fontFamily:"'Manrope',sans-serif"}}>
+                      fontFamily:"'Archivo',sans-serif"}}>
                       {new Date(Number(s.archived_at)).toLocaleDateString('it-IT', {day:'numeric',month:'long',year:'numeric'})}
                       {' · '}{totalBets} bet · {wonBets} vinte
                     </div>
@@ -903,14 +903,14 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
                           return (
                             <div key={cat.key} style={{background:'var(--surf)', border:'1px solid var(--brd)', borderRadius:10, padding:'12px 14px'}}>
                               <div style={{fontSize:9, letterSpacing:'.18em', textTransform:'uppercase',
-                                fontFamily:"'Manrope',sans-serif", color:'var(--dim)', marginBottom:10}}>
+                                fontFamily:"'Archivo',sans-serif", color:'var(--dim)', marginBottom:10}}>
                                 {cat.icon} {cat.label}
                               </div>
                               {board.map((r, i) => (
                                 <div key={r.id} style={{display:'flex', alignItems:'baseline', justifyContent:'space-between',
                                   padding:'3px 0', borderTop: i>0?'1px solid var(--rule)':'none'}}>
                                   <div style={{display:'flex', alignItems:'baseline', gap:6, minWidth:0}}>
-                                    <span style={{fontSize:9, color:'var(--dim)', fontFamily:"'Manrope',sans-serif",
+                                    <span style={{fontSize:9, color:'var(--dim)', fontFamily:"'Archivo',sans-serif",
                                       fontWeight:700, letterSpacing:'.06em', flexShrink:0}}>
                                       {i+1}.
                                     </span>
@@ -920,7 +920,7 @@ export default function StatsView({user,profiles,groupMembers,credits,bets,cats,
                                       {profiles[r.id]?.name || r.id}
                                     </span>
                                   </div>
-                                  <span style={{fontFamily:"'Playfair Display',serif", fontSize:14,
+                                  <span style={{fontFamily:"'Bodoni Moda',serif", fontSize:14,
                                     color:i===0?'var(--gold)':'var(--dim)', flexShrink:0, marginLeft:4}}>
                                     {r[cat.key]}{cat.unit}
                                   </span>

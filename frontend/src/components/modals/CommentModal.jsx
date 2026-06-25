@@ -38,7 +38,7 @@ export default function CommentModal({ bet, onSave, onSkip }) {
             color:"var(--txt)",
             borderRadius:0,
             padding:"10px 2px",
-            fontFamily:"'Manrope',sans-serif",
+            fontFamily:"'Archivo',sans-serif",
             fontSize:15,
             outline:"none",
             resize:"none",

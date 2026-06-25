@@ -22,7 +22,7 @@ export default class ErrorBoundary extends React.Component {
       <div style={{
         minHeight: '100vh', padding: '24px 16px',
         background: '#0f0b23', color: '#ede8fd',
-        fontFamily: "'Manrope',sans-serif",
+        fontFamily: "'Archivo',sans-serif",
         overflowY: 'auto',
       }}>
         <div style={{
@@ -60,7 +60,7 @@ export default class ErrorBoundary extends React.Component {
         <button onClick={() => { window.location.reload(); }} style={{
           padding: '10px 22px', borderRadius: 999, border: 'none',
           background: '#c4a878', color: '#1a1530',
-          fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 800,
+          fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 800,
           letterSpacing: '.18em', textTransform: 'uppercase',
           cursor: 'pointer',
         }}>Ricarica</button>

@@ -7,7 +7,7 @@ import CommentThread from './CommentThread.jsx';
 
 const S = {
   card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
-  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 18px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:13,fontWeight:600,transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
+  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 18px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Archivo',sans-serif",fontSize:13,fontWeight:600,transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
   row: {display:"flex",alignItems:"center",gap:10},
 };
 
@@ -240,7 +240,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
           {!bet.isSecret && !done && (
             <div style={{flexShrink:0,textAlign:'right',lineHeight:1}}>
               <div style={{
-                fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,
+                fontFamily:"'Bodoni Moda',serif",fontSize:28,fontWeight:700,
                 color:'var(--gold)', letterSpacing:'-0.02em',
               }}>
                 {parseFloat(bet.quota).toFixed(2)}
@@ -270,9 +270,9 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
               </div>
             ))}
           </div>
-          <span style={{fontSize:10,color:'var(--dim)',fontFamily:"'Playfair Display',serif"}}>₡ {bet.stake}</span>
+          <span style={{fontSize:10,color:'var(--dim)',fontFamily:"'Bodoni Moda',serif"}}>₡ {bet.stake}</span>
           {!done && !bet.isSecret && (
-            <span style={{marginLeft:'auto',fontSize:11,color:'var(--grn)',fontFamily:"'Playfair Display',serif",fontWeight:600}}>
+            <span style={{marginLeft:'auto',fontSize:11,color:'var(--grn)',fontFamily:"'Bodoni Moda',serif",fontWeight:600}}>
               → ₡ {bet.potentialWin}
             </span>
           )}
@@ -443,7 +443,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                     <button onClick={()=>onCounter(bet)} style={{
                       padding:'10px 14px', borderRadius:10, border:'1px solid var(--grn)',
                       background:'var(--grn)22', color:'var(--grn)', cursor:'pointer',
-                      fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight:800,
+                      fontFamily:"'Archivo',sans-serif", fontSize:13, fontWeight:800,
                       letterSpacing:'.06em', textTransform:'uppercase',
                       WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
                     }}>
@@ -452,7 +452,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                     <button onClick={()=>onCounter(bet)} style={{
                       padding:'10px 14px', borderRadius:10, border:'1px solid var(--red)',
                       background:'var(--red)22', color:'var(--red)', cursor:'pointer',
-                      fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight:800,
+                      fontFamily:"'Archivo',sans-serif", fontSize:13, fontWeight:800,
                       letterSpacing:'.06em', textTransform:'uppercase',
                       WebkitTapHighlightColor:'transparent', touchAction:'manipulation',
                     }}>
@@ -473,7 +473,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                   const count=emojiReactions.filter(r=>r.emoji===e).length;
                   const isMe=myReaction?.emoji===e;
                   return(
-                    <button key={e} onClick={()=>onReaction(bet.id,e)} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:20,border:`1px solid ${isMe?"var(--gold)":"var(--brd)"}`,background:isMe?"var(--gold)22":"transparent",cursor:"pointer",fontSize:13,color:isMe?"var(--gold)":"var(--dim)",fontFamily:"'Manrope',sans-serif",fontWeight:600,transition:"all .15s"}}>
+                    <button key={e} onClick={()=>onReaction(bet.id,e)} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:20,border:`1px solid ${isMe?"var(--gold)":"var(--brd)"}`,background:isMe?"var(--gold)22":"transparent",cursor:"pointer",fontSize:13,color:isMe?"var(--gold)":"var(--dim)",fontFamily:"'Archivo',sans-serif",fontWeight:600,transition:"all .15s"}}>
                       {e}{count>0&&<span style={{fontSize:11}}>{count}</span>}
                     </button>
                   );
@@ -487,7 +487,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                         ? 'linear-gradient(90deg, var(--gold)33, var(--gold)22)'
                         : 'linear-gradient(90deg, var(--gold)18, var(--gold)10)',
                       cursor:'pointer', fontSize:11, color:'var(--gold)',
-                      fontFamily:"'Manrope',sans-serif", fontWeight:800, letterSpacing:1,
+                      fontFamily:"'Archivo',sans-serif", fontWeight:800, letterSpacing:1,
                       boxShadow:'0 0 10px var(--glow), inset 0 1px 0 rgba(255,255,255,.06)',
                       transition:'all .15s', opacity: photoBusy ? .5 : 1,
                       flexShrink:0}}>
@@ -675,12 +675,12 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
               }}>
                 <div style={{flex:1, minWidth:0}}>
                   <div style={{
-                    fontFamily:"'Manrope',sans-serif",
+                    fontFamily:"'Archivo',sans-serif",
                     fontSize:10, color:'var(--blu)', letterSpacing:'.22em',
                     textTransform:'uppercase', fontWeight:700,
                   }}>👥 {t('bet_card.invitees_title')}</div>
                   <div style={{
-                    fontFamily:"'Playfair Display',serif",
+                    fontFamily:"'Bodoni Moda',serif",
                     fontSize:22, fontWeight:700, color:'var(--txt)',
                     marginTop:8, lineHeight:1.2, letterSpacing:'-0.01em',
                     overflow:'hidden', textOverflow:'ellipsis',
@@ -693,7 +693,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                       fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:999,
                       background:'var(--blu)22', color:'var(--blu)',
                       border:'1px solid var(--blu)44',
-                      fontFamily:"'Manrope',sans-serif",
+                      fontFamily:"'Archivo',sans-serif",
                     }}>
                       {rows.length} {rows.length === 1 ? t('bet_card.invitee_one') : t('bet_card.invitee_many')}
                     </span>
@@ -702,7 +702,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                         fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:999,
                         background:'var(--grn)22', color:'var(--grn)',
                         border:'1px solid var(--grn)44',
-                        fontFamily:"'Manrope',sans-serif",
+                        fontFamily:"'Archivo',sans-serif",
                       }}>
                         ✓ {votedCount}
                       </span>
@@ -712,7 +712,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                         fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:999,
                         background:'var(--gold)22', color:'var(--gold)',
                         border:'1px solid var(--gold)44',
-                        fontFamily:"'Manrope',sans-serif",
+                        fontFamily:"'Archivo',sans-serif",
                       }}>
                         ⏳ {pendingCount}
                       </span>
@@ -761,7 +761,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                         }}>
                           <span style={{
                             fontSize:13, fontWeight:600, color:'var(--dim)',
-                            fontFamily:"'Manrope',sans-serif",
+                            fontFamily:"'Archivo',sans-serif",
                             fontVariantNumeric:'tabular-nums',
                           }}>{r.stake} ₡</span>
                           <span style={{
@@ -769,7 +769,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                             padding:'4px 10px', borderRadius:999,
                             background: `${sideCol}1f`, color: sideCol,
                             border: `1px solid ${sideCol}55`,
-                            fontFamily:"'Manrope',sans-serif",
+                            fontFamily:"'Archivo',sans-serif",
                           }}>{r.side === 'yes' ? t('bet_card.yes') : t('bet_card.no')}</span>
                         </div>
                       ) : (
@@ -778,7 +778,7 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
                           padding:'4px 10px', borderRadius:999,
                           background:'var(--gold)18', color:'var(--gold)',
                           border:'1px solid var(--gold)44',
-                          fontFamily:"'Manrope',sans-serif", flexShrink:0,
+                          fontFamily:"'Archivo',sans-serif", flexShrink:0,
                         }}>{t('bet_card.invitee_pending')}</span>
                       )}
                     </div>
@@ -797,11 +797,11 @@ export default function BetCard({bet,user,profiles,cats,onResolve,onReveal,onCou
           padding:20,cursor:"pointer",
         }}>
           <img src={lightbox.image_url} alt="" style={{maxWidth:"90vw",maxHeight:"80vh",borderRadius:14,boxShadow:"0 20px 60px rgba(0,0,0,.7)"}}/>
-          <div style={{marginTop:14,color:"#ede8fd",fontFamily:"'Manrope',sans-serif",fontSize:14,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{marginTop:14,color:"#ede8fd",fontFamily:"'Archivo',sans-serif",fontSize:14,display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:22}}>{profiles[lightbox.bettor]?.avatar}</span>
             <span style={{fontWeight:600}}>{profiles[lightbox.bettor]?.name}</span>
           </div>
-          <div style={{position:"absolute",top:20,right:24,color:"#8480a0",fontSize:11,letterSpacing:2,fontFamily:"'Manrope',sans-serif"}}>{t('bet_card.tap_close')}</div>
+          <div style={{position:"absolute",top:20,right:24,color:"#8480a0",fontSize:11,letterSpacing:2,fontFamily:"'Archivo',sans-serif"}}>{t('bet_card.tap_close')}</div>
         </div>
       )}
     </div>

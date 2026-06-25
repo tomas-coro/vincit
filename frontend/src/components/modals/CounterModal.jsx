@@ -56,7 +56,7 @@ export default function CounterModal({bet,user,profiles,credits,cats,onPlace,onC
               {[5,10,20,50].map(s => (
                 <button key={s} onClick={()=>s<=maxC&&setStakeStr(String(s))} style={{
                   flex:1, padding:"9px 4px", borderRadius:999, cursor:"pointer",
-                  fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:600, letterSpacing:".06em",
+                  fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:600, letterSpacing:".06em",
                   background:"transparent",
                   border:`1px solid ${stake===s?'var(--gold)':'var(--rule)'}`,
                   color: stake===s?'var(--gold)':'var(--dim)',

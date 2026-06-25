@@ -120,7 +120,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
 
   const pill = active => ({
     padding:'5px 12px', borderRadius:20, flexShrink:0, cursor:'pointer', whiteSpace:'nowrap',
-    fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:600,
+    fontFamily:"'Archivo',sans-serif", fontSize:11, fontWeight:600,
     border:`1px solid ${active ? 'var(--gold)' : 'var(--brd)'}`,
     background: active ? 'var(--gold)22' : 'transparent',
     color: active ? 'var(--gold)' : 'var(--dim)',
@@ -139,7 +139,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
             {t('trophies.counter_trophies')}
           </div>
           <div style={{display:'flex', alignItems:'baseline', gap:4, marginTop:4}}>
-            <div style={{fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:'var(--gold)', lineHeight:1}}>
+            <div style={{fontFamily:"'Bodoni Moda',serif", fontSize:28, fontWeight:900, color:'var(--gold)', lineHeight:1}}>
               {maxedCount}
             </div>
             <div style={{fontSize:14, color:'var(--dim)'}}>/{totalTrophies}</div>
@@ -154,7 +154,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
             {t('trophies.counter_levels')}
           </div>
           <div style={{display:'flex', alignItems:'baseline', gap:4, marginTop:4}}>
-            <div style={{fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:900, color:'var(--txt)', lineHeight:1}}>
+            <div style={{fontFamily:"'Bodoni Moda',serif", fontSize:28, fontWeight:900, color:'var(--txt)', lineHeight:1}}>
               {earnedLevels}
             </div>
             <div style={{fontSize:14, color:'var(--dim)'}}>/{totalLevels}</div>
@@ -221,7 +221,7 @@ export default function TrophiesSection({ embedded = false, betsTick = 0 }) {
                   <div style={{
                     fontSize: 9, letterSpacing: 2, color: 'var(--gold)',
                     textTransform: 'uppercase', fontWeight: 800,
-                    fontFamily: "'Manrope',sans-serif",
+                    fontFamily: "'Archivo',sans-serif",
                   }}>{t('trophies.cat_secret')}</div>
                   <div style={{
                     fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
@@ -394,13 +394,13 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
       <div>
         <div style={{
           fontSize:8.5, letterSpacing:'.22em', textTransform:'uppercase',
-          color:'var(--dim)', fontWeight:700, fontFamily:"'Manrope',sans-serif",
+          color:'var(--dim)', fontWeight:700, fontFamily:"'Archivo',sans-serif",
         }}>{label}</div>
         {kicker && <div style={{fontSize:10.5, color:'var(--mut)', marginTop:2}}>{kicker}</div>}
       </div>
       <div style={{
         fontSize:12.5, fontWeight:700, color:'var(--txt)',
-        fontFamily:"'Manrope',sans-serif", fontVariantNumeric:'tabular-nums',
+        fontFamily:"'Archivo',sans-serif", fontVariantNumeric:'tabular-nums',
       }}>{value}</div>
     </div>
   );
@@ -436,7 +436,7 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
         <div style={{display:'flex', alignItems:'flex-start', gap:12}}>
           <div style={{
             fontSize: masked ? 30 : 32, lineHeight:1, flexShrink:0,
-            fontFamily: masked ? "'Playfair Display',serif" : undefined,
+            fontFamily: masked ? "'Bodoni Moda',serif" : undefined,
             fontStyle: masked ? 'italic' : undefined,
             fontWeight: masked ? 900 : undefined,
             color: masked ? 'var(--mut)' : undefined,
@@ -444,12 +444,12 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
           }}>{displayIcon}</div>
           <div style={{flex:1, minWidth:0}}>
             <div style={{
-              fontFamily:"'Manrope',sans-serif", fontSize:8, fontWeight:800,
+              fontFamily:"'Archivo',sans-serif", fontSize:8, fontWeight:800,
               letterSpacing:'.28em', textTransform:'uppercase',
               color: accent, marginBottom:2,
             }}>{t('trophies.cat_'+(a.category || 'mission'))}</div>
             <div style={{
-              fontFamily: masked ? "'Cormorant Garamond',serif" : "'Manrope',sans-serif",
+              fontFamily: masked ? "'Cormorant Garamond',serif" : "'Archivo',sans-serif",
               fontStyle: masked ? 'italic' : undefined,
               fontSize:15, fontWeight:700, color:'var(--txt)',
               letterSpacing: masked ? '.06em' : '-0.005em',
@@ -479,7 +479,7 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
               background:'var(--mut)0f', border:'1px dashed var(--brd)',
               borderRadius:8, textAlign:'center',
               fontSize:10, letterSpacing:'.16em', textTransform:'uppercase',
-              color:'var(--mut)', fontFamily:"'Manrope',sans-serif", fontWeight:700,
+              color:'var(--mut)', fontFamily:"'Archivo',sans-serif", fontWeight:700,
             }}>🔒 {t('trophies.detail_locked')}</div>
           ) : max_level <= 1 ? (
             <Row label={t('trophies.detail_unlocked')} value={fmtDate(a.unlockedAt || a.firstUnlockedAt)} />
@@ -498,7 +498,7 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
                       background: entry ? lvColor : 'var(--brd)',
                     }}/>
                     <span style={{
-                      fontSize:11, fontFamily:"'Manrope',sans-serif", fontWeight:700,
+                      fontSize:11, fontFamily:"'Archivo',sans-serif", fontWeight:700,
                       letterSpacing:'.04em',
                       color: entry ? (lv === level ? lvColor : 'var(--txt)') : 'var(--mut)',
                     }}>
@@ -508,7 +508,7 @@ function TrophyDetailPopover({ a, anchorRect, t, fmtDate, onClose }) {
                   <span style={{
                     fontSize:12, fontWeight:700,
                     color: entry ? 'var(--txt)' : 'var(--mut)',
-                    fontFamily:"'Manrope',sans-serif", fontVariantNumeric:'tabular-nums',
+                    fontFamily:"'Archivo',sans-serif", fontVariantNumeric:'tabular-nums',
                   }}>
                     {entry ? fmtDate(entry.unlocked_at) : '—'}
                   </span>
@@ -577,7 +577,7 @@ function SecretTrophyTile({ a, t, fmtDate, onOpen }) {
           <div style={{
             fontSize: 9, letterSpacing: 2.5, color: 'rgba(255,255,255,.85)',
             textTransform: 'uppercase', fontWeight: 800,
-            fontFamily: "'Manrope',sans-serif",
+            fontFamily: "'Archivo',sans-serif",
           }}>{t('trophies.meta_kicker')}</div>
           <div style={{
             fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
@@ -596,7 +596,7 @@ function SecretTrophyTile({ a, t, fmtDate, onOpen }) {
               color: '#1a1530',
               textShadow: '0 1px 0 rgba(255,255,255,.4)',
               textTransform: 'uppercase',
-              fontFamily:"'Manrope',sans-serif",
+              fontFamily:"'Archivo',sans-serif",
             }}>👑 {fmtDate(a.unlockedAt)}</div>
           )}
         </div>
@@ -629,7 +629,7 @@ function SecretTrophyTile({ a, t, fmtDate, onOpen }) {
           color: level >= max_level ? '#1a1530' : 'var(--gold)',
           border: '1px solid var(--gold)55',
           fontSize: 9, fontWeight: 800, letterSpacing: '.08em',
-          fontFamily: "'Manrope',sans-serif", textTransform: 'uppercase',
+          fontFamily: "'Archivo',sans-serif", textTransform: 'uppercase',
         }}>{level >= max_level ? 'MAX' : `${level}/${max_level}`}</div>
       )}
       {/* Big emoji centerpiece — masked shows italic "?" in Playfair so it
@@ -637,7 +637,7 @@ function SecretTrophyTile({ a, t, fmtDate, onOpen }) {
       <div style={{
         fontSize: masked ? 52 : 56, lineHeight: 1,
         textAlign:'center', marginBottom: 10,
-        fontFamily: masked ? "'Playfair Display',serif" : undefined,
+        fontFamily: masked ? "'Bodoni Moda',serif" : undefined,
         fontStyle: masked ? 'italic' : undefined,
         fontWeight: masked ? 900 : undefined,
         color: masked ? 'var(--mut)' : undefined,
@@ -646,7 +646,7 @@ function SecretTrophyTile({ a, t, fmtDate, onOpen }) {
           : 'drop-shadow(0 4px 16px var(--gold)88)',
       }}>{masked ? '?' : a.icon}</div>
       <div style={{
-        fontFamily: masked ? "'Cormorant Garamond',serif" : "'Manrope',sans-serif",
+        fontFamily: masked ? "'Cormorant Garamond',serif" : "'Archivo',sans-serif",
         fontStyle: masked ? 'italic' : 'normal',
         fontSize: 16, fontWeight: masked ? 600 : 700,
         color: unlocked ? 'var(--gold)' : 'var(--dim)',
@@ -668,7 +668,7 @@ function SecretTrophyTile({ a, t, fmtDate, onOpen }) {
           textAlign:'center',
           fontSize: 8, letterSpacing: 1.5, fontWeight: 700,
           color: 'var(--gold)',
-          fontFamily:"'Manrope',sans-serif",
+          fontFamily:"'Archivo',sans-serif",
           textTransform: 'uppercase',
         }}>✓ {fmtDate(a.unlockedAt)}</div>
       )}
@@ -726,7 +726,7 @@ function TrophyTile({ a, t, fmtDate, onOpen }) {
         <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:4}}>
           <div style={{
             fontSize:30, lineHeight:1,
-            fontFamily: masked ? "'Playfair Display',serif" : undefined,
+            fontFamily: masked ? "'Bodoni Moda',serif" : undefined,
             fontWeight: masked ? 900 : undefined,
             color: masked ? 'var(--mut)' : undefined,
             filter: masked ? 'none' : unlocked ? `drop-shadow(0 0 10px ${tierC}77)` : 'grayscale(1) opacity(.55)',
@@ -760,7 +760,7 @@ function TrophyTile({ a, t, fmtDate, onOpen }) {
           fontSize:13, fontWeight:700, lineHeight:1.2,
           color: unlocked ? 'var(--txt)' : 'var(--dim)',
           marginTop:2,
-          fontFamily: masked ? "'Playfair Display',serif" : undefined,
+          fontFamily: masked ? "'Bodoni Moda',serif" : undefined,
           letterSpacing: masked ? '.15em' : undefined,
         }}>{labelName}</div>
         <div style={{
@@ -896,7 +896,7 @@ function FinalTrophyTile({ a, t, fmtDate, finaleGoals, onOpen }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 9, letterSpacing: 2.5, textTransform: 'uppercase', fontWeight: 800,
-          fontFamily: "'Manrope',sans-serif",
+          fontFamily: "'Archivo',sans-serif",
           color: locked ? 'var(--dim)' : isMax ? 'rgba(26,21,48,.7)' : tierC,
         }}>{t('trophies.cat_finale')}</div>
 
@@ -931,7 +931,7 @@ function FinalTrophyTile({ a, t, fmtDate, finaleGoals, onOpen }) {
               </div>
               <div style={{
                 marginTop: 6, fontSize: 9, letterSpacing: 1.5, fontWeight: 700,
-                fontFamily: "'Manrope',sans-serif", color: isMax ? 'rgba(26,21,48,.6)' : textMuted,
+                fontFamily: "'Archivo',sans-serif", color: isMax ? 'rgba(26,21,48,.6)' : textMuted,
               }}>
                 {isMax
                   ? `👑 MAX · ${fmtDate(a.unlockedAt)}`
@@ -953,7 +953,7 @@ function FinalTrophyTile({ a, t, fmtDate, finaleGoals, onOpen }) {
               </div>
               <div style={{
                 marginTop: 5, fontSize: 9, letterSpacing: 1.5, fontWeight: 700,
-                fontFamily: "'Manrope',sans-serif", color: 'var(--dim)',
+                fontFamily: "'Archivo',sans-serif", color: 'var(--dim)',
               }}>
                 {t('trophies.gran_finale_progress', { done: nextGoal.done, total: nextGoal.total, n: 1 })}
               </div>
@@ -969,7 +969,7 @@ function FinalTrophyTile({ a, t, fmtDate, finaleGoals, onOpen }) {
         background: locked ? 'var(--mut)11' : isMax ? 'rgba(26,21,48,.3)' : `${tierC}22`,
         border: locked ? '1px dashed var(--brd)' : `1px solid ${isMax ? 'rgba(26,21,48,.5)' : tierC + '66'}`,
         fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase',
-        fontFamily: "'Manrope',sans-serif",
+        fontFamily: "'Archivo',sans-serif",
         color: locked ? 'var(--mut)' : isMax ? '#1a1530' : tierC,
       }}>
         {locked ? `🔒 ${t('trophies.locked')}` : isMax ? 'MAX 👑' : `Lv ${level}/${max_level}`}

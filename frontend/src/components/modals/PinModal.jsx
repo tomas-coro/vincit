@@ -27,7 +27,7 @@ export default function PinModal({user,profiles,vaultPin,onSuccess,onClose}){
           style={{
             width:"100%",background:"transparent",border:0,borderBottom:"1px solid var(--brd)",
             color:"var(--txt)",borderRadius:0,padding:"12px 2px",
-            fontFamily:"'Playfair Display',serif",
+            fontFamily:"'Bodoni Moda',serif",
             fontSize:36,letterSpacing:18,textAlign:"center",
             outline:"none",marginBottom:28,transition:"border-color .18s",
           }}/>
@@ -35,7 +35,7 @@ export default function PinModal({user,profiles,vaultPin,onSuccess,onClose}){
         <button onClick={onClose} style={{
           width:"100%", padding:"4px 0",
           background:"transparent",border:"none",cursor:"pointer",
-          fontFamily:"'Manrope',sans-serif",fontSize:10,fontWeight:600,
+          fontFamily:"'Archivo',sans-serif",fontSize:10,fontWeight:600,
           letterSpacing:".3em",textTransform:"uppercase",color:"var(--dim)",
         }}>{t('pin_modal.cancel')}</button>
       </div>

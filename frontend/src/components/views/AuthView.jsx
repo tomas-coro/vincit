@@ -112,7 +112,7 @@ export default function AuthView({ onAuth, onShowPrivacy }) {
             <button key={t2} onClick={() => { setTab(t2); setError(''); }}
               style={{ padding:'6px 0 14px', border:'none', cursor:'pointer',
                 background:'transparent',
-                fontFamily:"'Manrope',sans-serif",
+                fontFamily:"'Archivo',sans-serif",
                 fontSize:11, fontWeight:600, letterSpacing:'.22em', textTransform:'uppercase',
                 borderBottom:`2px solid ${tab===t2 ? 'var(--gold)' : 'transparent'}`,
                 marginBottom:-1,
@@ -203,7 +203,7 @@ export default function AuthView({ onAuth, onShowPrivacy }) {
                 style={{
                   background: 'transparent', border: 'none', cursor: 'pointer',
                   color: 'var(--dim)', fontSize: 12, padding: 0, textDecoration: 'underline',
-                  fontFamily: "'Manrope',sans-serif",
+                  fontFamily: "'Archivo',sans-serif",
                 }}>
                 {t('auth.forgot_link')}
               </button>
@@ -212,7 +212,7 @@ export default function AuthView({ onAuth, onShowPrivacy }) {
 
           <button type="submit" disabled={loading}
             style={{ width:'100%', marginTop:28, padding:'17px 0', borderRadius:999, border:'none',
-              background:'var(--pur)', color:'#1a1530', fontFamily:"'Manrope',sans-serif",
+              background:'var(--pur)', color:'#1a1530', fontFamily:"'Archivo',sans-serif",
               fontSize:13, fontWeight:700, letterSpacing:'.18em', textTransform:'uppercase',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.7 : 1,
@@ -266,12 +266,12 @@ export default function AuthView({ onAuth, onShowPrivacy }) {
                   padding: '8px 14px', borderRadius: 10,
                   background: 'transparent', border: '1px solid var(--brd)',
                   color: 'var(--dim)', cursor: 'pointer',
-                  fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 600,
+                  fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 600,
                 }}>{t('reveal.cancel')}</button>
                 <button type="submit" disabled={forgotBusy} style={{
                   padding: '10px 18px', borderRadius: 10, border: 'none',
                   background: 'var(--gold)', color: '#07060f',
-                  fontFamily: "'Manrope',sans-serif", fontSize: 13, fontWeight: 800,
+                  fontFamily: "'Archivo',sans-serif", fontSize: 13, fontWeight: 800,
                   cursor: forgotBusy ? 'wait' : 'pointer', opacity: forgotBusy ? 0.7 : 1,
                 }}>{forgotBusy ? '…' : t('auth.forgot_send')}</button>
               </div>

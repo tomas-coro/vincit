@@ -6,7 +6,7 @@ import EmptyState from '../EmptyState.jsx';
 
 const S = {
   card: {background:"var(--card)",border:"1px solid var(--brd)",borderRadius:16,padding:16},
-  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 18px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:13,fontWeight:600,transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
+  btn: {display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 18px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Archivo',sans-serif",fontSize:13,fontWeight:600,transition:"all .18s",userSelect:"none",whiteSpace:"nowrap"},
   bdg: {display:"inline-flex",alignItems:"center",gap:3,padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600},
 };
 
@@ -34,7 +34,7 @@ export default function VaultView({user,profiles,bets,cats,onReveal,onFlame,unlo
             <button onClick={() => setShowPinReset(true)} style={{
               background:'none', border:'none', cursor:'pointer',
               fontSize:12, color:'var(--dim)', textDecoration:'underline',
-              fontFamily:"'Manrope',sans-serif",
+              fontFamily:"'Archivo',sans-serif",
             }}>{t('vault_view.forgot_pin')}</button>
           </div>
         ) : (

@@ -71,7 +71,7 @@ export async function renderH2HCard({
 
   // ── Top kicker ───────────────────────────────────────────────────
   ctx.fillStyle = '#c8973f';
-  ctx.font = '700 30px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '700 30px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillText('⚔  HEAD-TO-HEAD', W / 2, 90);
@@ -107,7 +107,7 @@ export async function renderH2HCard({
     ctx.fillText(initial(name), cx, cy + 6);
     // Name under
     ctx.fillStyle = 'rgba(255,255,255,.65)';
-    ctx.font = '700 26px "Manrope", "Helvetica Neue", Arial, sans-serif';
+    ctx.font = '700 26px "Archivo", "Helvetica Neue", Arial, sans-serif';
     ctx.textBaseline = 'top';
     ctx.fillText((name || '').toUpperCase(), cx, cy + r + 28);
   };
@@ -120,7 +120,7 @@ export async function renderH2HCard({
   roundRect(ctx, W / 2 - 60, cy - 32, 120, 64, 32);
   ctx.fill();
   ctx.fillStyle = '#c8973f';
-  ctx.font = '800 32px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '800 32px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('VS', W / 2, cy);
@@ -134,7 +134,7 @@ export async function renderH2HCard({
   ctx.fillText(String(myWins), W / 2 - 70, scoreY);
 
   ctx.fillStyle = 'rgba(255,255,255,.35)';
-  ctx.font = '800 70px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '800 70px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('—', W / 2, scoreY);
 
@@ -146,14 +146,14 @@ export async function renderH2HCard({
   // ── Net credits banner ───────────────────────────────────────────
   const netPositive = (netMe || 0) >= 0;
   const netTxt = `${netPositive ? '+' : ''}${netMe || 0} ₡`;
-  ctx.font = '800 56px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '800 56px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.fillStyle = netPositive ? '#3cc18b' : '#e87171';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillText(netTxt, W / 2, 870);
 
   ctx.fillStyle = 'rgba(255,255,255,.55)';
-  ctx.font = '600 24px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '600 24px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.fillText('BILANCIO PER ME', W / 2, 950);
 
   // ── Stats row: total bets + current streak ───────────────────────
@@ -168,25 +168,25 @@ export async function renderH2HCard({
 
   // Total bets
   ctx.fillStyle = '#c8973f';
-  ctx.font = '800 56px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '800 56px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(String(totalBets || 0), W * 0.27, rowY + 10);
   ctx.fillStyle = 'rgba(255,255,255,.45)';
-  ctx.font = '600 20px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '600 20px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.fillText('BET RISOLTE', W * 0.27, rowY + 84);
 
   // Streak (only if ≥2)
   const absStreak = Math.abs(streak || 0);
   ctx.fillStyle = streak >= 0 ? '#3cc18b' : '#e87171';
-  ctx.font = '800 56px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '800 56px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.fillText(absStreak >= 2 ? `${streak >= 0 ? '🔥' : '❄️'} ${absStreak}` : '—', W * 0.73, rowY + 10);
   ctx.fillStyle = 'rgba(255,255,255,.45)';
-  ctx.font = '600 20px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '600 20px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.fillText(absStreak >= 2 ? (streak >= 0 ? 'STREAK A MIO FAVORE' : 'STREAK CONTRO') : 'NESSUNA STREAK', W * 0.73, rowY + 84);
 
   // ── Footer brand ─────────────────────────────────────────────────
   ctx.fillStyle = 'rgba(200,151,63,.55)';
-  ctx.font = '700 22px "Manrope", "Helvetica Neue", Arial, sans-serif';
+  ctx.font = '700 22px "Archivo", "Helvetica Neue", Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(`${brand.toUpperCase()}`, W / 2, H - 70);
 

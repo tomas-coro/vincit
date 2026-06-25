@@ -112,7 +112,7 @@ export default function CommentThread({
           background: 'transparent', border: 'none', cursor: 'pointer',
           padding: '6px 0',
           color: 'var(--dim)',
-          fontFamily: "'Manrope',sans-serif",
+          fontFamily: "'Archivo',sans-serif",
           fontSize: 11, fontWeight: 600, letterSpacing: '.18em', textTransform: 'uppercase',
           WebkitTapHighlightColor: 'transparent',
         }}
@@ -173,7 +173,7 @@ export default function CommentThread({
                         flexWrap: 'wrap',
                       }}>
                         <span style={{
-                          fontFamily: "'Manrope',sans-serif",
+                          fontFamily: "'Archivo',sans-serif",
                           fontSize: 12, fontWeight: 700, color: accent,
                           letterSpacing: '-0.01em',
                         }}>{name}</span>
@@ -194,7 +194,7 @@ export default function CommentThread({
                         )}
                       </div>
                       <div style={{
-                        fontFamily: "'Manrope',sans-serif",
+                        fontFamily: "'Archivo',sans-serif",
                         fontSize: 13, lineHeight: 1.45,
                         color: 'var(--txt)', wordBreak: 'break-word',
                         whiteSpace: 'pre-wrap',
@@ -232,7 +232,7 @@ export default function CommentThread({
                 background: 'transparent',
                 border: 'none', borderBottom: '1px solid var(--brd)',
                 color: 'var(--txt)', padding: '6px 2px',
-                fontFamily: "'Manrope',sans-serif", fontSize: 13,
+                fontFamily: "'Archivo',sans-serif", fontSize: 13,
                 outline: 'none', minHeight: 26, maxHeight: 96,
                 lineHeight: 1.4,
               }}
@@ -252,7 +252,7 @@ export default function CommentThread({
                 background: draft.trim() ? 'var(--gold)' : 'var(--mut)44',
                 color: draft.trim() ? '#1a1530' : 'var(--mut)',
                 border: 'none',
-                fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 800,
+                fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 800,
                 letterSpacing: '.18em', textTransform: 'uppercase',
                 cursor: draft.trim() && !sending ? 'pointer' : 'not-allowed',
                 WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',

@@ -184,7 +184,7 @@ export default function GroupInfoModal({ group, userId, onClose, onLeft, onDelet
   };
 
   const S = {
-    btn: { fontFamily:"'Manrope',sans-serif", fontSize:13, fontWeight:600,
+    btn: { fontFamily:"'Archivo',sans-serif", fontSize:13, fontWeight:600,
            cursor:'pointer', transition:'all .18s', borderRadius:10, border:'none' },
   };
 
@@ -219,7 +219,7 @@ export default function GroupInfoModal({ group, userId, onClose, onLeft, onDelet
               maxLength={40}
               style={{ width:'100%', background:'var(--inp)', border:'1px solid var(--brd)',
                 color:'var(--txt)', borderRadius:10, padding:'10px 14px',
-                fontFamily:"'Manrope',sans-serif", fontSize:14, outline:'none', marginBottom:12,
+                fontFamily:"'Archivo',sans-serif", fontSize:14, outline:'none', marginBottom:12,
                 boxSizing:'border-box' }}
             />
             {isOwner && (
@@ -235,7 +235,7 @@ export default function GroupInfoModal({ group, userId, onClose, onLeft, onDelet
                   onChange={e => setEditThreshold(e.target.value)}
                   style={{ width:'100%', background:'var(--inp)', border:'1px solid var(--brd)',
                     color:'var(--txt)', borderRadius:10, padding:'10px 14px',
-                    fontFamily:"'Manrope',sans-serif", fontSize:14, outline:'none', marginBottom:4,
+                    fontFamily:"'Archivo',sans-serif", fontSize:14, outline:'none', marginBottom:4,
                     boxSizing:'border-box' }}
                 />
                 <div style={{ fontSize:11, color:'var(--dim)' }}>

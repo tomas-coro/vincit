@@ -352,7 +352,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
         background: 'transparent',
         color: active ? 'var(--txt)' : 'var(--dim)',
         border: 'none', borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
-        marginBottom: -1, cursor: 'pointer', fontFamily: "'Manrope',sans-serif",
+        marginBottom: -1, cursor: 'pointer', fontFamily: "'Archivo',sans-serif",
         fontSize: 11, fontWeight: 600, letterSpacing: '.22em', textTransform: 'uppercase',
         whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 8,
         transition: 'all .18s',
@@ -406,7 +406,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
           border: `1px solid ${rank === 1 ? 'var(--gold)' : rank === 2 ? '#c0c4d0' : rank === 3 ? '#b87333' : 'var(--brd)'}55`,
           color:  rank === 1 ? 'var(--gold)' : rank === 2 ? '#c0c4d0' : rank === 3 ? '#b87333' : 'var(--mut)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'Playfair Display',serif", fontSize: 13, fontWeight: 700,
+          fontFamily: "'Bodoni Moda',serif", fontSize: 13, fontWeight: 700,
           flexShrink: 0,
         }}>{rank}</div>
       )}
@@ -425,7 +425,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
               padding: '2px 8px', borderRadius: 999,
               background: 'var(--gold)18', border: '1px solid var(--gold)44',
               color: 'var(--gold)',
-              fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
+              fontFamily: "'Archivo',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
             }}>
               <span style={{fontSize:11}}>🏆</span> {lb.trophyPoints}
             </span>
@@ -434,7 +434,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
         {/* h2h record vs me, if any bets played together */}
         {lb?.h2hTotal > 0 && (
           <div style={{
-            fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 600,
+            fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 600,
             marginTop: 4, letterSpacing: '.04em',
           }}>
             <span style={{ color: 'var(--grn)' }}>{lb.h2hWon}W</span>
@@ -468,7 +468,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
       border: `1px solid ${kind === 'primary' ? 'var(--gold)55' : kind === 'danger' ? 'var(--red)44' : 'var(--brd)'}`,
       color: kind === 'primary' ? 'var(--gold)' : kind === 'danger' ? 'var(--red)' : 'var(--dim)',
       cursor: disabled ? 'wait' : 'pointer',
-      fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
+      fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 700,
       letterSpacing: 0.5, whiteSpace: 'nowrap',
       opacity: disabled ? 0.6 : 1,
     }}>{label}</button>
@@ -508,7 +508,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
             style={{
               flex: 1, border: 'none', outline: 'none',
               background: 'transparent', color: 'var(--txt)',
-              fontFamily: "'Manrope',sans-serif", fontSize: 14, letterSpacing: '.01em',
+              fontFamily: "'Archivo',sans-serif", fontSize: 14, letterSpacing: '.01em',
             }}
           />
         </div>
@@ -553,7 +553,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
                 marginTop: 16, padding: '8px 18px', borderRadius: 10,
                 background: 'var(--gold)22', border: '1px solid var(--gold)55',
                 color: 'var(--gold)', cursor: 'pointer',
-                fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 700,
+                fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 700,
               }}>{t('friends.empty_cta')}</button>
             </div>
           )}
@@ -649,14 +649,14 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
                 background: codeCopied ? 'var(--gold)' : 'transparent',
                 border: '1px solid var(--gold)',
                 color: codeCopied ? '#1a1530' : 'var(--gold)',
-                fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 800,
+                fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 800,
                 letterSpacing: '.1em', textTransform: 'uppercase',
               }}>{codeCopied ? t('friends.code_copied') : t('friends.code_copy')}</button>
               <button onClick={handleRegenCode} style={{
                 padding: '8px 14px', borderRadius: 999, cursor: 'pointer',
                 background: 'transparent', border: '1px solid var(--brd)',
                 color: 'var(--dim)',
-                fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
+                fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 700,
                 letterSpacing: '.08em', textTransform: 'uppercase',
               }}>🔄 {t('friends.code_regen')}</button>
             </div>
@@ -689,7 +689,7 @@ export default function FriendsView({ groups, user, myBets = [], myCredits = 0, 
                 style={{
                   padding: '10px 18px', borderRadius: 10, border: 'none',
                   background: 'var(--gold)', color: '#1a1530', cursor: 'pointer',
-                  fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 800,
+                  fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 800,
                   letterSpacing: '.08em', textTransform: 'uppercase',
                   opacity: codeInput.trim().length < 4 ? 0.4 : 1,
                 }}>
@@ -969,7 +969,7 @@ function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserI
               ];
 
               const cellStyle = (isLeader) => ({
-                fontFamily: "'Playfair Display',serif",
+                fontFamily: "'Bodoni Moda',serif",
                 fontFeatureSettings: "'lnum' 1, 'tnum' 1",
                 fontSize: 24, fontWeight: 800, lineHeight: 1,
                 color: isLeader === null ? 'var(--txt)' : (isLeader ? 'var(--gold)' : 'var(--dim)'),
@@ -992,7 +992,7 @@ function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserI
                   }}>
                     <div style={{
                       textAlign: 'right',
-                      fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 800,
+                      fontFamily: "'Archivo',sans-serif", fontSize: 10, fontWeight: 800,
                       letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)',
                     }}>{t('friends.report_you')}</div>
                     <div style={{
@@ -1002,7 +1002,7 @@ function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserI
                     }}>scout report</div>
                     <div style={{
                       textAlign: 'left',
-                      fontFamily: "'Manrope',sans-serif", fontSize: 10, fontWeight: 800,
+                      fontFamily: "'Archivo',sans-serif", fontSize: 10, fontWeight: 800,
                       letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)',
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>{friend.name}</div>
@@ -1021,7 +1021,7 @@ function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserI
                       </div>
                       <div style={{
                         textAlign: 'center',
-                        fontFamily: "'Manrope',sans-serif", fontSize: 9, fontWeight: 700,
+                        fontFamily: "'Archivo',sans-serif", fontSize: 9, fontWeight: 700,
                         letterSpacing: '.2em', textTransform: 'uppercase',
                         color: 'var(--mut)', lineHeight: 1.2,
                       }}>{r.label}</div>
@@ -1064,7 +1064,7 @@ function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserI
                             background: joinable ? 'var(--card)' : 'transparent',
                             color: joinable ? 'var(--txt)' : 'var(--mut)',
                             cursor: joinable ? 'pointer' : 'default',
-                            fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 600,
+                            fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 600,
                             opacity: joinable ? 1 : 0.6,
                             WebkitTapHighlightColor: 'transparent',
                           }}>
@@ -1090,7 +1090,7 @@ function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserI
                 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{
-                      fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700,
+                      fontFamily: "'Bodoni Moda',serif", fontSize: 22, fontWeight: 700,
                     }}>
                       <span style={{ color: 'var(--grn)' }}>{data.vsMe.iWon}</span>
                       <span style={{ color: 'var(--mut)', margin: '0 6px', fontSize: 14 }}>–</span>
@@ -1153,7 +1153,7 @@ function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserI
                               padding: '6px 10px', borderRadius: 999,
                               border: `1px solid ${isOpen ? color : color + '55'}`,
                               background: isOpen ? `${color}28` : `${color}12`,
-                              fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
+                              fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 700,
                               color, cursor: 'pointer',
                               boxShadow: isOpen ? `0 0 0 2px ${color}22` : 'none',
                               transition: 'all .15s',
@@ -1228,7 +1228,7 @@ function FriendProfileModal({ friend, myAch, myBets = [], myCredits = 0, myUserI
                                   </div>
                                   <div style={{
                                     width: 56, textAlign: 'right',
-                                    fontFamily: "'Playfair Display',serif", fontSize: 13, fontWeight: 700,
+                                    fontFamily: "'Bodoni Moda',serif", fontSize: 13, fontWeight: 700,
                                     color: c,
                                   }}>Lv {row.lvl}<span style={{fontSize: 9, color:'var(--mut)', marginLeft: 3}}>/{maxLvl}</span></div>
                                 </div>

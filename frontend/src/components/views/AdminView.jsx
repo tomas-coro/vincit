@@ -18,7 +18,7 @@ const S = {
   pre:     { background: 'var(--inp)', color: 'var(--txt)', borderRadius: 4, padding: 12, fontSize: 11, fontFamily: 'monospace', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' },
   btn:     (variant) => ({
     padding: '8px 16px', borderRadius: 999, cursor: 'pointer',
-    fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: '.08em',
+    fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: '.08em',
     background: variant === 'danger' ? 'transparent' : variant === 'ghost' ? 'transparent' : 'var(--pur)',
     border: `1px solid ${variant === 'danger' ? 'var(--red)66' : variant === 'ghost' ? 'transparent' : 'transparent'}`,
     color: variant === 'danger' ? 'var(--red)' : variant === 'ghost' ? 'var(--dim)' : '#1a1530',
@@ -242,7 +242,7 @@ export default function AdminView({ isDesktop, meId }) {
         background: 'transparent',
         color: active ? 'var(--txt)' : 'var(--dim)',
         border: 'none', borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`,
-        marginBottom: -1, cursor: 'pointer', fontFamily: "'Manrope',sans-serif",
+        marginBottom: -1, cursor: 'pointer', fontFamily: "'Archivo',sans-serif",
         fontSize: 11, fontWeight: 600, letterSpacing: '.22em', textTransform: 'uppercase',
         whiteSpace: 'nowrap', transition: 'all .18s',
       }}>{label}</button>
@@ -297,7 +297,7 @@ export default function AdminView({ isDesktop, meId }) {
           background: active ? 'var(--gold)22' : 'transparent',
           border: `1px solid ${active ? 'var(--gold)66' : 'var(--brd)'}`,
           color: active ? 'var(--gold)' : 'var(--dim)',
-          fontFamily: "'Manrope',sans-serif", fontSize: 11, fontWeight: 700,
+          fontFamily: "'Archivo',sans-serif", fontSize: 11, fontWeight: 700,
           letterSpacing: '.06em', whiteSpace: 'nowrap',
           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
         });
@@ -313,7 +313,7 @@ export default function AdminView({ isDesktop, meId }) {
               <span style={{ color: 'var(--dim)', fontSize: 14 }}>🔍</span>
               <input value={query} onChange={e => setQuery(e.target.value)}
                 placeholder="Cerca per email o nome…"
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--txt)', fontFamily: "'Manrope',sans-serif", fontSize: 14, letterSpacing: '.01em' }}/>
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--txt)', fontFamily: "'Archivo',sans-serif", fontSize: 14, letterSpacing: '.01em' }}/>
               <span style={{ fontSize: 10, color: 'var(--mut)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, flexShrink: 0 }}>
                 {filtersActive ? `${filteredUsers.length} / ${users.length}` : users.length}
               </span>
@@ -341,7 +341,7 @@ export default function AdminView({ isDesktop, meId }) {
                   style={{
                     background: 'var(--inp)', color: 'var(--txt)',
                     border: '1px solid var(--brd)', borderRadius: 6,
-                    padding: '4px 8px', fontSize: 11, fontFamily: "'Manrope',sans-serif",
+                    padding: '4px 8px', fontSize: 11, fontFamily: "'Archivo',sans-serif",
                     cursor: 'pointer',
                   }}>
                   {SORTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
@@ -536,7 +536,7 @@ export default function AdminView({ isDesktop, meId }) {
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input value={pwNew} onChange={e => setPwNew(e.target.value)} type="text"
                       placeholder="nuova password"
-                      style={{ flex: 1, background: 'var(--inp)', border: `1px solid ${hasInput && pwErr ? 'var(--red)55' : hasInput ? 'var(--grn)55' : 'var(--brd)'}`, borderRadius: 8, color: 'var(--txt)', padding: '8px 10px', fontFamily: "'Manrope',sans-serif", fontSize: 13, outline: 'none' }}/>
+                      style={{ flex: 1, background: 'var(--inp)', border: `1px solid ${hasInput && pwErr ? 'var(--red)55' : hasInput ? 'var(--grn)55' : 'var(--brd)'}`, borderRadius: 8, color: 'var(--txt)', padding: '8px 10px', fontFamily: "'Archivo',sans-serif", fontSize: 13, outline: 'none' }}/>
                     <button onClick={() => setPassword(u.id, pwNew)} disabled={busy || !!pwErr} style={S.btn()}>
                       Applica
                     </button>
@@ -796,7 +796,7 @@ export default function AdminView({ isDesktop, meId }) {
                 <button key={n} onClick={() => setAllTrophies(n)} disabled={trophyBusy}
                   style={{
                     padding: '10px 18px', borderRadius: 999, cursor: trophyBusy ? 'wait' : 'pointer',
-                    fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: '.08em',
+                    fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: '.08em',
                     background: lastSetLevel === n ? 'var(--pur)' : 'var(--pur)22',
                     border: `1px solid ${lastSetLevel === n ? 'var(--pur)' : 'var(--pur)55'}`,
                     color: lastSetLevel === n ? '#fff' : 'var(--pur)',
@@ -808,7 +808,7 @@ export default function AdminView({ isDesktop, meId }) {
               <button onClick={() => setAllTrophies(0)} disabled={trophyBusy}
                 style={{
                   padding: '10px 18px', borderRadius: 999, cursor: trophyBusy ? 'wait' : 'pointer',
-                  fontFamily: "'Manrope',sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: '.08em',
+                  fontFamily: "'Archivo',sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: '.08em',
                   background: lastSetLevel === 0 ? 'var(--mut)33' : 'transparent',
                   border: '1px solid var(--brd)',
                   color: 'var(--mut)',
@@ -888,7 +888,7 @@ export default function AdminView({ isDesktop, meId }) {
             style={{
               width: '100%', padding: '14px 0', borderRadius: 12, border: '1px solid var(--red)',
               background: 'var(--red)', color: '#fff',
-              fontFamily: "'Manrope',sans-serif", fontSize: 15, fontWeight: 800, letterSpacing: 0.5,
+              fontFamily: "'Archivo',sans-serif", fontSize: 15, fontWeight: 800, letterSpacing: 0.5,
               cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1,
             }}>
             {busy ? '…' : '🔥 RESET TOTALE'}

@@ -128,7 +128,7 @@ export default function GroupPicker({
         background: 'var(--card)',
         border: '1px solid var(--brd)',
         borderRadius: 14, cursor: 'pointer',
-        fontFamily: "'Manrope',sans-serif",
+        fontFamily: "'Archivo',sans-serif",
         color: 'var(--txt)',
         textAlign: 'left',
         transition: 'all .18s',
@@ -220,14 +220,14 @@ export default function GroupPicker({
             style={{
               flex: 1, border: 'none', outline: 'none',
               background: 'transparent', color: 'var(--txt)',
-              fontFamily: "'Manrope',sans-serif", fontSize: 13,
+              fontFamily: "'Archivo',sans-serif", fontSize: 13,
             }}
           />
           <kbd style={{
             display: 'inline-flex', alignItems: 'center',
             padding: '2px 6px', borderRadius: 5,
             background: 'var(--card)', border: '1px solid var(--brd)',
-            color: 'var(--dim)', fontSize: 9, fontFamily: "'Manrope',sans-serif",
+            color: 'var(--dim)', fontSize: 9, fontFamily: "'Archivo',sans-serif",
             letterSpacing: 0.5,
           }}>ESC</kbd>
         </div>
