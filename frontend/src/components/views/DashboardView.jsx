@@ -47,6 +47,7 @@ import { useLang, TRANSLATIONS } from '../../i18n.js';
 import BetCard from '../BetCard.jsx';
 import { StreakInline } from '../StreakBadge.jsx';
 import DieFace from '../DieFace.jsx';
+import Icon from '../Icon.jsx';
 import BetListModal from '../modals/BetListModal.jsx';
 import RankingModal from '../modals/RankingModal.jsx';
 
@@ -380,7 +381,7 @@ export default function DashboardView({
           if (days < 2) return null;
           return (
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexShrink: 0 }}>
-              <span style={{ fontSize: 'clamp(22px, 3vw, 28px)', lineHeight: 1, flexShrink: 0 }} aria-hidden>📅</span>
+              <Icon name="calendar" size={26} style={{ color: 'var(--gold)' }} />
               <span className="bc-num" style={{ fontSize: 'clamp(28px, 4vw, 38px)', color: 'var(--gold)', lineHeight: 1 }}>
                 {days}
               </span>
@@ -507,16 +508,16 @@ export default function DashboardView({
   const scoreCard = (() => {
     const rest = rankRows.slice(3);
     const podiumSlots = [
-      { rankIdx: 1, medal: '🥈', platformH: 38, avatarSize: 44, numSize: 24 },
-      { rankIdx: 0, medal: '🥇', platformH: 58, avatarSize: 54, numSize: 32 },
-      { rankIdx: 2, medal: '🥉', platformH: 26, avatarSize: 40, numSize: 20 },
+      { rankIdx: 1, medalColor: '#c2c8d6',    platformH: 38, avatarSize: 44, numSize: 24 }, // argento
+      { rankIdx: 0, medalColor: 'var(--gold)', platformH: 58, avatarSize: 54, numSize: 32 }, // oro
+      { rankIdx: 2, medalColor: '#c08a4e',    platformH: 26, avatarSize: 40, numSize: 20 }, // bronzo
     ];
     return (
       <div className={`card ${otherIds.length > 0 ? 'pGold' : ''}`}
         style={{ ...S.card, marginBottom: 14, background: 'linear-gradient(135deg,var(--card),var(--surf))' }}>
         <SecLabel>{t('dashboard.ranking')}</SecLabel>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 4 }}>
-          {podiumSlots.map(({ rankIdx, medal, platformH, avatarSize, numSize }) => {
+          {podiumSlots.map(({ rankIdx, medalColor, platformH, avatarSize, numSize }) => {
             const s = rankRows[rankIdx];
             const isFirst = rankIdx === 0;
             if (!s) return (
@@ -534,7 +535,7 @@ export default function DashboardView({
             const numColor   = isFirst ? 'var(--gold)' : s.c;
             return (
               <div key={s.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
-                <div style={{ fontSize: isFirst ? 16 : 13, lineHeight: 1, marginBottom: 5 }}>{medal}</div>
+                <Icon name="medal" size={isFirst ? 24 : 19} style={{ color: medalColor, marginBottom: 5 }} />
                 <div style={{
                   width: avatarSize, height: avatarSize, borderRadius: '50%',
                   background: `${s.c}33`, border: `2px solid ${isFirst ? 'var(--gold)' : `${s.c}77`}`,
@@ -637,12 +638,12 @@ export default function DashboardView({
       onMouseEnter={e => { if (onGoToVault) { e.currentTarget.style.background = 'var(--gold)10'; e.currentTarget.style.borderColor = 'var(--gold)88'; } }}
       onMouseLeave={e => { if (onGoToVault) { e.currentTarget.style.background = 'var(--card)';   e.currentTarget.style.borderColor = 'var(--gold)44'; } }}
     >
-      <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--gold)22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🔒</div>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--gold)22', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold)' }}><Icon name="lock" size={19} /></div>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--gold)' }}>{t('dashboard.vault_teaser')}</div>
         <div style={{ fontSize: 12, color: 'var(--dim)' }}>{mySec.length === 1 ? t('dashboard.vault_teaser_one', { n: mySec.length }) : t('dashboard.vault_teaser_many', { n: mySec.length })}</div>
       </div>
-      {onGoToVault && <span style={{ color: 'var(--gold)', fontSize: 14 }}>➤</span>}
+      {onGoToVault && <Icon name="arrow" size={18} style={{ color: 'var(--gold)' }} />}
     </div>
   );
 
@@ -650,7 +651,7 @@ export default function DashboardView({
   const expiredAlert = expiredBets.length > 0 && (
     <div style={{ ...S.card, marginBottom: 12, background: 'var(--red)14', border: '1px solid var(--red)66', borderLeft: '4px solid var(--red)', borderRadius: 10, padding: '12px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 16 }}>⏱</span>
+        <Icon name="clock" size={17} style={{ color: 'var(--red)' }} />
         <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--red)', letterSpacing: '.01em' }}>
           {t(expiredBets.length === 1 ? 'dashboard.expired_one' : 'dashboard.expired_many', { n: expiredBets.length })}
         </div>
@@ -664,7 +665,7 @@ export default function DashboardView({
           {onResolve && (() => {
             const isPendingResolve = pendingResolveIds?.has(b.id);
             return isPendingResolve
-              ? <span style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 999, background: 'var(--mut)22', border: '1px solid var(--mut)44', color: 'var(--mut)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', fontFamily: "'Archivo',sans-serif", opacity: .55 }}>⏳ In invio…</span>
+              ? <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'var(--mut)22', border: '1px solid var(--mut)44', color: 'var(--mut)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', fontFamily: "'Archivo',sans-serif", opacity: .55 }}><Icon name="hourglass" size={12} />In invio…</span>
               : <button onClick={() => onResolve(b)} style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 999, background: 'var(--red)22', border: '1px solid var(--red)55', color: 'var(--red)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: "'Archivo',sans-serif", WebkitTapHighlightColor: 'transparent' }}>Dichiara</button>;
           })()}
         </div>
@@ -675,7 +676,7 @@ export default function DashboardView({
   const expiryAlert = expiring.length > 0 && (
     <div style={{ ...S.card, marginBottom: 12, background: 'var(--gold)0e', border: '1px solid var(--gold)55', borderLeft: '4px solid var(--gold)', borderRadius: 10, padding: '12px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <span style={{ fontSize: 16 }}>⚡</span>
+        <Icon name="bolt" size={17} style={{ color: 'var(--gold)' }} />
         <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--gold)' }}>{t('dashboard.expiry', { n: expiring.length })}</div>
       </div>
       {expiring.map(b => (
@@ -704,7 +705,7 @@ export default function DashboardView({
             </div>
             {topWinBet && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: isDifferent ? 4 : 0 }}>
-                <span style={{ fontSize: 12 }}>🏆</span>
+                <Icon name="trophy" size={14} style={{ color: 'var(--gold)' }} />
                 <span style={{ fontSize: 10, color: 'var(--grn)', fontWeight: 700, flexShrink: 0, fontFamily: "'Archivo',sans-serif" }}>+{gain} ₡</span>
                 <span style={{ fontSize: 12, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontStyle: 'italic', fontFamily: "'Cormorant Garamond',serif" }}>
                   "{topWinBet.title}"
@@ -713,7 +714,7 @@ export default function DashboardView({
             )}
             {isDifferent && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12 }}>💀</span>
+                <Icon name="skull" size={14} style={{ color: 'var(--red)' }} />
                 <span style={{ fontSize: 10, color: 'var(--red)', fontWeight: 700, flexShrink: 0, fontFamily: "'Archivo',sans-serif" }}>{prob}% win</span>
                 <span style={{ fontSize: 12, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontStyle: 'italic', fontFamily: "'Cormorant Garamond',serif" }}>
                   "{craziestBet.title}"
@@ -721,7 +722,7 @@ export default function DashboardView({
               </div>
             )}
           </div>
-          <span style={{ fontSize: 13, color: 'var(--gold)', flexShrink: 0, opacity: .8 }}>▸</span>
+          <Icon name="arrow" size={15} style={{ color: 'var(--gold)', flexShrink: 0, opacity: .8 }} />
         </div>
       </div>
     );
@@ -920,11 +921,11 @@ export default function DashboardView({
       {/* Monthly summary */}
       {showSummary && (
         <div style={{ ...S.card, marginBottom: 12, background: 'var(--gold)11', border: '1px solid var(--gold)44', position: 'relative' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--gold)', marginBottom: 6 }}>📊 {months[prevMonth]} {prevYear}</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--gold)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 7 }}><Icon name="bars" size={16} />{months[prevMonth]} {prevYear}</div>
           <div style={{ fontSize: 13, color: 'var(--txt)', marginBottom: 4 }}>{profiles[user]?.name} {myPrevWins.length}V / {profiles[other]?.name} {otPrevWins.length}V</div>
           {bestBet && <div style={{ fontSize: 12, color: 'var(--dim)', marginBottom: 2 }}>{t('dashboard.best_bet')} <span style={{ color: 'var(--gold)' }}>{bestBet.title} @ {parseFloat(bestBet.quota).toFixed(2)}×</span></div>}
           <div style={{ fontSize: 12, color: netProfit >= 0 ? 'var(--grn)' : 'var(--red)' }}>{t('dashboard.net_profit', { name: profiles[user]?.name })} {netProfit >= 0 ? '+' : ''}{netProfit} ₡</div>
-          <button onClick={() => { localStorage.setItem(prevMonthKey, '1'); setSummaryDismissed(true); }} style={{ position: 'absolute', top: 10, right: 10, background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--dim)' }}>✕</button>
+          <button onClick={() => { localStorage.setItem(prevMonthKey, '1'); setSummaryDismissed(true); }} aria-label="Chiudi" style={{ position: 'absolute', top: 10, right: 10, background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--dim)', display: 'flex', padding: 2 }}><Icon name="x" size={16} /></button>
         </div>
       )}
 
@@ -944,7 +945,7 @@ export default function DashboardView({
               <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gold)' }}>{displayName} {newPart === 1 ? t('dashboard.notif_one') : ''}</div>
               <div style={{ fontSize: 11, color: 'var(--dim)' }}>{t('dashboard.notif_sub')} · <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Vedi →</span></div>
             </div>
-            <button onClick={e => { e.stopPropagation(); onNotifSeen?.(); }} aria-label="Chiudi" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--dim)', fontSize: 16, padding: '4px 6px', flexShrink: 0, lineHeight: 1 }}>✕</button>
+            <button onClick={e => { e.stopPropagation(); onNotifSeen?.(); }} aria-label="Chiudi" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--dim)', padding: '4px 6px', flexShrink: 0, lineHeight: 1, display: 'flex' }}><Icon name="x" size={16} /></button>
           </div>
         );
       })()}

@@ -12,6 +12,7 @@ import AuthView from './components/views/AuthView.jsx';
 import PairingView from './components/views/PairingView.jsx';
 import DashboardView from './components/views/DashboardView.jsx';
 import GroupPicker from './components/GroupPicker.jsx';
+import Icon from './components/Icon.jsx';
 import { applyFreshResetIfNeeded } from './freshReset.js';
 
 // Lazy: views the user navigates to after first paint. Each becomes its
@@ -1775,11 +1776,11 @@ export default function App() {
       };
 
   const NAV = [
-    { id: 'dashboard', e: '🏠', l: t('nav.dashboard') },
-    { id: 'bets',      e: '🎯', l: t('nav.bets') },
-    { id: 'stats',     e: '📊', l: t('nav.stats') },
-    { id: 'trophies',  e: '🏆', l: t('nav.trophies') },
-    { id: 'settings',  e: '👤', l: t('nav.profile') },
+    { id: 'dashboard', e: '🏠', icon: 'home',   l: t('nav.dashboard') },
+    { id: 'bets',      e: '🎯', icon: 'target', l: t('nav.bets') },
+    { id: 'stats',     e: '📊', icon: 'bars',   l: t('nav.stats') },
+    { id: 'trophies',  e: '🏆', icon: 'trophy', l: t('nav.trophies') },
+    { id: 'settings',  e: '👤', icon: 'user',   l: t('nav.profile') },
   ];
   navRef.current = NAV; // sync ref every render so onEnd can navigate by index
 
@@ -1912,7 +1913,7 @@ export default function App() {
                 display:'flex', alignItems:'center', gap:7, padding:'6px 0', fontSize:13,
                 fontFamily:"'Archivo',sans-serif", color:'var(--dim)', fontWeight:600,
                 letterSpacing:'.06em', WebkitTapHighlightColor:'transparent' }}>
-              <span style={{ fontSize:17, lineHeight:1 }}>🔔</span>
+              <Icon name="bell" size={18} />
               Notifiche
               {inboxUnread > 0 && (
                 <span style={{ minWidth:18, height:18, padding:'0 5px', borderRadius:9,
@@ -1975,7 +1976,7 @@ export default function App() {
                   userSelect: 'none', position: 'relative',
                   willChange: 'transform',
                 }}>
-                  <span style={{ fontSize: 17, transition: 'font-size .2s' }}>{n.e}</span>
+                  <Icon name={n.icon} size={18} />
                   {n.l}
                   {n.id === 'bets' && secretCount > 0 && (
                     <div title="Vault" style={{ position: 'absolute', right: 14, width: 6, height: 6, borderRadius: 999, background: 'var(--gold)' }}/>
@@ -2025,9 +2026,9 @@ export default function App() {
               </div>
               <button onClick={() => { setInboxOpen(true); markInboxRead(); }}
                 style={{ position:'relative', background:'transparent', border:'none', cursor:'pointer',
-                  padding:'6px 4px', fontSize:20, lineHeight:1, flexShrink:0,
+                  padding:'6px 4px', lineHeight:1, flexShrink:0,
                   WebkitTapHighlightColor:'transparent' }}>
-                🔔
+                <Icon name="bell" size={21} style={{ color: 'var(--dim)' }} />
                 {inboxUnread > 0 && (
                   <span style={{ position:'absolute', top:0, right:-2,
                     minWidth:16, height:16, padding:'0 3px', borderRadius:8,
@@ -2142,13 +2143,14 @@ export default function App() {
                     WebkitTapHighlightColor: 'transparent',
                   }}>
                   <span style={{
-                    fontSize: 20, lineHeight: 1,
+                    lineHeight: 1,
+                    color: isActive ? 'var(--gold)' : 'var(--dim)',
                     filter: isActive || isSwipeFocus
                       ? `drop-shadow(0 0 6px ${C.glow})`
                       : 'none',
                     transform: isActive ? 'translateY(-1px)' : 'none',
-                    transition: 'filter .2s, transform .15s',
-                  }}>{n.e}</span>
+                    transition: 'filter .2s, transform .15s, color .2s',
+                  }}><Icon name={n.icon} size={22} /></span>
                   {pendingDot && (
                     <div style={{
                       position: 'absolute', top: 2, right: '14%',
