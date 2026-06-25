@@ -166,6 +166,9 @@ export default function DashboardView({
   const isWinStreak  = fireKind === 'win';
   const isHotStreak  = isWinStreak && fireLevel >= 5;
   const streakAccent = isWinStreak ? (isHotStreak ? 'var(--red)' : 'var(--gold)') : 'var(--blu)';
+  // Dimensione "gemella" per i due numeri dell'hero (streak ↔ crediti): nel
+  // layout "Duello pari" pesano uguale, quindi condividono la stessa scala.
+  const heroNum = 'clamp(38px, 9vw, 74px)';
 
   // ── Tab helpers ────────────────────────────────────────────────────
   const tabStyle = (id) => ({
@@ -230,39 +233,67 @@ export default function DashboardView({
   };
 
   // ── Render helpers ─────────────────────────────────────────────────
+  // Icona streak in SVG (eredita il colore accento via currentColor):
+  // fiamma per le vittorie, fiocco di neve per le sconfitte. Sostituisce
+  // le emoji 🔥/❄️ così l'hero parla lo stesso linguaggio del mockup.
+  const StreakGlyph = ({ size }) => (
+    <span aria-hidden style={{
+      width: size, height: size, display: 'inline-flex', flexShrink: 0,
+      filter: `drop-shadow(0 4px 14px color-mix(in srgb, ${streakAccent} 45%, transparent))`,
+    }}>
+      {isWinStreak ? (
+        <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '100%', height: '100%', display: 'block' }}>
+          <path d="M13 2c.5 3-1.5 4.5-3 6.5C8.4 10.6 7 12.4 7 15a5 5 0 0 0 10 0c0-2-1-3.6-2-5 .2 1.2-.4 2.2-1.3 2.6.6-2-.3-4.6-.7-5.6-.6-1.6-.5-3.5 1-5z" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%', display: 'block' }}>
+          <path d="M12 3v18" /><path d="M4.2 7.5l15.6 9" /><path d="M19.8 7.5l-15.6 9" />
+          <path d="M12 6.2l2.2-1.6M12 6.2L9.8 4.6M12 17.8l2.2 1.6M12 17.8l-2.2 1.6" />
+          <path d="M6.6 8.9 4.6 8.6M6.6 8.9 6.1 10.9M17.4 15.1l2 .3M17.4 15.1l.5-2" />
+          <path d="M17.4 8.9 17.9 6.9M17.4 8.9l2-.3M6.6 15.1l-2 .3M6.6 15.1l.5 2" />
+        </svg>
+      )}
+    </span>
+  );
+
+  // Lato sinistro del "Duello": fiamma/fiocco + numero streak gemello dei
+  // crediti, con glow caldo/freddo. Tocco 3-tap → easter-egg (fenice/ghiaccio).
   const renderStreakHero = () => {
+    const sglow = `color-mix(in srgb, ${streakAccent} 42%, transparent)`;
+    const glyphSize = 'clamp(26px, 6vw, 48px)';
     if (fireLevel >= 3) {
       return (
         <div
           onClick={handleStreakTap}
           style={{
             position: 'relative',
-            display: 'flex', alignItems: 'center', gap: isDesktop ? 14 : 10,
+            display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
             cursor: 'pointer', userSelect: 'none',
             WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
-            padding: '6px 10px', borderRadius: 16,
+            padding: '4px 8px 4px 0', borderRadius: 14,
             boxShadow: streakTapCount > 0 ? `0 0 0 2px ${streakAccent}66` : 'none',
             transition: 'box-shadow .2s',
-            alignSelf: isDesktop ? 'flex-end' : 'flex-start',
           }}>
-          <span key={streakPulseKey} style={{
-            fontSize: isDesktop ? 84 : 64, lineHeight: 1, display: 'inline-block',
-            animation: streakPulseKey > 0 ? 'bcStreakTap .35s cubic-bezier(.3,1.6,.5,1) both' : 'none',
-            filter: `drop-shadow(0 6px 22px ${streakAccent}66)`,
+          <span className="bc-num bc-breathe" style={{
+            ['--sglow']: sglow,
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            fontSize: heroNum, color: streakAccent, lineHeight: .9,
+            textShadow: `0 0 22px ${sglow}`,
           }}>
-            {isWinStreak ? '🔥' : '❄️'}
+            <span key={streakPulseKey} style={{
+              display: 'inline-flex',
+              animation: streakPulseKey > 0 ? 'bcStreakTap .35s cubic-bezier(.3,1.6,.5,1) both' : 'none',
+            }}>
+              <StreakGlyph size={glyphSize} />
+            </span>
+            {fireLevel}
           </span>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div className="bc-num" style={{ fontSize: 'clamp(48px, 11vw, 92px)', color: streakAccent, lineHeight: .92 }}>
-              {fireLevel}
-            </div>
-            <div className="bc-meta" style={{ marginTop: 6, fontSize: 8 }}>
-              — {isWinStreak ? t('dashboard_extra.streak_wins') : t('dashboard_extra.streak_losses')}
-            </div>
+          <div className="bc-meta" style={{ marginTop: 8, fontSize: 8 }}>
+            — {isWinStreak ? t('dashboard_extra.streak_wins') : t('dashboard_extra.streak_losses')}
           </div>
           {streakTapCount > 0 && (
             <span style={{
-              position: 'absolute', top: 4, right: 4,
+              position: 'absolute', top: 0, right: 0,
               fontSize: 10, fontWeight: 800, color: streakAccent,
               fontFamily: "'Archivo',sans-serif", letterSpacing: '.1em',
             }}>{streakTapCount}/3</span>
@@ -271,12 +302,16 @@ export default function DashboardView({
       );
     }
     if (!isDesktop) return null;
+    // Senza streak attiva (e solo su desktop, dove c'è spazio): un accenno
+    // sbiadito a sinistra così il "Duello" non resta monco.
     return (
-      <div style={{ alignSelf: 'flex-end', display: 'flex', flexDirection: 'column', gap: 6, opacity: 0.55 }}>
-        <span aria-hidden style={{ fontSize: 40, lineHeight: 1, filter: 'grayscale(.4)' }}>🔥</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, opacity: 0.5, alignItems: 'flex-start' }}>
+        <span style={{ width: 40, height: 40, color: 'var(--dim)', display: 'inline-flex', filter: 'grayscale(.4)' }}>
+          <StreakGlyph size={40} />
+        </span>
         <span style={{
           fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic',
-          fontSize: 16, fontWeight: 500, color: 'var(--dim)', maxWidth: 260, lineHeight: 1.35,
+          fontSize: 16, fontWeight: 500, color: 'var(--dim)', maxWidth: 220, lineHeight: 1.35,
         }}>{t('dashboard_extra.streak_fallback')}</span>
       </div>
     );
@@ -388,23 +423,49 @@ export default function DashboardView({
         {myProfile.name}
       </div>
 
-      <div style={{
-        display: 'flex',
-        flexDirection: isDesktop ? 'row' : 'column',
-        alignItems: isDesktop ? 'flex-end' : 'stretch',
-        justifyContent: 'space-between',
-        gap: isDesktop ? 32 : 14,
-        marginTop: isDesktop ? 32 : 22,
-        paddingRight: isDesktop ? 24 : 8,
-      }}>
-        {renderStreakHero()}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: 'auto' }}>
-          <div className="bc-num" style={{ fontSize: 'clamp(48px, 11vw, 92px)', color: 'var(--gold)', lineHeight: .92 }}>
-            {Math.round(credits[user] ?? 0)}<span style={{ fontSize: '0.45em', color: 'var(--dim)', marginLeft: 6, fontWeight: 400 }}>₡</span>
+      {(() => {
+        // ── Hero "Duello pari": streak e crediti come cifre gemelle, divise
+        // da uno slash editoriale, affiancate anche su mobile. Senza streak
+        // attiva i crediti restano da soli, allineati a destra.
+        const streakNode = renderStreakHero();
+        const sglowGold  = 'color-mix(in srgb, var(--gold) 40%, transparent)';
+        const creditsNode = (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: streakNode ? 0 : 'auto', minWidth: 0 }}>
+            <div className="bc-num bc-breathe" style={{
+              ['--sglow']: sglowGold,
+              fontSize: heroNum, color: 'var(--gold)', lineHeight: .9,
+              textShadow: `0 0 24px ${sglowGold}`, whiteSpace: 'nowrap',
+            }}>
+              {Math.round(credits[user] ?? 0)}<span style={{ fontSize: '0.42em', color: 'var(--dim)', marginLeft: 6, fontWeight: 400 }}>₡</span>
+            </div>
+            <div className="bc-meta" style={{ marginTop: 8, fontSize: 8 }}>— {t('app.credits')}</div>
           </div>
-          <div className="bc-meta" style={{ marginTop: 6, fontSize: 8 }}>— {t('app.credits')}</div>
-        </div>
-      </div>
+        );
+        return (
+          <div style={{
+            display: 'flex', flexDirection: 'row', alignItems: 'flex-end',
+            // Su mobile (stretto) lo space-between tiene i due numeri agli
+            // estremi della riga: layout già approvato, non si tocca. Su desktop
+            // la riga è larga e lo space-between spingerebbe streak e crediti
+            // lontanissimi, isolando lo slash. Passo a flex-start così la coppia
+            // "gemella" resta una riga di punteggio compatta — "4 / 95" — con il
+            // solo gap a separare, ancorata a sinistra come il resto della Home.
+            justifyContent: isDesktop ? 'flex-start' : 'space-between',
+            gap: isDesktop ? 24 : 10,
+            marginTop: isDesktop ? 32 : 22, paddingRight: isDesktop ? 24 : 8,
+          }}>
+            {streakNode}
+            {streakNode && (
+              <span aria-hidden style={{
+                fontFamily: "'Cormorant Garamond',serif", fontStyle: 'italic',
+                fontSize: 'clamp(28px, 7vw, 52px)', color: 'var(--mut)',
+                lineHeight: 1, alignSelf: 'center', flexShrink: 0, marginBottom: '0.3em',
+              }}>/</span>
+            )}
+            {creditsNode}
+          </div>
+        );
+      })()}
 
       {renderFormTrail()}
       {renderSubHero()}
@@ -416,28 +477,24 @@ export default function DashboardView({
           { l: t('stats_view.win_rate'), v: `${wr}%`,      c: wr >= 50 ? 'var(--grn)' : 'var(--red)' },
           { l: t('dashboard.total_bets'), v: totalMy + myAct.length + mySec.length, c: 'var(--gold)' },
         ];
-        const yOffsets = isDesktop ? [0, 22, 8, 30] : [0, 14, 4, 18];
-        const anchors  = ['flex-start', 'center', 'flex-end', 'center'];
-        const aligns   = ['left', 'center', 'right', 'center'];
-        const nudges   = isDesktop ? [0, -6, 0, 10] : [0, -3, 0, 6];
+        // Banda statistiche a 4 colonne ESATTE, baseline allineata: niente più
+        // offset/nudge casuali (era lo "svasato sbavato"). Filetto sottile a
+        // sinistra di ogni colonna tranne la prima.
         return (
           <div style={{
-            display: 'flex', gap: 0,
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
             marginTop: isDesktop ? 44 : 28,
-            paddingTop: 18, borderTop: '1px solid var(--rule)',
-            alignItems: 'flex-start',
+            paddingTop: 16, borderTop: '1px solid var(--rule)',
           }}>
             {cells.map((s, idx) => (
               <div key={s.l} style={{
-                flex: 1, minWidth: 0,
-                paddingTop: yOffsets[idx], paddingLeft: 6, paddingRight: 6,
-                display: 'flex', flexDirection: 'column',
-                alignItems: anchors[idx], textAlign: aligns[idx],
-                transform: `translateX(${nudges[idx]}px)`,
+                minWidth: 0,
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                paddingLeft: idx === 0 ? 0 : 11,
                 borderLeft: idx === 0 ? 'none' : '1px solid var(--rule)',
               }}>
                 <div className="bc-num" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: s.c, lineHeight: 1 }}>{s.v}</div>
-                <div className="bc-meta" style={{ marginTop: 6, fontSize: 8 }}>{s.l}</div>
+                <div className="bc-meta" style={{ marginTop: 7, fontSize: 8 }}>{s.l}</div>
               </div>
             ))}
           </div>

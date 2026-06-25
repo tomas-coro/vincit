@@ -95,7 +95,9 @@ export async function registerPush(user, { prompt = true } = {}) {
   }
 }
 
-const CSS_BASE = `
+// Exported so the dev-only Home preview harness (src/preview.jsx) can reuse
+// the exact same global stylesheet as the real app instead of duplicating it.
+export const CSS_BASE = `
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,700&family=Playfair+Display:wght@700;900&display=swap');
 @keyframes sUp{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes fIn{from{opacity:0}to{opacity:1}}
@@ -106,6 +108,12 @@ const CSS_BASE = `
 @keyframes confA{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(90px) rotate(720deg);opacity:0}}
 @keyframes confB{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1}100%{transform:translate(var(--ex),var(--ey)) rotate(var(--rot,720deg)) scale(.4);opacity:0}}
 @keyframes bcStreakTap{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-8deg)}100%{transform:scale(1) rotate(0deg)}}
+/* Hero "respiro" glow — alone luminoso che pulsa su crediti (oro) e streak
+   (caldo/freddo). Il colore arriva dalla var locale --sglow impostata inline;
+   un text-shadow statico inline fa da fallback con reduced-motion. */
+@keyframes bcBreathe{0%,100%{text-shadow:0 0 18px var(--sglow,transparent)}50%{text-shadow:0 0 40px var(--sglow,transparent)}}
+.bc-breathe{animation:bcBreathe 4.4s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.bc-breathe{animation:none}}
 .bc *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 .bc{font-family:'Archivo',sans-serif;transition:background .25s,color .25s}
 /* Kill every default focus/click outline app-wide — user reported the lavender
